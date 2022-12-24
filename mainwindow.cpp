@@ -1,3 +1,4 @@
+#include <QCloseEvent>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
@@ -7,12 +8,12 @@
 #include "mainwindow.hpp"
 #include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
 	ui->progressBar->setVisible(false);
-	ui->slider->setValue(setting("Main/iSliderValue").toInt());
-	ui->sliderValue->setText(QString::number(ui->slider->value()) + " %");
+	ui->sizeSpinBox->setValue(setting("Main/iLastDesiredFileSize").toInt());
+	ui->sizeUnitComboBox->setCurrentText(setting("Main/sLastDesiredFileSizeUnit").toString());
 
 	// pick file
 	// TODO: Set file type filters
@@ -24,14 +25,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 		ui->fileName->setText(fileUrl.fileName());
 		selectedUrl = fileUrl;
-	});
-
-	// display slider value
-	QObject::connect(ui->slider, &QSlider::valueChanged, [this]() {
-		int value = ui->slider->value();
-
-		ui->sliderValue->setText(QString::number(value) + " %");
-		setSetting("Main/iSliderValue", value);
 	});
 
 	// start conversion
@@ -86,4 +79,13 @@ void MainWindow::setSetting(QString key, QVariant value)
 	}
 
 	settings.setValue(key, value);
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+	// save current parameters for next program run
+	setSetting("Main/iLastDesiredFileSize", ui->sizeSpinBox->value());
+	setSetting("Main/sLastDesiredFileSizeUnit", ui->sizeUnitComboBox->currentText());
+
+	event->accept();
 }

@@ -14,7 +14,7 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
 public:
-	explicit MainWindow(QWidget *parent = nullptr);
+	explicit MainWindow(QWidget* parent = nullptr);
 	~MainWindow() override;
 
 private:
@@ -24,5 +24,8 @@ private:
 
 	QVariant setting(QString key);
 	void setSetting(QString key, QVariant value);
+
+protected:
+	void closeEvent(QCloseEvent* event) override;
 };
 #endif // MAINWINDOW_HPP
