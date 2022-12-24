@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>329</width>
-    <height>235</height>
+    <width>328</width>
+    <height>264</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -129,7 +129,11 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QLineEdit" name="fileName"/>
+          <widget class="QLineEdit" name="fileName">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QPushButton" name="fileButton">
@@ -233,6 +237,34 @@
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QProgressBar" name="progressBar">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="maximum">
+       <number>0</number>
+      </property>
+      <property name="value">
+       <number>-1</number>
+      </property>
+      <property name="textVisible">
+       <bool>false</bool>
+      </property>
+      <property name="invertedAppearance">
+       <bool>false</bool>
+      </property>
+      <property name="textDirection">
+       <enum>QProgressBar::BottomToTop</enum>
+      </property>
+      <property name="format">
+       <string/>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -240,7 +272,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>329</width>
+     <width>328</width>
      <height>17</height>
     </rect>
    </property>

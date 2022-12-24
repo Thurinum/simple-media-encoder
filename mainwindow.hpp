@@ -2,6 +2,7 @@
 #define MAINWINDOW_HPP
 
 #include <QMainWindow>
+#include <QUrl>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,5 +18,6 @@ public:
 
 private:
 	Ui::MainWindow *ui;
+	QUrl selectedUrl;
 };
 #endif // MAINWINDOW_HPP
