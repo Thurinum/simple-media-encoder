@@ -2,6 +2,7 @@
 #define MAINWINDOW_HPP
 
 #include <QMainWindow>
+#include <QSettings>
 #include <QUrl>
 
 QT_BEGIN_NAMESPACE
@@ -13,11 +14,15 @@ class MainWindow : public QMainWindow
 	Q_OBJECT
 
 public:
-	MainWindow(QWidget *parent = nullptr);
-	~MainWindow();
+	explicit MainWindow(QWidget *parent = nullptr);
+	~MainWindow() override;
 
 private:
 	Ui::MainWindow *ui;
 	QUrl selectedUrl;
+	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
+
+	QVariant setting(QString key);
+	void setSetting(QString key, QVariant value);
 };
 #endif // MAINWINDOW_HPP
