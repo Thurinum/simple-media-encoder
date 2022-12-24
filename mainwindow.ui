@@ -210,7 +210,7 @@
          <item>
           <widget class="QLabel" name="sliderValue">
            <property name="text">
-            <string>69 %</string>
+            <string>xx %</string>
            </property>
           </widget>
          </item>

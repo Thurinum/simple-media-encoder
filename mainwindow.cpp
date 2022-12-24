@@ -28,6 +28,27 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	QObject::connect(ui->slider, &QSlider::valueChanged, [this]() {
 		ui->sliderValue->setText(QString::number(ui->slider->value()) + " %");
 	});
+
+	// start conversion
+	QObject::connect(ui->startButton, &QPushButton::clicked, [this]() {
+		if (!selectedUrl.isValid()) {
+			QMessageBox::information(this,
+							 "No file selected",
+							 "Please select a file to compress.");
+			return;
+		}
+
+		QString command = "explorer";
+		ui->progressBar->setVisible(true);
+
+		if (QProcess::execute(command, QStringList() << "") < 0) {
+			QMessageBox::critical(this,
+						    "Something went wrong",
+						    "File compression failed. Please try again.");
+		}
+
+		ui->progressBar->setVisible(false);
+	});
 }
 
 MainWindow::~MainWindow()
