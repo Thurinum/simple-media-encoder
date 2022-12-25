@@ -12,8 +12,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
 	ui->setupUi(this);
 	ui->progressBar->setVisible(false);
-	ui->sizeSpinBox->setValue(setting("Main/iLastDesiredFileSize").toInt());
+
+	// restore UI state
+	selectedUrl = QUrl(setting("Main/sLastFile").toString());
+
+	ui->fileName->setText(selectedUrl.fileName());
+	ui->sizeSpinBox->setValue(setting("Main/dLastDesiredFileSize").toDouble());
+	ui->fileSuffix->setText(setting("Main/sLastDesiredFileSuffix").toString());
 	ui->sizeUnitComboBox->setCurrentText(setting("Main/sLastDesiredFileSizeUnit").toString());
+	ui->qualityRatioSlider->setValue(setting("Main/iLastDesiredQualityRatio").toInt());
 
 	// pick file
 	// TODO: Set file type filters
@@ -57,25 +64,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			return;
 		}
 
-		// get media audio bitrate
-		ffprobe.startCommand("ffprobe -v error -select_streams a:0 -show_entries "
-					   "stream=bit_rate -of default=noprint_wrappers=1:nokey=1 "
-					   + selectedUrl.toLocalFile());
-		ffprobe.waitForFinished();
-
-		ok = false;
-		double audioBitrateKbps = ffprobe.readAllStandardOutput().toDouble(&ok);
-
-		if (!ok) {
-			QMessageBox::critical(
-				this,
-				"Failed to probe medium",
-				"An error occured while probing the media file bitrate: \n\n"
-					+ ffprobe.readAllStandardOutput());
-			ui->progressBar->setVisible(false);
-			return;
-		}
-
 		double unitConversionFactor = -1;
 
 		// TODO: Make more robust by populating combobox from C++
@@ -91,18 +79,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			break;
 		}
 
+		double minBitrateVideo = setting("Main/dMinBitrateVideoKbps").toDouble();
+		double minBitrateAudio = setting("Main/dMinBitrateAudioKbps").toDouble();
+
 		// TODO: Calculate accurately? (statistics)
 		double errorCorrection = (1.0 - setting("Main/dBitrateErrorMargin").toDouble());
 		double bitrateKbps = ui->sizeSpinBox->value() * unitConversionFactor / lengthSeconds
 					   * errorCorrection;
 		double videoBitrateRatio = ui->qualityRatioSlider->value() / 100.0;
 
+		double videoBitrateKpbs = qMax((1 - videoBitrateRatio) * bitrateKbps, minBitrateVideo);
+		double audioBitrateKbps = qMax(videoBitrateRatio * bitrateKbps, minBitrateAudio);
+
+		qDebug() << QString::number(qMax(videoBitrateRatio * bitrateKbps, minBitrateAudio));
+
 		QStringList fileName = selectedUrl.fileName().split(".");
 		QProcess ffmpeg;
 		QString command = QString("ffmpeg.exe -i %1 -b:v %2k -b:a %3k %4_%5.%6 -y")
 						.arg(selectedUrl.toLocalFile(),
-						     QString::number((1 - videoBitrateRatio) * bitrateKbps),
-						     QString::number(videoBitrateRatio * bitrateKbps),
+						     QString::number(videoBitrateKpbs),
+						     QString::number(audioBitrateKbps),
 						     fileName.first(),
 						     ui->fileSuffix->text(),
 						     fileName.last());
@@ -115,20 +111,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 							    + ffmpeg.readAllStandardOutput()
 							    + "\n\nCommand: " + command);
 
+		qDebug() << audioBitrateKbps;
 		QMessageBox::information(this,
 						 "Compressed successfully",
 						 QString("Requested size was %1 MB.\n\nCalculated bitrate "
 							   "was %2 kbps.\n\nBased on quality ratio of "
 							   "%3:\n\tVideo bitrate was set to %4 "
 							   "kbps;\n\tAudio bitrate was set to %5 kbps.\n\nAn "
-							   "error correction of %6 % was applied.")
+							   "error correction of %6 % was applied.\n\n%7")
 							 .arg(QString::number(ui->sizeSpinBox->value()),
 								QString::number(bitrateKbps),
 								QString::number(videoBitrateRatio),
-								QString::number((1 - videoBitrateRatio)
-										    * bitrateKbps),
-								QString::number(videoBitrateRatio * bitrateKbps),
-								QString::number((1 - errorCorrection) * 100)));
+								QString::number(videoBitrateKpbs),
+								QString::number(audioBitrateKbps),
+								QString::number((1 - errorCorrection) * 100),
+								videoBitrateKpbs + audioBitrateKbps > bitrateKbps
+									? "Warning: Cannot reach size target because "
+									  "it involves very small bitrates."
+									: ""));
 
 		ui->progressBar->setVisible(false);
 	});
@@ -161,7 +161,8 @@ void MainWindow::setSetting(QString key, QVariant value)
 		QMessageBox::warning(this,
 					   "Suspicious setting",
 					   "Attempted to create setting that doesn't already "
-					   "exist. Is this a typo?");
+					   "exist: "
+						   + key + ". Is this a typo?");
 	}
 
 	settings.setValue(key, value);
@@ -170,8 +171,11 @@ void MainWindow::setSetting(QString key, QVariant value)
 void MainWindow::closeEvent(QCloseEvent *event)
 {
 	// save current parameters for next program run
-	setSetting("Main/iLastDesiredFileSize", ui->sizeSpinBox->value());
+	setSetting("Main/sLastFile", selectedUrl);
+	setSetting("Main/dLastDesiredFileSize", ui->sizeSpinBox->value());
 	setSetting("Main/sLastDesiredFileSizeUnit", ui->sizeUnitComboBox->currentText());
+	setSetting("Main/sLastDesiredFileSuffix", ui->fileSuffix->text());
+	setSetting("Main/iLastDesiredQualityRatio", ui->qualityRatioSlider->value());
 
 	event->accept();
 }
