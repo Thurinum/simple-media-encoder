@@ -81,17 +81,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 		double minBitrateVideo = setting("Main/dMinBitrateVideoKbps").toDouble();
 		double minBitrateAudio = setting("Main/dMinBitrateAudioKbps").toDouble();
+		double maxBitrateAudio = setting("Main/dMaxBitrateAudioKbps").toDouble();
 
 		// TODO: Calculate accurately? (statistics)
 		double errorCorrection = (1.0 - setting("Main/dBitrateErrorMargin").toDouble());
 		double bitrateKbps = ui->sizeSpinBox->value() * unitConversionFactor / lengthSeconds
 					   * errorCorrection;
-		double videoBitrateRatio = ui->qualityRatioSlider->value() / 100.0;
-
-		double videoBitrateKpbs = qMax((1 - videoBitrateRatio) * bitrateKbps, minBitrateVideo);
-		double audioBitrateKbps = qMax(videoBitrateRatio * bitrateKbps, minBitrateAudio);
-
-		qDebug() << QString::number(qMax(videoBitrateRatio * bitrateKbps, minBitrateAudio));
+		double audioBitrateRatio = ui->qualityRatioSlider->value() / 100.0;
+		double audioBitrateKbps = qMax(minBitrateAudio, audioBitrateRatio * maxBitrateAudio);
+		double videoBitrateKpbs = qMax(minBitrateVideo, bitrateKbps - audioBitrateKbps);
 
 		QStringList fileName = selectedUrl.fileName().split(".");
 		QProcess ffmpeg;
@@ -112,23 +110,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 							    + "\n\nCommand: " + command);
 
 		qDebug() << audioBitrateKbps;
-		QMessageBox::information(this,
-						 "Compressed successfully",
-						 QString("Requested size was %1 MB.\n\nCalculated bitrate "
-							   "was %2 kbps.\n\nBased on quality ratio of "
-							   "%3:\n\tVideo bitrate was set to %4 "
-							   "kbps;\n\tAudio bitrate was set to %5 kbps.\n\nAn "
-							   "error correction of %6 % was applied.\n\n%7")
-							 .arg(QString::number(ui->sizeSpinBox->value()),
-								QString::number(bitrateKbps),
-								QString::number(videoBitrateRatio),
-								QString::number(videoBitrateKpbs),
-								QString::number(audioBitrateKbps),
-								QString::number((1 - errorCorrection) * 100),
-								videoBitrateKpbs + audioBitrateKbps > bitrateKbps
-									? "Warning: Cannot reach size target because "
-									  "it involves very small bitrates."
-									: ""));
+		QMessageBox::information(
+			this,
+			"Compressed successfully",
+			QString("Requested size was %1 MB.%7\n\nCalculated bitrate "
+				  "was %2 kbps.\n\nBased on quality ratio of "
+				  "%3:\n\tVideo bitrate was set to %4 "
+				  "kbps;\n\tAudio bitrate was set to %5 kbps.\n\nAn "
+				  "error correction of %6 % was applied.")
+				.arg(QString::number(ui->sizeSpinBox->value()),
+				     QString::number(bitrateKbps),
+				     QString::number(audioBitrateRatio),
+				     QString::number(videoBitrateKpbs),
+				     QString::number(audioBitrateKbps),
+				     QString::number((1 - errorCorrection) * 100),
+				     videoBitrateKpbs + audioBitrateKbps > bitrateKbps
+					     ? " It is too small and may not have been reached."
+					     : ""));
 
 		ui->progressBar->setVisible(false);
 	});
