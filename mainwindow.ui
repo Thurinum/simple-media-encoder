@@ -157,8 +157,8 @@
         <property name="spacing">
          <number>0</number>
         </property>
-        <item alignment="Qt::AlignLeft">
-         <widget class="QSpinBox" name="sizeSpinBox">
+        <item>
+         <widget class="QDoubleSpinBox" name="sizeSpinBox">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
             <horstretch>0</horstretch>

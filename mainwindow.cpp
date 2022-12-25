@@ -38,21 +38,86 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 		ui->progressBar->setVisible(true);
 
-		QString path = selectedUrl.toLocalFile();
-		QProcess* ffmpeg = new QProcess(this);
-		QStringList arguments;
-		arguments << "-i" << path << "-fs"
-			    << QString::number(ui->sizeSpinBox->value())
-					 + ui->sizeUnitComboBox->currentText().first(1)
-			    << path + ui->fileSuffix->text() << "-y";
+		// get media duration in seconds, which is required for calculating bitrate
+		QProcess ffprobe;
+		ffprobe.startCommand("ffprobe.exe -v error -show_entries format=duration -of "
+					   "default=noprint_wrappers=1:nokey=1 "
+					   + selectedUrl.toLocalFile());
+		ffprobe.waitForFinished();
 
-		//		ffmpeg->setProgram("ffmpeg.exe");
-		//		ffmpeg->setArguments(arguments);
+		bool ok = false;
+		double lengthSeconds = ffprobe.readAllStandardOutput().toDouble(&ok);
 
-		if (!QProcess::execute("ffmpeg.exe", arguments))
+		if (!ok) {
 			QMessageBox::critical(this,
-						    "Something went wrong",
-						    "File compression failed:\n\n" + ffmpeg->errorString());
+						    "Failed to probe medium",
+						    "An error occured while probing the media file: \n\n"
+							    + ffprobe.readAllStandardOutput());
+			ui->progressBar->setVisible(false);
+			return;
+		}
+
+		// get media audio bitrate
+		//		ffprobe.waitForFinished();
+
+		//		bool ok = false;
+		//		double lengthSeconds = ffprobe.readAllStandardOutput().toDouble(&ok);
+
+		//		if (!ok) {
+		//			QMessageBox::critical(this,
+		//						    "Failed to probe medium",
+		//						    "An error occured while probing the media file: \n\n"
+		//							    + ffprobe.readAllStandardOutput());
+		//			ui->progressBar->setVisible(false);
+		//			return;
+		//		}
+
+		double unitFactor = -1;
+
+		// TODO: Make more robust by populating combobox from C++
+		switch (ui->sizeUnitComboBox->currentIndex()) {
+		case 0: //
+			unitFactor = 8;
+			break;
+		case 1: // MB to kb
+			unitFactor = 8000;
+			break;
+		case 2: //
+			unitFactor = 8e+6;
+			break;
+		}
+
+		double bitrate = ui->sizeSpinBox->value() * unitFactor / lengthSeconds
+				     * (1.0 - setting("Main/dBitrateRelativeUncertainty").toDouble());
+		QStringList fileName = selectedUrl.fileName().split(".");
+		QProcess ffmpeg;
+		QString command = QString("ffmpeg.exe -i %1 -b:v %2k -an %4_%5.%6 -y")
+						.arg(selectedUrl.toLocalFile(),
+						     QString::number(bitrate),
+						     fileName.first(),
+						     ui->fileSuffix->text(),
+						     fileName.last());
+		ffmpeg.startCommand(command);
+
+		if (!ffmpeg.waitForFinished())
+			QMessageBox::critical(this,
+						    "Failed to compress",
+						    "An error occured while compressing the media file:\n\n"
+							    + ffmpeg.readAllStandardOutput()
+							    + "\n\nCommand: " + command);
+
+		QMessageBox::information(
+			this,
+			"Compressed successfully",
+			QString("Requested size was %1 MB.\n\nCalculated bitrate "
+				  "was %2 bits.\n\nCalculated length was %3 s.\n\nUncertainty was assumed "
+				  "to be %4.\n\nCommand run:\n\n%5")
+				.arg(QString::number(ui->sizeSpinBox->value()),
+				     QString::number(bitrate),
+				     QString::number(lengthSeconds),
+				     QString::number(
+					     1.0 - setting("Main/dBitrateRelativeUncertainty").toDouble()),
+				     command));
 
 		ui->progressBar->setVisible(false);
 	});
