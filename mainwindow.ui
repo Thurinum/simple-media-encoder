@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>328</width>
-    <height>264</height>
+    <height>286</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -256,7 +256,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QWidget" name="verticalWidget" native="true">
+     <widget class="QWidget" name="qualityRatioVLayout" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
         <horstretch>0</horstretch>
@@ -264,9 +264,70 @@
        </sizepolicy>
       </property>
       <layout class="QVBoxLayout" name="sliderVLayout">
-       <property name="bottomMargin">
-        <number>10</number>
+       <property name="leftMargin">
+        <number>0</number>
        </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="qualityRatioHeading">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Quality ratio</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="qualityRatioHLayout">
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="qualityRatioSliderVideoLabel">
+           <property name="text">
+            <string>Video</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSlider" name="qualityRatioSlider">
+           <property name="maximum">
+            <number>100</number>
+           </property>
+           <property name="singleStep">
+            <number>1</number>
+           </property>
+           <property name="value">
+            <number>33</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="invertedAppearance">
+            <bool>false</bool>
+           </property>
+           <property name="invertedControls">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="qualityRatioSliderAudioLabel">
+           <property name="text">
+            <string>Audio</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
       </layout>
      </widget>
     </item>

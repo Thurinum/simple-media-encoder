@@ -8,7 +8,7 @@
 #include "mainwindow.hpp"
 #include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
 	ui->progressBar->setVisible(false);
@@ -51,49 +51,58 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 		if (!ok) {
 			QMessageBox::critical(this,
 						    "Failed to probe medium",
-						    "An error occured while probing the media file: \n\n"
+						    "An error occured while probing the media file length: \n\n"
 							    + ffprobe.readAllStandardOutput());
 			ui->progressBar->setVisible(false);
 			return;
 		}
 
 		// get media audio bitrate
-		//		ffprobe.waitForFinished();
+		ffprobe.startCommand("ffprobe -v error -select_streams a:0 -show_entries "
+					   "stream=bit_rate -of default=noprint_wrappers=1:nokey=1 "
+					   + selectedUrl.toLocalFile());
+		ffprobe.waitForFinished();
 
-		//		bool ok = false;
-		//		double lengthSeconds = ffprobe.readAllStandardOutput().toDouble(&ok);
+		ok = false;
+		double audioBitrateKbps = ffprobe.readAllStandardOutput().toDouble(&ok);
 
-		//		if (!ok) {
-		//			QMessageBox::critical(this,
-		//						    "Failed to probe medium",
-		//						    "An error occured while probing the media file: \n\n"
-		//							    + ffprobe.readAllStandardOutput());
-		//			ui->progressBar->setVisible(false);
-		//			return;
-		//		}
+		if (!ok) {
+			QMessageBox::critical(
+				this,
+				"Failed to probe medium",
+				"An error occured while probing the media file bitrate: \n\n"
+					+ ffprobe.readAllStandardOutput());
+			ui->progressBar->setVisible(false);
+			return;
+		}
 
-		double unitFactor = -1;
+		double unitConversionFactor = -1;
 
 		// TODO: Make more robust by populating combobox from C++
 		switch (ui->sizeUnitComboBox->currentIndex()) {
 		case 0: //
-			unitFactor = 8;
+			unitConversionFactor = 8;
 			break;
 		case 1: // MB to kb
-			unitFactor = 8000;
+			unitConversionFactor = 8000;
 			break;
 		case 2: //
-			unitFactor = 8e+6;
+			unitConversionFactor = 8e+6;
 			break;
 		}
 
-		double bitrate = ui->sizeSpinBox->value() * unitFactor / lengthSeconds
-				     * (1.0 - setting("Main/dBitrateRelativeUncertainty").toDouble());
+		// TODO: Calculate accurately? (statistics)
+		double errorCorrection = (1.0 - setting("Main/dBitrateErrorMargin").toDouble());
+		double bitrateKbps = ui->sizeSpinBox->value() * unitConversionFactor / lengthSeconds
+					   * errorCorrection;
+		double videoBitrateRatio = ui->qualityRatioSlider->value() / 100.0;
+
 		QStringList fileName = selectedUrl.fileName().split(".");
 		QProcess ffmpeg;
-		QString command = QString("ffmpeg.exe -i %1 -b:v %2k -an %4_%5.%6 -y")
+		QString command = QString("ffmpeg.exe -i %1 -b:v %2k -b:a %3k %4_%5.%6 -y")
 						.arg(selectedUrl.toLocalFile(),
-						     QString::number(bitrate),
+						     QString::number((1 - videoBitrateRatio) * bitrateKbps),
+						     QString::number(videoBitrateRatio * bitrateKbps),
 						     fileName.first(),
 						     ui->fileSuffix->text(),
 						     fileName.last());
@@ -106,18 +115,20 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 							    + ffmpeg.readAllStandardOutput()
 							    + "\n\nCommand: " + command);
 
-		QMessageBox::information(
-			this,
-			"Compressed successfully",
-			QString("Requested size was %1 MB.\n\nCalculated bitrate "
-				  "was %2 bits.\n\nCalculated length was %3 s.\n\nUncertainty was assumed "
-				  "to be %4.\n\nCommand run:\n\n%5")
-				.arg(QString::number(ui->sizeSpinBox->value()),
-				     QString::number(bitrate),
-				     QString::number(lengthSeconds),
-				     QString::number(
-					     1.0 - setting("Main/dBitrateRelativeUncertainty").toDouble()),
-				     command));
+		QMessageBox::information(this,
+						 "Compressed successfully",
+						 QString("Requested size was %1 MB.\n\nCalculated bitrate "
+							   "was %2 kbps.\n\nBased on quality ratio of "
+							   "%3:\n\tVideo bitrate was set to %4 "
+							   "kbps;\n\tAudio bitrate was set to %5 kbps.\n\nAn "
+							   "error correction of %6 % was applied.")
+							 .arg(QString::number(ui->sizeSpinBox->value()),
+								QString::number(bitrateKbps),
+								QString::number(videoBitrateRatio),
+								QString::number((1 - videoBitrateRatio)
+										    * bitrateKbps),
+								QString::number(videoBitrateRatio * bitrateKbps),
+								QString::number((1 - errorCorrection) * 100)));
 
 		ui->progressBar->setVisible(false);
 	});
@@ -136,7 +147,8 @@ QVariant MainWindow::setting(QString key)
 					    "The configuration file is missing a key. Please reinstall the "
 					    "program.\n\nMissing key: "
 						    + key + "\nWorking dir: " + QDir::currentPath());
-		// TODO: Can't use QApplication:: to quit because window isn't yet opened. Find a proper workaround lol
+		// TODO: Can't use QApplication:: to quit because window isn't yet opened.
+		// Find a proper workaround lol
 		return 0 / 0;
 	}
 
@@ -146,16 +158,16 @@ QVariant MainWindow::setting(QString key)
 void MainWindow::setSetting(QString key, QVariant value)
 {
 	if (!settings.contains(key)) {
-		QMessageBox::warning(
-			this,
-			"Suspicious setting",
-			"Attempted to create setting that doesn't already exist. Is this a typo?");
+		QMessageBox::warning(this,
+					   "Suspicious setting",
+					   "Attempted to create setting that doesn't already "
+					   "exist. Is this a typo?");
 	}
 
 	settings.setValue(key, value);
 }
 
-void MainWindow::closeEvent(QCloseEvent* event)
+void MainWindow::closeEvent(QCloseEvent *event)
 {
 	// save current parameters for next program run
 	setSetting("Main/iLastDesiredFileSize", ui->sizeSpinBox->value());
