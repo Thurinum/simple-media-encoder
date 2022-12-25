@@ -25,6 +25,9 @@ private:
 	QVariant setting(QString key);
 	void setSetting(QString key, QVariant value);
 
+public slots:
+	void compressionEnded(int statusCode);
+
 protected:
 	void closeEvent(QCloseEvent* event) override;
 };

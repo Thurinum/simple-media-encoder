@@ -12,15 +12,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
 	ui->setupUi(this);
 	ui->progressBar->setVisible(false);
-
-	// restore UI state
-	selectedUrl = QUrl(setting("Main/sLastFile").toString());
-
-	ui->fileName->setText(selectedUrl.fileName());
-	ui->sizeSpinBox->setValue(setting("Main/dLastDesiredFileSize").toDouble());
-	ui->fileSuffix->setText(setting("Main/sLastDesiredFileSuffix").toString());
-	ui->sizeUnitComboBox->setCurrentText(setting("Main/sLastDesiredFileSizeUnit").toString());
-	ui->qualityRatioSlider->setValue(setting("Main/iLastDesiredQualityRatio").toInt());
+	this->setFixedSize(this->width(), this->height());
 
 	// pick file
 	// TODO: Set file type filters
@@ -33,6 +25,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		ui->fileName->setText(fileUrl.fileName());
 		selectedUrl = fileUrl;
 	});
+
+	// update audio quality slider
+	QObject::connect(ui->qualityRatioSlider, &QSlider::valueChanged, [this]() {
+		double currentValue = ui->qualityRatioSlider->value() / 100.0
+					    * setting("Main/dMaxBitrateAudioKbps").toDouble();
+		ui->qualityRatioSliderLabel->setText(QString::number(currentValue) + " kbps");
+	});
+
+	// restore UI state
+	selectedUrl = QUrl(setting("Main/sLastFile").toString());
+
+	ui->fileName->setText(selectedUrl.fileName());
+	ui->sizeSpinBox->setValue(setting("Main/dLastDesiredFileSize").toDouble());
+	ui->fileSuffix->setText(setting("Main/sLastDesiredFileSuffix").toString());
+	ui->sizeUnitComboBox->setCurrentText(setting("Main/sLastDesiredFileSizeUnit").toString());
+	ui->qualityRatioSlider->setValue(setting("Main/iLastDesiredQualityRatio").toInt());
+	emit ui->qualityRatioSlider->valueChanged(ui->qualityRatioSlider->value());
 
 	// start conversion
 	QObject::connect(ui->startButton, &QPushButton::clicked, [this]() {
@@ -92,7 +101,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		double videoBitrateKpbs = qMax(minBitrateVideo, bitrateKbps - audioBitrateKbps);
 
 		QStringList fileName = selectedUrl.fileName().split(".");
-		QProcess ffmpeg;
+		QProcess *ffmpeg = new QProcess(this);
 		QString command = QString("ffmpeg.exe -i %1 -b:v %2k -b:a %3k %4_%5.%6 -y")
 						.arg(selectedUrl.toLocalFile(),
 						     QString::number(videoBitrateKpbs),
@@ -100,35 +109,36 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 						     fileName.first(),
 						     ui->fileSuffix->text(),
 						     fileName.last());
-		ffmpeg.startCommand(command);
+		ffmpeg->startCommand(command);
 
-		if (!ffmpeg.waitForFinished())
-			QMessageBox::critical(this,
-						    "Failed to compress",
-						    "An error occured while compressing the media file:\n\n"
-							    + ffmpeg.readAllStandardOutput()
-							    + "\n\nCommand: " + command);
+		connect(ffmpeg, &QProcess::finished, this, &MainWindow::compressionEnded);
 
-		qDebug() << audioBitrateKbps;
-		QMessageBox::information(
-			this,
-			"Compressed successfully",
-			QString("Requested size was %1 MB.%7\n\nCalculated bitrate "
-				  "was %2 kbps.\n\nBased on quality ratio of "
-				  "%3:\n\tVideo bitrate was set to %4 "
-				  "kbps;\n\tAudio bitrate was set to %5 kbps.\n\nAn "
-				  "error correction of %6 % was applied.")
-				.arg(QString::number(ui->sizeSpinBox->value()),
-				     QString::number(bitrateKbps),
-				     QString::number(audioBitrateRatio),
-				     QString::number(videoBitrateKpbs),
-				     QString::number(audioBitrateKbps),
-				     QString::number((1 - errorCorrection) * 100),
-				     videoBitrateKpbs + audioBitrateKbps > bitrateKbps
-					     ? " It is too small and may not have been reached."
-					     : ""));
+		//		if (!ffmpeg.waitForFinished())
+		//			QMessageBox::critical(this,
+		//						    "Failed to compress",
+		//						    "An error occured while compressing the media file:\n\n"
+		//							    + ffmpeg.readAllStandardOutput()
+		//							    + "\n\nCommand: " + command);
 
-		ui->progressBar->setVisible(false);
+		//		QMessageBox::information(
+		//			this,
+		//			"Compressed successfully",
+		//			QString("Requested size was %1 MB.%7\n\nCalculated bitrate "
+		//				  "was %2 kbps.\n\nBased on quality ratio of "
+		//				  "%3:\n\tVideo bitrate was set to %4 "
+		//				  "kbps;\n\tAudio bitrate was set to %5 kbps.\n\nAn "
+		//				  "error correction of %6 % was applied.")
+		//				.arg(QString::number(ui->sizeSpinBox->value()),
+		//				     QString::number(bitrateKbps),
+		//				     QString::number(audioBitrateRatio),
+		//				     QString::number(videoBitrateKpbs),
+		//				     QString::number(audioBitrateKbps),
+		//				     QString::number((1 - errorCorrection) * 100),
+		//				     videoBitrateKpbs + audioBitrateKbps > bitrateKbps
+		//					     ? " It is too small and may not have been reached."
+		//					     : ""));
+
+		
 	});
 }
 
@@ -164,6 +174,12 @@ void MainWindow::setSetting(QString key, QVariant value)
 	}
 
 	settings.setValue(key, value);
+}
+
+void MainWindow::compressionEnded(int statusCode)
+{
+	ui->progressBar->setVisible(false);
+	QMessageBox::information(this, "Compression ended", "Compression ended successfully.");
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
