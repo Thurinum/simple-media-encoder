@@ -36,14 +36,23 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 			return;
 		}
 
-		QString command = "explorer";
 		ui->progressBar->setVisible(true);
 
-		if (QProcess::execute(command, QStringList() << "") < 0) {
+		QString path = selectedUrl.toLocalFile();
+		QProcess* ffmpeg = new QProcess(this);
+		QStringList arguments;
+		arguments << "-i" << path << "-fs"
+			    << QString::number(ui->sizeSpinBox->value())
+					 + ui->sizeUnitComboBox->currentText().first(1)
+			    << path + ui->fileSuffix->text() << "-y";
+
+		//		ffmpeg->setProgram("ffmpeg.exe");
+		//		ffmpeg->setArguments(arguments);
+
+		if (!QProcess::execute("ffmpeg.exe", arguments))
 			QMessageBox::critical(this,
 						    "Something went wrong",
-						    "File compression failed. Please try again.");
-		}
+						    "File compression failed:\n\n" + ffmpeg->errorString());
 
 		ui->progressBar->setVisible(false);
 	});
