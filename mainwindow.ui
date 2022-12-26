@@ -47,9 +47,15 @@
    <iconset>
     <normaloff>C:/Users/Thurinum/Downloads/ftcatalogmanager.png</normaloff>C:/Users/Thurinum/Downloads/ftcatalogmanager.png</iconset>
   </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <widget class="QWidget" name="owo">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+    <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
      <horstretch>0</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
@@ -92,7 +98,7 @@
      <number>15</number>
     </property>
     <item>
-     <widget class="QLabel" name="label">
+     <widget class="QLabel" name="mainHeading">
       <property name="font">
        <font>
         <family>Segoe UI Light</family>
@@ -106,7 +112,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QWidget" name="filePickerLayout_2" native="true">
+     <widget class="QWidget" name="filePickerWidget" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
         <horstretch>0</horstretch>
@@ -207,7 +213,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QWidget" name="sizeAndSuffixLayout_2" native="true">
+     <widget class="QWidget" name="sizeAndSuffixWidget" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
         <horstretch>0</horstretch>
@@ -329,14 +335,14 @@
      </widget>
     </item>
     <item>
-     <widget class="QWidget" name="qualityRatioLayout" native="true">
+     <widget class="QWidget" name="qualityRatioWidget" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <layout class="QVBoxLayout" name="sliderVLayout">
+      <layout class="QVBoxLayout" name="qualityRatioLayout">
        <property name="leftMargin">
         <number>6</number>
        </property>
@@ -437,35 +443,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QProgressBar" name="progressBar">
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="maximum">
-       <number>0</number>
-      </property>
-      <property name="value">
-       <number>-1</number>
-      </property>
-      <property name="textVisible">
-       <bool>false</bool>
-      </property>
-      <property name="invertedAppearance">
-       <bool>false</bool>
-      </property>
-      <property name="textDirection">
-       <enum>QProgressBar::BottomToTop</enum>
-      </property>
-      <property name="format">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_2">
+     <widget class="QLabel" name="acknowledgements">
       <property name="text">
        <string>Powered by Qt and FFMPEG. Open source under GNU GPL v3.</string>
       </property>

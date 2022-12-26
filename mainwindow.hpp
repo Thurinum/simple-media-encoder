@@ -1,6 +1,9 @@
 #ifndef MAINWINDOW_HPP
 #define MAINWINDOW_HPP
 
+#include "compressor.hpp"
+#include <QGraphicsBlurEffect>
+#include <QLabel>
 #include <QMainWindow>
 #include <QSettings>
 #include <QUrl>
@@ -21,12 +24,11 @@ private:
 	Ui::MainWindow *ui;
 	QUrl selectedUrl;
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
+	Compressor* compressor = new Compressor(this);
+	QLabel* spinner = new QLabel(this);
 
-	QVariant setting(QString key);
+	QVariant setting(const QString& key);
 	void setSetting(QString key, QVariant value);
-
-public slots:
-	void compressionEnded(int statusCode);
 
 protected:
 	void closeEvent(QCloseEvent* event) override;
