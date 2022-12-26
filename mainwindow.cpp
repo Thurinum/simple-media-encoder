@@ -52,6 +52,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		spinner->show();
 		compressor->compress(selectedUrl,
 					   ui->fileSuffix->text(),
+					   (Compressor::VideoCodec) ui->videoCodecComboBox->currentIndex(),
+					   (Compressor::AudioCodec) ui->audioCodecCombobox->currentIndex(),
+					   (Compressor::Container) ui->containerCombobox->currentIndex(),
 					   ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
 					   ui->qualityRatioSlider->value() / 100.0);
 	});
@@ -78,6 +81,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 					    "Something went wrong when compressing the media file:\n\n\t"
 						    + errorMessage,
 					    QMessageBox::Ok);
+	});
+
+	// handle compression progress updates
+	connect(compressor, &Compressor::compressionProgressUpdate, [this](int progressPercent) {
+		ui->progressBar->setValue(progressPercent);
 	});
 
 	// show name of file picked with file dialog
@@ -127,7 +135,7 @@ QVariant MainWindow::setting(const QString &key)
 	return settings.value(key);
 }
 
-void MainWindow::setSetting(QString key, QVariant value)
+void MainWindow::setSetting(const QString &key, const QVariant &value)
 {
 	if (!settings.contains(key)) {
 		QMessageBox::warning(this,

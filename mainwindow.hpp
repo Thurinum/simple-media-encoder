@@ -28,7 +28,7 @@ private:
 	QLabel* spinner = new QLabel(this);
 
 	QVariant setting(const QString& key);
-	void setSetting(QString key, QVariant value);
+	void setSetting(const QString& key, const QVariant& value);
 
 protected:
 	void closeEvent(QCloseEvent* event) override;

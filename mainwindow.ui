@@ -75,7 +75,7 @@
      <height>0</height>
     </size>
    </property>
-   <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,0,0,0,0,0">
+   <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,0,0,0,0,0,0">
     <property name="spacing">
      <number>20</number>
     </property>
@@ -377,12 +377,7 @@
          </item>
          <item>
           <property name="text">
-           <string>M4A</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>OGG</string>
+           <string>OGG Vorbis</string>
           </property>
          </item>
          <item>
@@ -464,11 +459,6 @@
          <item>
           <property name="text">
            <string>MP4</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>OGG</string>
           </property>
          </item>
          <item>
@@ -614,6 +604,13 @@
       </property>
       <property name="text">
        <string>Start compression</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QProgressBar" name="progressBar">
+      <property name="value">
+       <number>24</number>
       </property>
      </widget>
     </item>
