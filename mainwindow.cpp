@@ -14,7 +14,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
-	this->setFixedSize(this->width(), this->height());
+	//this->setFixedSize(this->width(), this->height());
 
 	// setup spinner widget
 	QMovie *spinnerGif = new QMovie("spinner.gif");
@@ -121,9 +121,7 @@ QVariant MainWindow::setting(const QString &key)
 					    "The configuration file is missing a key. Please reinstall the "
 					    "program.\n\nMissing key: "
 						    + key + "\nWorking dir: " + QDir::currentPath());
-		// TODO: Can't use QApplication:: to quit because window isn't yet opened.
-		// Find a proper workaround lol
-		return 0 / 0;
+		return 0 / 0; // lol
 	}
 
 	return settings.value(key);

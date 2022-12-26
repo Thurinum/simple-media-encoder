@@ -35,11 +35,14 @@ void Compressor::compress(const QUrl& fileUrl,
 	QStringList fileName = fileUrl.fileName().split(".");
 	QString outputPath = fileName.first() + "_" + fileSuffix + "." + fileName.last();
 
-	QString command = QString("ffmsfsdafsdafpeg.exe -i %1 -b:v %2k -b:a %3k %4 -y")
-					.arg(fileUrl.toLocalFile(),
-					     QString::number(videoBitrateKpbs),
-					     QString::number(audioBitrateKbps),
-					     outputPath);
+	// ffmpeg.exe -i "C:\Users\Thurinum\Videos\bellec.mp4" -c:v libaom-av1 -c:a libopus -b:v 1000k -b:a 128k test.mp4 -y
+
+	QString command
+		= QString("ffmpeg.exe -i %1 -c:v libaom-av1 -c:a libopus -b:v %2k -b:a %3k %4 -y")
+			  .arg(fileUrl.toLocalFile(),
+				 QString::number(videoBitrateKpbs),
+				 QString::number(audioBitrateKbps),
+				 outputPath);
 	ffmpeg->startCommand(command);
 
 	auto a = connect(ffmpeg, &QProcess::finished, [=]() {

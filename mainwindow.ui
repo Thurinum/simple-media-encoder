@@ -9,12 +9,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>369</width>
-    <height>382</height>
+    <width>347</width>
+    <height>411</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -27,8 +27,8 @@
   </property>
   <property name="maximumSize">
    <size>
-    <width>369</width>
-    <height>382</height>
+    <width>100000</width>
+    <height>100000</height>
    </size>
   </property>
   <property name="baseSize">
@@ -52,9 +52,9 @@
   </property>
   <widget class="QWidget" name="owo">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+    <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
      <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
+     <verstretch>1</verstretch>
     </sizepolicy>
    </property>
    <property name="minimumSize">
@@ -75,12 +75,12 @@
      <height>0</height>
     </size>
    </property>
-   <layout class="QVBoxLayout" name="mainLayout">
+   <layout class="QVBoxLayout" name="mainLayout" stretch="0,0,0,0,0,0,0">
     <property name="spacing">
      <number>20</number>
     </property>
     <property name="sizeConstraint">
-     <enum>QLayout::SetMinimumSize</enum>
+     <enum>QLayout::SetDefaultConstraint</enum>
     </property>
     <property name="leftMargin">
      <number>10</number>
@@ -236,10 +236,32 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
+       <property name="horizontalSpacing">
+        <number>10</number>
+       </property>
+       <item row="2" column="2">
+        <widget class="QLineEdit" name="fileSuffix">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="placeholderText">
+          <string>Leave empty to overwrite</string>
+         </property>
+         <property name="clearButtonEnabled">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="0">
-        <layout class="QHBoxLayout" name="spinBoxHLayout" stretch="0,0,0">
+        <layout class="QHBoxLayout" name="spinBoxHLayout" stretch="0,0">
          <property name="spacing">
           <number>4</number>
+         </property>
+         <property name="sizeConstraint">
+          <enum>QLayout::SetDefaultConstraint</enum>
          </property>
          <item>
           <widget class="QDoubleSpinBox" name="sizeSpinBox">
@@ -276,23 +298,19 @@
            </item>
           </widget>
          </item>
-         <item>
-          <spacer name="sizeSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Preferred</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
         </layout>
+       </item>
+       <item row="0" column="2">
+        <widget class="QLabel" name="fileSuffixHeading">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>File suffix</string>
+         </property>
+        </widget>
        </item>
        <item row="0" column="0">
         <widget class="QLabel" name="spinBoxHeading">
@@ -312,31 +330,179 @@
          </property>
         </widget>
        </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="gridWidget" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <layout class="QGridLayout" name="formatLayout">
+       <property name="leftMargin">
+        <number>5</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>5</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <property name="horizontalSpacing">
+        <number>10</number>
+       </property>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="audioCodecCombobox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <item>
+          <property name="text">
+           <string>OPUS</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>AAC</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>M4A</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>OGG</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>MP3</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QComboBox" name="videoCodecComboBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <item>
+          <property name="text">
+           <string>H.265</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>VP9</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>H.264</string>
+          </property>
+         </item>
+        </widget>
+       </item>
        <item row="0" column="1">
-        <widget class="QLabel" name="fileSuffixHeading">
+        <widget class="QLabel" name="audioCodecLabel">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="font">
           <font>
            <pointsize>12</pointsize>
           </font>
          </property>
          <property name="text">
-          <string>File suffix</string>
+          <string>Audio Codec</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="fileSuffix">
+       <item row="0" column="0">
+        <widget class="QLabel" name="videoCodecLabel">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <property name="placeholderText">
-          <string>Leave empty to overwrite</string>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
          </property>
-         <property name="clearButtonEnabled">
-          <bool>true</bool>
+         <property name="text">
+          <string>Video Codec</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QComboBox" name="containerCombobox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <item>
+          <property name="text">
+           <string>MP4</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>OGG</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>WEBM</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>MOV</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>MKV</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QLabel" name="containerLabel">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Container</string>
          </property>
         </widget>
        </item>
@@ -468,7 +634,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>369</width>
+     <width>347</width>
      <height>17</height>
     </rect>
    </property>
