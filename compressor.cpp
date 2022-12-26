@@ -35,18 +35,14 @@ void Compressor::compress(const QUrl& fileUrl,
 	QStringList fileName = fileUrl.fileName().split(".");
 	QString outputPath = fileName.first() + "_" + fileSuffix + "." + fileName.last();
 
-	QString command = QString("ffmpeg.exe -i %1 -b:v %2k -b:a %3k %4 -y")
+	QString command = QString("ffmsfsdafsdafpeg.exe -i %1 -b:v %2k -b:a %3k %4 -y")
 					.arg(fileUrl.toLocalFile(),
 					     QString::number(videoBitrateKpbs),
 					     QString::number(audioBitrateKbps),
 					     outputPath);
 	ffmpeg->startCommand(command);
 
-	connect(ffmpeg, &QProcess::readyReadStandardOutput, [=]() { qDebug() << "ERROR: "; });
-
-	connect(ffmpeg, &QProcess::readyRead, [=]() { qDebug() << "READY: " << ffmpeg->read(1000); });
-
-	connect(ffmpeg, &QProcess::finished, [=]() {
+	auto a = connect(ffmpeg, &QProcess::finished, [=]() {
 		QFile media(outputPath);
 
 		if (!media.open(QIODevice::ReadOnly)) {

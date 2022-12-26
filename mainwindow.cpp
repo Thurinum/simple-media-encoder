@@ -27,30 +27,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	spinner->raise();
 	spinner->close();
 
-	// handle successful compression
-	connect(compressor,
-		  &Compressor::compressionSucceeded,
-		  [this](double requestedSizeKbps, double actualSizeKbps) {
-			  spinner->close();
-			  QMessageBox::information(
-				  this,
-				  "Compressed successfully",
-				  QString(
-					  "Requested size was %1 kb.\nActual compression achieved is %2 kb.")
-					  .arg(QString::number(requestedSizeKbps),
-						 QString::number(actualSizeKbps)));
-		  });
-
-	// handle failed compression
-	connect(compressor, &Compressor::compressionFailed, [this](QString errorMessage) {
-		spinner->close();
-		QMessageBox::critical(this,
-					    "Failed to compress",
-					    "Something went wrong when compressing the media file:\n\n\t"
-						    + errorMessage,
-					    QMessageBox::Ok);
-	});
-
 	// start compression button
 	connect(ui->startButton, &QPushButton::clicked, [this]() {
 		if (!selectedUrl.isValid()) {
@@ -78,6 +54,30 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 					   ui->fileSuffix->text(),
 					   ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
 					   ui->qualityRatioSlider->value() / 100.0);
+	});
+
+	// handle successful compression
+	connect(compressor,
+		  &Compressor::compressionSucceeded,
+		  [this](double requestedSizeKbps, double actualSizeKbps) {
+			  spinner->close();
+			  QMessageBox::information(
+				  this,
+				  "Compressed successfully",
+				  QString(
+					  "Requested size was %1 kb.\nActual compression achieved is %2 kb.")
+					  .arg(QString::number(requestedSizeKbps),
+						 QString::number(actualSizeKbps)));
+		  });
+
+	// handle failed compression
+	connect(compressor, &Compressor::compressionFailed, [this](QString errorMessage) {
+		spinner->close();
+		QMessageBox::critical(this,
+					    "Failed to compress",
+					    "Something went wrong when compressing the media file:\n\n\t"
+						    + errorMessage,
+					    QMessageBox::Ok);
 	});
 
 	// show name of file picked with file dialog
