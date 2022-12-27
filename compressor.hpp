@@ -12,19 +12,32 @@ class Compressor : public QObject
 public:
 	explicit Compressor(QObject* parent);
 
-	enum VideoCodec { libx265, libvpx_vp9, libx264 };
-	enum AudioCodec { libopus, aac, libvorbis, libmp3lame }; // libfdk_aac
-	enum Container { mp4, webm, mov, mkv };
+	struct Format
+	{
+		QString name;
+		QString library;
 
-	Q_ENUM(VideoCodec)
-	Q_ENUM(AudioCodec)
-	Q_ENUM(Container)
+		Format(QString name, QString library) : name{name}, library{library} {}
+
+		bool operator==(const Format& rhs) const;
+	};
+
+	const QList<Format> videoCodecs = {Format("H.265", "libx265"),
+						     Format("VP9", "libvpx-vp9"),
+						     Format("H.264", "libx264")};
+
+	const QList<Format> audioCodecs = {Format("OPUS", "libopus"),
+						     Format("AAC", "libfdk_aac"),
+						     Format("OGG Vorbis", "libvorbis"),
+						     Format("MP3", "libmp3lame")};
+
+	const QList<QString> containers = {"mp4", "webm", "mov", "mkv"};
 
 	void compress(const QUrl& fileUrl,
 			  const QString& fileSuffix,
-			  VideoCodec videoCodec,
-			  AudioCodec audioCodec,
-			  Container container,
+			  const Format& videoCodec,
+			  const Format& audioCodec,
+			  const QString& container,
 			  double sizeKbps,
 			  double audioQualityPercent,
 			  double minVideoBitrateKbps = 64,

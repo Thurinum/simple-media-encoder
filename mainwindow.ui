@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>347</width>
-    <height>411</height>
+    <height>449</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -365,26 +365,6 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <item>
-          <property name="text">
-           <string>OPUS</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>AAC</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>OGG Vorbis</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>MP3</string>
-          </property>
-         </item>
         </widget>
        </item>
        <item row="1" column="0">
@@ -395,21 +375,6 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <item>
-          <property name="text">
-           <string>H.265</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>VP9</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>H.264</string>
-          </property>
-         </item>
         </widget>
        </item>
        <item row="0" column="1">
@@ -456,26 +421,6 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <item>
-          <property name="text">
-           <string>MP4</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>WEBM</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>MOV</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>MKV</string>
-          </property>
-         </item>
         </widget>
        </item>
        <item row="0" column="2">

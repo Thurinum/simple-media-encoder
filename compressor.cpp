@@ -20,9 +20,9 @@ Compressor::Compressor(QObject* parent) : QObject{parent}
 
 void Compressor::compress(const QUrl& fileUrl,
 				  const QString& fileSuffix,
-				  VideoCodec videoCodec,
-				  AudioCodec audioCodec,
-				  Container container,
+				  const Format& videoCodec,
+				  const Format& audioCodec,
+				  const QString& container,
 				  double sizeKbps,
 				  double audioQualityPercent,
 				  double minVideoBitrateKbps,
@@ -30,6 +30,19 @@ void Compressor::compress(const QUrl& fileUrl,
 				  double maxAudioBitrateKbps,
 				  double overshootCorrectionPercent)
 {
+	if (!videoCodecs.contains(videoCodec)) {
+		emit compressionFailed("Invalid video codec " + videoCodec.name);
+		return;
+	}
+	if (!audioCodecs.contains(audioCodec)) {
+		emit compressionFailed("Invalid audio codec " + audioCodec.name);
+		return;
+	}
+	if (!containers.contains(container)) {
+		emit compressionFailed("Invalid container " + container);
+		return;
+	}
+
 	ffprobe->startCommand("ffprobe.exe -v error -show_entries format=duration -of "
 				    "default=noprint_wrappers=1:nokey=1 "
 				    + fileUrl.toLocalFile());
@@ -50,13 +63,12 @@ void Compressor::compress(const QUrl& fileUrl,
 	double videoBitrateKpbs = qMax(minVideoBitrateKbps, bitrateKbps - audioBitrateKbps);
 
 	QStringList fileName = fileUrl.fileName().split(".");
-	QString outputPath = fileName.first() + "_" + fileSuffix + "."
-				   + QVariant::fromValue(container).toString();
+	QString outputPath = fileName.first() + "_" + fileSuffix + "." + container;
 
 	QString command = QString("ffmpeg.exe -i %1 -c:v %2 -c:a %3 -b:v %4k -b:a %5k %6 -y")
 					.arg(fileUrl.toLocalFile(),
-					     QVariant::fromValue(videoCodec).toString(),
-					     QVariant::fromValue(audioCodec).toString(),
+					     videoCodec.library,
+					     audioCodec.library,
 					     QString::number(videoBitrateKpbs),
 					     QString::number(audioBitrateKbps),
 					     outputPath);
@@ -72,7 +84,7 @@ void Compressor::compress(const QUrl& fileUrl,
 		int progressPercent = QTime::fromString(match.captured(1)).second() * 100
 					    / durationSeconds;
 
-		emit compressionProgressUpdate(progressPercent); // TODO
+		emit compressionProgressUpdate(progressPercent);
 	});
 
 	*processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=](int exitCode) {
@@ -101,4 +113,9 @@ void Compressor::compress(const QUrl& fileUrl,
 	});
 
 	ffmpeg->startCommand(command);
+}
+
+bool Compressor::Format::operator==(const Format& rhs) const
+{
+	return this->name == rhs.name && this->library == rhs.library;
 }

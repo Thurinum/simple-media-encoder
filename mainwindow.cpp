@@ -7,6 +7,7 @@
 #include <QMovie>
 #include <QPixmap>
 #include <QProcess>
+#include <QPropertyAnimation>
 
 #include "mainwindow.hpp"
 #include "ui_mainwindow.h"
@@ -26,6 +27,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	spinnerGif->start();
 	spinner->raise();
 	spinner->close();
+
+	// populate format dropdowns
+	for (const Compressor::Format &format : compressor->videoCodecs)
+		ui->videoCodecComboBox->addItem(format.name, format.library);
+
+	for (const Compressor::Format &format : compressor->audioCodecs)
+		ui->audioCodecCombobox->addItem(format.name, format.library);
+
+	for (const QString &container : compressor->containers)
+		ui->containerCombobox->addItem(container);
 
 	// start compression button
 	connect(ui->startButton, &QPushButton::clicked, [this]() {
@@ -50,13 +61,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		}
 
 		spinner->show();
-		compressor->compress(selectedUrl,
-					   ui->fileSuffix->text(),
-					   (Compressor::VideoCodec) ui->videoCodecComboBox->currentIndex(),
-					   (Compressor::AudioCodec) ui->audioCodecCombobox->currentIndex(),
-					   (Compressor::Container) ui->containerCombobox->currentIndex(),
-					   ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
-					   ui->qualityRatioSlider->value() / 100.0);
+		compressor
+			->compress(selectedUrl,
+				     ui->fileSuffix->text(),
+				     Compressor::Format(ui->videoCodecComboBox->currentText(),
+								ui->videoCodecComboBox->currentData().toString()),
+				     Compressor::Format(ui->audioCodecCombobox->currentText(),
+								ui->audioCodecCombobox->currentData().toString()),
+				     ui->containerCombobox->currentText(),
+				     ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
+				     ui->qualityRatioSlider->value() / 100.0);
 	});
 
 	// handle successful compression
