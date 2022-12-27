@@ -144,6 +144,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	ui->fileSuffix->setText(setting("Main/sLastDesiredFileSuffix").toString());
 	ui->sizeUnitComboBox->setCurrentText(setting("Main/sLastDesiredFileSizeUnit").toString());
 	ui->qualityRatioSlider->setValue(setting("Main/iLastDesiredQualityRatio").toInt());
+	ui->videoCodecComboBox->setCurrentText(setting("Main/sLastDesiredVideoCodec").toString());
+	ui->audioCodecCombobox->setCurrentText(setting("Main/sLastDesiredAudioCodec").toString());
+	ui->containerCombobox->setCurrentText(setting("Main/sLastDesiredContainer").toString());
 	emit ui->qualityRatioSlider->valueChanged(ui->qualityRatioSlider->value());
 }
 
@@ -208,6 +211,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	setSetting("Main/sLastDesiredFileSizeUnit", ui->sizeUnitComboBox->currentText());
 	setSetting("Main/sLastDesiredFileSuffix", ui->fileSuffix->text());
 	setSetting("Main/iLastDesiredQualityRatio", ui->qualityRatioSlider->value());
+
+	setSetting("Main/sLastDesiredVideoCodec", ui->videoCodecComboBox->currentText());
+	setSetting("Main/sLastDesiredAudioCodec", ui->audioCodecCombobox->currentText());
+	setSetting("Main/sLastDesiredContainer", ui->containerCombobox->currentText());
 
 	event->accept();
 }
