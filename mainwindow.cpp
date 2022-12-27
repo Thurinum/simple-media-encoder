@@ -131,9 +131,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	// show value in kbps of audio quality slider
 	connect(ui->qualityRatioSlider, &QSlider::valueChanged, [this]() {
-		double currentValue = ui->qualityRatioSlider->value() / 100.0
-					    * setting("Main/dMaxBitrateAudioKbps").toDouble();
-		ui->qualityRatioSliderLabel->setText(QString::number(currentValue) + " kbps");
+		double currentValue = qMax(16.0,
+						   ui->qualityRatioSlider->value() / 100.0
+							   * setting("Main/dMaxBitrateAudioKbps").toDouble());
+		ui->qualityRatioSliderLabel->setText(QString::number(qRound(currentValue)) + " kbps");
 	});
 
 	// restore UI state on run
