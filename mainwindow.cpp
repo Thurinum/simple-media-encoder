@@ -3,11 +3,13 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QGraphicsDropShadowEffect>
+#include <QMenu>
 #include <QMessageBox>
 #include <QMovie>
 #include <QPixmap>
 #include <QProcess>
 #include <QPropertyAnimation>
+#include <QWhatsThis>
 
 #include "mainwindow.hpp"
 #include "ui_mainwindow.h"
@@ -29,6 +31,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	progressBarAnimation = new QPropertyAnimation(ui->progressBar, "value");
 	progressBarAnimation->setDuration(100);
+
+	// menu
+	QMenu *menu = new QMenu(this);
+	menu->addAction("Help", &QWhatsThis::enterWhatsThisMode);
+	menu->addSeparator();
+	menu->addAction("About");
+	menu->addAction("About Qt", &QApplication::aboutQt);
+	ui->toolButton->setMenu(menu);
+	connect(ui->toolButton, &QToolButton::pressed, ui->toolButton, &QToolButton::showMenu);
 
 	// populate format dropdowns
 	for (const Compressor::Format &format : compressor->videoCodecs)
@@ -80,7 +91,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  &Compressor::compressionSucceeded,
 		  [this](double requestedSizeKbps, double actualSizeKbps) {
 			  spinner->close();
-			  ui->progressBar->setValue(0);
+			  setProgress(100);
 			  QMessageBox::information(
 				  this,
 				  "Compressed successfully",
@@ -88,11 +99,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 					  "Requested size was %1 kb.\nActual compression achieved is %2 kb.")
 					  .arg(QString::number(requestedSizeKbps),
 						 QString::number(actualSizeKbps)));
+
+			  setProgress(0);
 		  });
 
 	// handle failed compression
 	connect(compressor, &Compressor::compressionFailed, [this](QString errorMessage) {
 		spinner->close();
+		setProgress(0);
 		QMessageBox::critical(this,
 					    "Failed to compress",
 					    "Something went wrong when compressing the media file:\n\n\t"
@@ -101,11 +115,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	});
 
 	// handle compression progress updates
-	connect(compressor, &Compressor::compressionProgressUpdate, [this](int progressPercent) {
-		progressBarAnimation->setStartValue(ui->progressBar->value());
-		progressBarAnimation->setEndValue(progressPercent);
-		progressBarAnimation->start();
-	});
+	connect(compressor, &Compressor::compressionProgressUpdate, this, &MainWindow::setProgress);
 
 	// show name of file picked with file dialog
 	connect(ui->fileButton, &QPushButton::clicked, [this]() {
@@ -165,6 +175,13 @@ void MainWindow::setSetting(const QString &key, const QVariant &value)
 	}
 
 	settings.setValue(key, value);
+}
+
+void MainWindow::setProgress(int progressPercent)
+{
+	progressBarAnimation->setStartValue(ui->progressBar->value());
+	progressBarAnimation->setEndValue(progressPercent);
+	progressBarAnimation->start();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

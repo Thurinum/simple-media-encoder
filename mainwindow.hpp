@@ -32,6 +32,8 @@ private:
 	QLabel* spinner = new QLabel(this);
 	QPropertyAnimation* progressBarAnimation;
 
+	void setProgress(int progressPercent);
+
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
 
 protected:

@@ -81,8 +81,10 @@ void Compressor::compress(const QUrl& fileUrl,
 		if (!match.hasMatch())
 			return;
 
-		int progressPercent = QTime::fromString(match.captured(1)).second() * 100
-					    / durationSeconds;
+		QTime timestamp = QTime::fromString(match.captured(1));
+		int currentDuration = timestamp.second() + timestamp.minute() * 60
+					    + timestamp.hour() * 3600;
+		int progressPercent = currentDuration * 100 / durationSeconds;
 
 		emit compressionProgressUpdate(progressPercent);
 	});
