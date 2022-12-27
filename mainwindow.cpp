@@ -9,6 +9,7 @@
 #include <QPixmap>
 #include <QProcess>
 #include <QPropertyAnimation>
+#include <QSequentialAnimationGroup>
 #include <QWhatsThis>
 
 #include "mainwindow.hpp"
@@ -18,19 +19,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
 	ui->setupUi(this);
 
-	// setup spinner widget
-	QMovie *spinnerGif = new QMovie("spinner.gif");
-	spinner->setFixedSize(width(), height());
-	spinner->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-	spinner->setStyleSheet("background-color: rgba(0, 0, 0, 69)");
-	spinner->setMovie(spinnerGif);
-	spinnerGif->setScaledSize(QSize(69, 69));
-	spinnerGif->start();
-	spinner->raise();
-	spinner->close();
-
 	progressBarAnimation = new QPropertyAnimation(ui->progressBar, "value");
 	progressBarAnimation->setDuration(100);
+	ui->progressWidget->setVisible(false);
 
 	// menu
 	QMenu *menu = new QMenu(this);
@@ -73,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			break;
 		}
 
-		spinner->show();
+		showProgress();
 		compressor
 			->compress(selectedUrl,
 				     ui->fileSuffix->text(),
@@ -90,7 +81,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	connect(compressor,
 		  &Compressor::compressionSucceeded,
 		  [this](double requestedSizeKbps, double actualSizeKbps) {
-			  spinner->close();
 			  setProgress(100);
 			  QMessageBox::information(
 				  this,
@@ -101,17 +91,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 						 QString::number(actualSizeKbps)));
 
 			  setProgress(0);
+			  hideProgress();
 		  });
 
 	// handle failed compression
 	connect(compressor, &Compressor::compressionFailed, [this](QString errorMessage) {
-		spinner->close();
 		setProgress(0);
 		QMessageBox::critical(this,
 					    "Failed to compress",
 					    "Something went wrong when compressing the media file:\n\n\t"
 						    + errorMessage,
 					    QMessageBox::Ok);
+		hideProgress();
 	});
 
 	// handle compression progress updates
@@ -182,6 +173,18 @@ void MainWindow::setProgress(int progressPercent)
 	progressBarAnimation->setStartValue(ui->progressBar->value());
 	progressBarAnimation->setEndValue(progressPercent);
 	progressBarAnimation->start();
+}
+
+void MainWindow::showProgress()
+{
+	ui->progressWidget->setVisible(true);
+	ui->owo->setEnabled(false);
+}
+
+void MainWindow::hideProgress()
+{
+	ui->progressWidget->setVisible(false);
+	ui->owo->setEnabled(true);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

@@ -27,14 +27,14 @@ public:
 private:
 	QUrl selectedUrl;
 	Compressor* compressor = new Compressor(this);
+	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
 
 	Ui::MainWindow* ui;
-	QLabel* spinner = new QLabel(this);
 	QPropertyAnimation* progressBarAnimation;
 
 	void setProgress(int progressPercent);
-
-	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
+	void showProgress();
+	void hideProgress();
 
 protected:
 	void closeEvent(QCloseEvent* event) override;
