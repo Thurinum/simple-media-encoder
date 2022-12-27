@@ -22,7 +22,8 @@ public:
 		bool operator==(const Format& rhs) const;
 	};
 
-	const QList<Format> videoCodecs = {Format("H.265", "libx265"),
+	const QList<Format> videoCodecs = {Format("H.264 NVENC", "h264_nvenc"),
+						     Format("H.265", "libx265"),
 						     Format("VP9", "libvpx-vp9"),
 						     Format("H.264", "libx264")};
 
