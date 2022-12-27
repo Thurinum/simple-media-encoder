@@ -5,6 +5,7 @@
 #include <QGraphicsBlurEffect>
 #include <QLabel>
 #include <QMainWindow>
+#include <QPropertyAnimation>
 #include <QSettings>
 #include <QUrl>
 
@@ -20,15 +21,18 @@ public:
 	explicit MainWindow(QWidget* parent = nullptr);
 	~MainWindow() override;
 
-private:
-	Ui::MainWindow *ui;
-	QUrl selectedUrl;
-	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
-	Compressor* compressor = new Compressor(this);
-	QLabel* spinner = new QLabel(this);
-
 	QVariant setting(const QString& key);
 	void setSetting(const QString& key, const QVariant& value);
+
+private:
+	QUrl selectedUrl;
+	Compressor* compressor = new Compressor(this);
+
+	Ui::MainWindow* ui;
+	QLabel* spinner = new QLabel(this);
+	QPropertyAnimation* progressBarAnimation;
+
+	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
 
 protected:
 	void closeEvent(QCloseEvent* event) override;

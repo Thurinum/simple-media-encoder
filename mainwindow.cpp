@@ -15,7 +15,6 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
-	//this->setFixedSize(this->width(), this->height());
 
 	// setup spinner widget
 	QMovie *spinnerGif = new QMovie("spinner.gif");
@@ -27,6 +26,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	spinnerGif->start();
 	spinner->raise();
 	spinner->close();
+
+	progressBarAnimation = new QPropertyAnimation(ui->progressBar, "value");
+	progressBarAnimation->setDuration(100);
 
 	// populate format dropdowns
 	for (const Compressor::Format &format : compressor->videoCodecs)
@@ -78,6 +80,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  &Compressor::compressionSucceeded,
 		  [this](double requestedSizeKbps, double actualSizeKbps) {
 			  spinner->close();
+			  ui->progressBar->setValue(0);
 			  QMessageBox::information(
 				  this,
 				  "Compressed successfully",
@@ -99,7 +102,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	// handle compression progress updates
 	connect(compressor, &Compressor::compressionProgressUpdate, [this](int progressPercent) {
-		ui->progressBar->setValue(progressPercent);
+		progressBarAnimation->setStartValue(ui->progressBar->value());
+		progressBarAnimation->setEndValue(progressPercent);
+		progressBarAnimation->start();
 	});
 
 	// show name of file picked with file dialog
