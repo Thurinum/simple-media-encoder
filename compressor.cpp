@@ -62,6 +62,8 @@ void Compressor::compress(const QUrl& fileUrl,
 	double audioBitrateKbps = qMax(minAudioBitrateKbps, audioQualityPercent * maxAudioBitrateKbps);
 	double videoBitrateKpbs = qMax(minVideoBitrateKbps, bitrateKbps - audioBitrateKbps);
 
+	emit compressionStarted(videoBitrateKpbs, audioBitrateKbps);
+
 	QStringList fileName = fileUrl.fileName().split(".");
 	QString outputPath = fileName.first() + "_" + fileSuffix + "." + container;
 
@@ -77,6 +79,8 @@ void Compressor::compress(const QUrl& fileUrl,
 		QString output = QString(ffmpeg->readAllStandardOutput());
 		QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
 		QRegularExpressionMatch match = regex.match(output);
+
+		qDebug() << output;
 
 		if (!match.hasMatch())
 			return;

@@ -77,6 +77,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 				     ui->qualityRatioSlider->value() / 100.0);
 	});
 
+	// handle displaying target bitrates during compression
+	connect(compressor,
+		  &Compressor::compressionStarted,
+		  [this](double videoBitrateKbps, double audioBitrateKbps) {
+			  ui->progressLabel->setText(
+				  QString("Video bitrate: %1 kbps | Audio bitrate: %2 kbps")
+					  .arg(QString::number(qRound(videoBitrateKbps)),
+						 QString::number(qRound(audioBitrateKbps))));
+		  });
+
 	// handle successful compression
 	connect(compressor,
 		  &Compressor::compressionSucceeded,
@@ -115,7 +125,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 									 QDir::currentPath(),
 									 "*");
 
-		ui->fileName->setText(fileUrl.fileName());
+		ui->fileName->setText(fileUrl.toLocalFile());
 		selectedUrl = fileUrl;
 	});
 
@@ -128,7 +138,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	// restore UI state on run
 	selectedUrl = QUrl(setting("Main/sLastFile").toString());
-	ui->fileName->setText(selectedUrl.fileName());
+	ui->fileName->setText(selectedUrl.toLocalFile());
 	ui->sizeSpinBox->setValue(setting("Main/dLastDesiredFileSize").toDouble());
 	ui->fileSuffix->setText(setting("Main/sLastDesiredFileSuffix").toString());
 	ui->sizeUnitComboBox->setCurrentText(setting("Main/sLastDesiredFileSizeUnit").toString());
@@ -177,14 +187,16 @@ void MainWindow::setProgress(int progressPercent)
 
 void MainWindow::showProgress()
 {
-	ui->progressWidget->setVisible(true);
 	ui->owo->setEnabled(false);
+	ui->progressWidget->setVisible(true);
+	ui->startButton->setText("Compressing...");
 }
 
 void MainWindow::hideProgress()
 {
-	ui->progressWidget->setVisible(false);
 	ui->owo->setEnabled(true);
+	ui->progressWidget->setVisible(false);
+	ui->startButton->setText("Start compression");
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

@@ -46,6 +46,7 @@ public:
 			  double overshootCorrectionPercent = 0.02);
 
 signals:
+	void compressionStarted(double videoBitrateKbps, double audioBitrateKbps);
 	void compressionSucceeded(double requestedSizeKbps, double actualSizeKbps);
 	void compressionProgressUpdate(double progressPercent);
 	void compressionFailed(QString errorMessage);
