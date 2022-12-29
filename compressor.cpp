@@ -45,9 +45,9 @@ void Compressor::compress(const QUrl& fileUrl,
 		return;
 	}
 
-	ffprobe->startCommand("ffprobe.exe -v error -show_entries format=duration -of "
-				    "default=noprint_wrappers=1:nokey=1 "
-				    + fileUrl.toLocalFile());
+	ffprobe->startCommand(QString("ffprobe.exe -v error -show_entries format=duration -of "
+						"default=noprint_wrappers=1:nokey=1 \"%1\"")
+					    .arg(fileUrl.toLocalFile()));
 	ffprobe->waitForFinished();
 
 	bool couldParseDuration = false;
@@ -68,7 +68,7 @@ void Compressor::compress(const QUrl& fileUrl,
 	QStringList fileName = fileUrl.fileName().split(".");
 	QString outputPath = fileName.first() + "_" + fileSuffix + "." + container;
 
-	QString command = QString("ffmpeg.exe -i %1 -c:v %2 -c:a %3 -b:v %4k -b:a %5k %6 -y")
+	QString command = QString("ffmpeg.exe -i \"%1\" -c:v %2 -c:a %3 -b:v %4k -b:a %5k \"%6\" -y")
 					.arg(fileUrl.toLocalFile(),
 					     videoCodec.library,
 					     audioCodec.library,
