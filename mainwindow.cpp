@@ -4,7 +4,6 @@
 #include <QFileDialog>
 #include <QGraphicsDropShadowEffect>
 #include <QMenu>
-#include <QMessageBox>
 #include <QMovie>
 #include <QPixmap>
 #include <QProcess>
@@ -14,6 +13,8 @@
 
 #include "mainwindow.hpp"
 #include "ui_mainwindow.h"
+
+using Severity = QMessageBox::Icon;
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -105,15 +106,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  });
 
 	// handle failed compression
-	connect(compressor, &Compressor::compressionFailed, [this](QString errorMessage) {
-		setProgress(0);
-		QMessageBox::critical(this,
-					    "Failed to compress",
-					    "Something went wrong when compressing the media file:\n\n\t"
-						    + errorMessage,
-					    QMessageBox::Ok);
-		hideProgress();
-	});
+	connect(compressor,
+		  &Compressor::compressionFailed,
+		  [this](QString shortError, QString longError) {
+			  setProgress(0);
+			  ShowMessageBox(Severity::Critical, "Compression failed", shortError, longError);
+			  hideProgress();
+		  });
 
 	// handle compression progress updates
 	connect(compressor, &Compressor::compressionProgressUpdate, this, &MainWindow::setProgress);
@@ -201,6 +200,24 @@ void MainWindow::hideProgress()
 	ui->owo->setEnabled(true);
 	ui->progressWidget->setVisible(false);
 	ui->startButton->setText("Start compression");
+}
+
+void MainWindow::ShowMessageBox(QMessageBox::Icon severity,
+					  const QString &title,
+					  const QString &message,
+					  const QString &details)
+{
+	QFont font;
+	font.setBold(true);
+
+	QMessageBox dialog;
+	dialog.setWindowTitle(ui->owo->windowTitle());
+	dialog.setIcon(severity);
+	dialog.setText("<font size=5><b>" + title + ".</b></font>");
+	dialog.setInformativeText(message);
+	dialog.setDetailedText(details);
+	dialog.setStandardButtons(QMessageBox::Ok);
+	dialog.exec();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

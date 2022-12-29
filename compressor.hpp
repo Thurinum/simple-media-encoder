@@ -2,6 +2,7 @@
 #define COMPRESSOR_HPP
 
 #include <QEventLoop>
+#include <QList>
 #include <QObject>
 #include <QProcess>
 
@@ -20,6 +21,8 @@ public:
 		Format(QString name, QString library) : name{name}, library{library} {}
 
 		bool operator==(const Format& rhs) const;
+
+		static QString stringFromList(QList<Format> list);
 	};
 
 	const QList<Format> videoCodecs = {Format("H.264 NVENC", "h264_nvenc"),
@@ -50,7 +53,7 @@ signals:
 	void compressionStarted(double videoBitrateKbps, double audioBitrateKbps);
 	void compressionSucceeded(double requestedSizeKbps, double actualSizeKbps);
 	void compressionProgressUpdate(double progressPercent);
-	void compressionFailed(QString errorMessage);
+	void compressionFailed(QString error, QString errorDetails = "");
 
 private:
 	QEventLoop eventLoop;
@@ -59,7 +62,11 @@ private:
 	QMetaObject::Connection* const processUpdateConnection = new QMetaObject::Connection();
 	QMetaObject::Connection* const processFinishedConnection = new QMetaObject::Connection();
 
+	QString parseOutput();
+
 	double durationSeconds = -1;
+
+	QString output = "";
 };
 
 #endif // COMPRESSOR_HPP

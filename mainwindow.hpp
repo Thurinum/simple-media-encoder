@@ -2,9 +2,11 @@
 #define MAINWINDOW_HPP
 
 #include "compressor.hpp"
+
 #include <QGraphicsBlurEffect>
 #include <QLabel>
 #include <QMainWindow>
+#include <QMessageBox>
 #include <QPropertyAnimation>
 #include <QSettings>
 #include <QUrl>
@@ -35,6 +37,11 @@ private:
 	void setProgress(int progressPercent);
 	void showProgress();
 	void hideProgress();
+
+	void ShowMessageBox(QMessageBox::Icon severity,
+				  const QString& title,
+				  const QString& message,
+				  const QString& details = "");
 
 protected:
 	void closeEvent(QCloseEvent* event) override;

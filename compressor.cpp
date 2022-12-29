@@ -3,6 +3,7 @@
 #include <QEventLoop>
 #include <QFile>
 #include <QRegularExpression>
+#include <QStringBuilder>
 #include <QTime>
 #include <QUrl>
 #include <QVariant>
@@ -10,9 +11,7 @@
 Compressor::Compressor(QObject* parent) : QObject{parent}
 
 {
-	ffmpeg->setReadChannel(QProcess::StandardOutput);
 	ffmpeg->setProcessChannelMode(QProcess::MergedChannels);
-
 	connect(ffmpeg, &QProcess::errorOccurred, [=](QProcess::ProcessError error) {
 		emit compressionFailed("Process " + QVariant::fromValue(error).toString());
 	});
@@ -31,15 +30,18 @@ void Compressor::compress(const QUrl& fileUrl,
 				  double overshootCorrectionPercent)
 {
 	if (!videoCodecs.contains(videoCodec)) {
-		emit compressionFailed("Invalid video codec " + videoCodec.name);
+		emit compressionFailed("Invalid video codec " + videoCodec.name,
+					     "Available codecs: " + Format::stringFromList(videoCodecs));
 		return;
 	}
 	if (!audioCodecs.contains(audioCodec)) {
-		emit compressionFailed("Invalid audio codec " + audioCodec.name);
+		emit compressionFailed("Invalid audio codec " + audioCodec.name,
+					     "Available codecs: " + Format::stringFromList(audioCodecs));
 		return;
 	}
 	if (!containers.contains(container)) {
-		emit compressionFailed("Invalid container " + container);
+		emit compressionFailed("Invalid container " + container,
+					     "Available codecs: " + containers.join(", "));
 		return;
 	}
 
@@ -49,12 +51,11 @@ void Compressor::compress(const QUrl& fileUrl,
 	ffprobe->waitForFinished();
 
 	bool couldParseDuration = false;
-	QString durationOutput = ffprobe->readAllStandardOutput();
+	QString durationOutput = ffprobe->readAll();
 	double durationSeconds = durationOutput.toDouble(&couldParseDuration);
 
 	if (!couldParseDuration) {
-		emit compressionFailed("An error occured while probing the media file length.\n\n"
-					     + durationOutput);
+		emit compressionFailed("Could not probe media file's length.", durationOutput);
 		return;
 	}
 
@@ -75,12 +76,12 @@ void Compressor::compress(const QUrl& fileUrl,
 					     QString::number(audioBitrateKbps),
 					     outputPath);
 
-	*processUpdateConnection = connect(ffmpeg, &QProcess::readyReadStandardOutput, [=]() {
-		QString output = QString(ffmpeg->readAllStandardOutput());
+	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [=]() {
+		QString line = QString(ffmpeg->readAll());
 		QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
-		QRegularExpressionMatch match = regex.match(output);
+		QRegularExpressionMatch match = regex.match(line);
 
-		qDebug() << output;
+		output += line;
 
 		if (!match.hasMatch())
 			return;
@@ -97,10 +98,9 @@ void Compressor::compress(const QUrl& fileUrl,
 		if (exitCode != 0) {
 			disconnect(*processUpdateConnection);
 			disconnect(*processFinishedConnection);
-			emit compressionFailed(
-				"Something went wrong during compression:\n\nffmpeg exit code:"
-				+ QString::number(exitCode) + "\n\nffmpeg command: " + command
-				+ "\n\nffmpeg error log: " + ffmpeg->readAllStandardOutput());
+
+			emit compressionFailed(parseOutput(), command + "\n\n" + output);
+			output.clear();
 			return;
 		}
 
@@ -108,20 +108,48 @@ void Compressor::compress(const QUrl& fileUrl,
 		if (!media.open(QIODevice::ReadOnly)) {
 			disconnect(*processUpdateConnection);
 			disconnect(*processFinishedConnection);
-			emit compressionFailed("Could not open the resulting compressed file:\n\n\t"
-						     + media.errorString());
+			emit compressionFailed("Could not open the compressed media.",
+						     media.errorString());
+			output.clear();
 			return;
 		}
 
 		disconnect(*processUpdateConnection);
 		disconnect(*processFinishedConnection);
 		emit compressionSucceeded(sizeKbps, media.size() / 125.0);
+		output.clear();
 	});
 
 	ffmpeg->startCommand(command);
 }
 
+QString Compressor::parseOutput()
+{
+	QStringList split = output.split("Press [q] to stop, [?] for help");
+	if (split.length() == 1)
+		split = output.split("[0][0][0][0]");
+
+	return split.last()
+		.replace(
+			QRegularExpression(
+				R"((\[.*\]|(?:Conversion failed!)|(?:v\d\.\d.*)|(?: (?:\s)+)|(?:- (?:\s)+(?1))))"),
+			"")
+		.trimmed();
+}
+
 bool Compressor::Format::operator==(const Format& rhs) const
 {
 	return this->name == rhs.name && this->library == rhs.library;
+}
+
+QString Compressor::Format::stringFromList(QList<Format> list)
+{
+	QString str;
+
+	for (const Format& format : list)
+		str += format.name % ", ";
+
+	str.chop(2);
+
+	return str;
 }
