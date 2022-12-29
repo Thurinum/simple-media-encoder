@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>349</width>
-    <height>387</height>
+    <height>435</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -41,11 +41,11 @@
    <cursorShape>ArrowCursor</cursorShape>
   </property>
   <property name="windowTitle">
-   <string>Video Compressor</string>
+   <string/>
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>C:/Users/Thurinum/Downloads/ftcatalogmanager.png</normaloff>C:/Users/Thurinum/Downloads/ftcatalogmanager.png</iconset>
+    <normaloff>build/appicon.png</normaloff>build/appicon.png</iconset>
   </property>
   <property name="autoFillBackground">
    <bool>false</bool>

@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
 	a.setApplicationName("Video Compressor");
 
 	MainWindow w;
+	w.setWindowIcon(QIcon("appicon.png"));
 	w.show();
 
 	return a.exec();
