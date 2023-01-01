@@ -68,6 +68,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		showProgress();
 		compressor
 			->compress(selectedUrl,
+				     ui->outputDirLineEdit->text().isEmpty()
+					     ? QDir::currentPath()
+					     : ui->outputDirLineEdit->text(),
 				     ui->fileSuffix->text(),
 				     Compressor::Format(ui->videoCodecComboBox->currentText(),
 								ui->videoCodecComboBox->currentData().toString()),
@@ -126,6 +129,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 		ui->fileName->setText(fileUrl.toLocalFile());
 		selectedUrl = fileUrl;
+	});
+
+	// show name of file picked with file dialog
+	connect(ui->outputDirButton, &QPushButton::clicked, [this]() {
+		QDir dir = QFileDialog::getExistingDirectory(this,
+									   "Select output directory",
+									   QDir::currentPath());
+
+		ui->outputDirLineEdit->setText(dir.absolutePath());
 	});
 
 	// show value in kbps of audio quality slider

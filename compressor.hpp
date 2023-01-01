@@ -1,6 +1,7 @@
 #ifndef COMPRESSOR_HPP
 #define COMPRESSOR_HPP
 
+#include <QDir>
 #include <QEventLoop>
 #include <QList>
 #include <QObject>
@@ -37,7 +38,8 @@ public:
 
 	const QList<QString> containers = {"mp4", "webm", "mov", "mkv"};
 
-	void compress(const QUrl& fileUrl,
+	void compress(const QUrl& inputUrl,
+			  const QDir& outputDir,
 			  const QString& fileSuffix,
 			  const Format& videoCodec,
 			  const Format& audioCodec,
