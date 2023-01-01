@@ -138,6 +138,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 									   QDir::currentPath());
 
 		ui->outputDirLineEdit->setText(dir.absolutePath());
+		selectedDir = dir;
 	});
 
 	// show value in kbps of audio quality slider
@@ -150,7 +151,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	// restore UI state on run
 	selectedUrl = QUrl(setting("Main/sLastFile").toString());
-	ui->fileName->setText(selectedUrl.toLocalFile());
+	selectedDir = QDir(setting("Main/sLastDir").toString());
+
+	if (QFile::exists(selectedUrl.toLocalFile()))
+		ui->fileName->setText(selectedUrl.toLocalFile());
+	if (selectedDir.exists())
+		ui->outputDirLineEdit->setText(selectedDir.absolutePath());
+
 	ui->sizeSpinBox->setValue(setting("Main/dLastDesiredFileSize").toDouble());
 	ui->fileSuffix->setText(setting("Main/sLastDesiredFileSuffix").toString());
 	ui->sizeUnitComboBox->setCurrentText(setting("Main/sLastDesiredFileSizeUnit").toString());
@@ -236,6 +243,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
 	// save current parameters for next program run
 	setSetting("Main/sLastFile", selectedUrl);
+	setSetting("Main/sLastDir", selectedDir.absolutePath());
 	setSetting("Main/dLastDesiredFileSize", ui->sizeSpinBox->value());
 	setSetting("Main/sLastDesiredFileSizeUnit", ui->sizeUnitComboBox->currentText());
 	setSetting("Main/sLastDesiredFileSuffix", ui->fileSuffix->text());

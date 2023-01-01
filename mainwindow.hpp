@@ -28,6 +28,7 @@ public:
 
 private:
 	QUrl selectedUrl;
+	QDir selectedDir;
 	Compressor* compressor = new Compressor(this);
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
 

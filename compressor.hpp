@@ -23,7 +23,7 @@ public:
 
 		bool operator==(const Format& rhs) const;
 
-		static QString stringFromList(QList<Format> list);
+		static QString stringFromList(const QList<Format>& list);
 	};
 
 	const QList<Format> videoCodecs = {Format("H.264 NVENC", "h264_nvenc"),

@@ -144,7 +144,7 @@ bool Compressor::Format::operator==(const Format& rhs) const
 	return this->name == rhs.name && this->library == rhs.library;
 }
 
-QString Compressor::Format::stringFromList(QList<Format> list)
+QString Compressor::Format::stringFromList(const QList<Format>& list)
 {
 	QString str;
 
