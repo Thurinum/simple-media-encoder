@@ -56,7 +56,8 @@ void Compressor::compress(const QUrl& inputUrl,
 	double durationSeconds = durationOutput.toDouble(&couldParseDuration);
 
 	if (!couldParseDuration) {
-		emit compressionFailed("Could not probe media file's length.", durationOutput);
+		emit compressionFailed("Media file is not found, invalid, or corrupted.",
+					     durationOutput);
 		return;
 	}
 
