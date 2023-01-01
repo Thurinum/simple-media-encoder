@@ -31,7 +31,7 @@ public:
 						     Format("H.264", "libx264")};
 
 	const QList<Format> audioCodecs = {Format("OPUS", "libopus"),
-						     Format("AAC", "libfdk_aac"),
+						     Format("AAC", "aac"),
 						     Format("OGG Vorbis", "libvorbis"),
 						     Format("MP3", "libmp3lame")};
 
