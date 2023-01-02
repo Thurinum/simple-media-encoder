@@ -52,8 +52,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	QList<Container> containers;
 
 	parseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
-	parseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecCombobox);
-	parseContainers(&containers, ui->containerCombobox);
+	parseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecComboBox);
+	parseContainers(&containers, ui->containerComboBox);
 
 	// start compression button
 	connect(ui->startButton, &QPushButton::clicked, [=, this]() {
@@ -84,8 +84,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 						   : ui->outputDirLineEdit->text(),
 					   ui->fileSuffix->text(),
 					   videoCodecs.at(ui->videoCodecComboBox->currentIndex()),
-					   audioCodecs.at(ui->audioCodecCombobox->currentIndex()),
-					   containers.at(ui->containerCombobox->currentIndex()),
+					   audioCodecs.at(ui->audioCodecComboBox->currentIndex()),
+					   containers.at(ui->containerComboBox->currentIndex()),
 					   ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
 					   ui->qualityRatioSlider->value() / 100.0,
 					   ui->widthSpinBox->value(),
@@ -204,8 +204,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	ui->sizeUnitComboBox->setCurrentText(setting("LastDesired/sFileSizeUnit").toString());
 	ui->qualityRatioSlider->setValue(setting("LastDesired/iQualityRatio").toInt());
 	ui->videoCodecComboBox->setCurrentText(setting("LastDesired/sVideoCodec").toString());
-	ui->audioCodecCombobox->setCurrentText(setting("LastDesired/sAudioCodec").toString());
-	ui->containerCombobox->setCurrentText(setting("LastDesired/sContainer").toString());
+	ui->audioCodecComboBox->setCurrentText(setting("LastDesired/sAudioCodec").toString());
+	ui->containerComboBox->setCurrentText(setting("LastDesired/sContainer").toString());
+	ui->widthSpinBox->setValue(setting("LastDesired/iWidth").toInt());
+	ui->heightSpinBox->setValue(setting("LastDesired/iHeight").toInt());
 	ui->openInExplorerCheckbox->setChecked(
 		setting("LastDesired/bOpenInExplorerOnSuccess").toBool());
 	ui->playCheckbox->setChecked(setting("LastDesired/bPlayResultOnSuccess").toBool());
@@ -391,8 +393,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	setSetting("LastDesired/iQualityRatio", ui->qualityRatioSlider->value());
 
 	setSetting("LastDesired/sVideoCodec", ui->videoCodecComboBox->currentText());
-	setSetting("LastDesired/sAudioCodec", ui->audioCodecCombobox->currentText());
-	setSetting("LastDesired/sContainer", ui->containerCombobox->currentText());
+	setSetting("LastDesired/sAudioCodec", ui->audioCodecComboBox->currentText());
+	setSetting("LastDesired/sContainer", ui->containerComboBox->currentText());
+
+	setSetting("LastDesired/iWidth", ui->widthSpinBox->value());
+	setSetting("LastDesired/iHeight", ui->heightSpinBox->value());
 
 	setSetting("LastDesired/bOpenInExplorerOnSuccess", ui->openInExplorerCheckbox->isChecked());
 	setSetting("LastDesired/bPlayResultOnSuccess", ui->playCheckbox->isChecked());
