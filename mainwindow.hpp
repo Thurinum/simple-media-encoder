@@ -3,6 +3,7 @@
 
 #include "compressor.hpp"
 
+#include <QComboBox>
 #include <QGraphicsBlurEffect>
 #include <QLabel>
 #include <QMainWindow>
@@ -10,6 +11,10 @@
 #include <QPropertyAnimation>
 #include <QSettings>
 #include <QUrl>
+
+using Severity = QMessageBox::Icon;
+using Codec = Compressor::Codec;
+using Container = Compressor::Container;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -39,10 +44,13 @@ private:
 	void showProgress();
 	void hideProgress();
 
-	void ShowMessageBox(QMessageBox::Icon severity,
+	void ShowMessageBox(Severity severity,
 				  const QString& title,
 				  const QString& message,
 				  const QString& details = "");
+
+	void parseCodecs(QList<Codec>* codecs, const QString& type, QComboBox* comboBox);
+	void parseContainers(QList<Container>* containers, QComboBox* comboBox);
 
 protected:
 	void closeEvent(QCloseEvent* event) override;

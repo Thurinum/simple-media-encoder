@@ -14,7 +14,50 @@
 #include "mainwindow.hpp"
 #include "ui_mainwindow.h"
 
-using Severity = QMessageBox::Icon;
+void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBox *comboBox)
+{
+	settings.beginGroup(type);
+
+	if (settings.childKeys().empty()) {
+		ShowMessageBox(Severity::Critical,
+				   tr("No %1").arg(type),
+				   tr("Could not find %1 in the INI. Please check the config. Aborting.")
+					   .arg(type));
+		QApplication::exit(1);
+	}
+
+	for (const QString &codecLibrary : settings.childKeys()) {
+		QString codecName = setting(codecLibrary).toString();
+		Codec codec{codecName, codecLibrary};
+		codecs->append(codec);
+		comboBox->addItem(codecName);
+	}
+	settings.endGroup();
+}
+
+void MainWindow::parseContainers(QList<Container> *containers, QComboBox *comboBox)
+{
+	QString type = "Containers";
+
+	settings.beginGroup(type);
+
+	if (settings.childKeys().empty()) {
+		ShowMessageBox(Severity::Critical,
+				   tr("No %1").arg(type),
+				   tr("Could not find %1 in the INI. Please check the config. Aborting.")
+					   .arg(type));
+		QApplication::exit(1);
+	}
+
+	for (const QString &containerName : settings.childKeys()) {
+		QStringList supportedCodecs
+			= setting(containerName).toString().split(QRegularExpression("(\\s*),(\\s*)"));
+		Container container{containerName, supportedCodecs};
+		containers->append(container);
+		comboBox->addItem(containerName);
+	}
+	settings.endGroup();
+}
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -26,29 +69,28 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	// menu
 	QMenu *menu = new QMenu(this);
-	menu->addAction("Help", &QWhatsThis::enterWhatsThisMode);
+	menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
 	menu->addSeparator();
-	menu->addAction("About");
-	menu->addAction("About Qt", &QApplication::aboutQt);
+	menu->addAction(tr("About"));
+	menu->addAction(tr("About Qt"), &QApplication::aboutQt);
 	ui->toolButton->setMenu(menu);
 	connect(ui->toolButton, &QToolButton::pressed, ui->toolButton, &QToolButton::showMenu);
 
-	// populate format dropdowns
-	for (const Compressor::Format &format : compressor->videoCodecs)
-		ui->videoCodecComboBox->addItem(format.name, format.library);
+	// parse codecs
+	QList<Codec> videoCodecs;
+	QList<Codec> audioCodecs;
+	QList<Container> containers;
 
-	for (const Compressor::Format &format : compressor->audioCodecs)
-		ui->audioCodecCombobox->addItem(format.name, format.library);
-
-	for (const QString &container : compressor->containers)
-		ui->containerCombobox->addItem(container);
+	parseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
+	parseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecCombobox);
+	parseContainers(&containers, ui->containerCombobox);
 
 	// start compression button
-	connect(ui->startButton, &QPushButton::clicked, [this]() {
+	connect(ui->startButton, &QPushButton::clicked, [=, this]() {
 		if (!selectedUrl.isValid()) {
 			QMessageBox::information(this,
-							 "No file selected",
-							 "Please select a file to compress.");
+							 tr("No file selected"),
+							 tr("Please select a file to compress."));
 			return;
 		}
 
@@ -66,19 +108,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		}
 
 		showProgress();
-		compressor
-			->compress(selectedUrl,
-				     ui->outputDirLineEdit->text().isEmpty()
-					     ? QDir::currentPath()
-					     : ui->outputDirLineEdit->text(),
-				     ui->fileSuffix->text(),
-				     Compressor::Format(ui->videoCodecComboBox->currentText(),
-								ui->videoCodecComboBox->currentData().toString()),
-				     Compressor::Format(ui->audioCodecCombobox->currentText(),
-								ui->audioCodecCombobox->currentData().toString()),
-				     ui->containerCombobox->currentText(),
-				     ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
-				     ui->qualityRatioSlider->value() / 100.0);
+		compressor->compress(selectedUrl,
+					   ui->outputDirLineEdit->text().isEmpty()
+						   ? QDir::currentPath()
+						   : ui->outputDirLineEdit->text(),
+					   ui->fileSuffix->text(),
+					   videoCodecs.at(ui->videoCodecComboBox->currentIndex()),
+					   audioCodecs.at(ui->audioCodecCombobox->currentIndex()),
+					   containers.at(ui->containerCombobox->currentIndex()),
+					   ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
+					   ui->qualityRatioSlider->value() / 100.0);
 	});
 
 	// handle displaying target bitrates during compression
@@ -86,7 +125,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  &Compressor::compressionStarted,
 		  [this](double videoBitrateKbps, double audioBitrateKbps) {
 			  ui->progressLabel->setText(
-				  QString("Video bitrate: %1 kbps | Audio bitrate: %2 kbps")
+				  QString(tr("Video bitrate: %1 kbps | Audio bitrate: %2 kbps"))
 					  .arg(QString::number(qRound(videoBitrateKbps)),
 						 QString::number(qRound(audioBitrateKbps))));
 		  });
@@ -96,13 +135,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  &Compressor::compressionSucceeded,
 		  [this](double requestedSizeKbps, double actualSizeKbps) {
 			  setProgress(100);
-			  QMessageBox::information(
-				  this,
-				  "Compressed successfully",
-				  QString(
-					  "Requested size was %1 kb.\nActual compression achieved is %2 kb.")
-					  .arg(QString::number(requestedSizeKbps),
-						 QString::number(actualSizeKbps)));
+			  ShowMessageBox(Severity::Information,
+					     tr("Compressed successfully"),
+					     QString(tr("Requested size was %1 kb.\nActual "
+							    "compression achieved is %2 kb."))
+						     .arg(QString::number(requestedSizeKbps),
+							    QString::number(actualSizeKbps)));
 
 			  setProgress(0);
 			  hideProgress();
@@ -113,7 +151,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  &Compressor::compressionFailed,
 		  [this](QString shortError, QString longError) {
 			  setProgress(0);
-			  ShowMessageBox(Severity::Critical, "Compression failed", shortError, longError);
+			  ShowMessageBox(Severity::Critical,
+					     tr("Compression failed"),
+					     shortError,
+					     longError);
 			  hideProgress();
 		  });
 
@@ -123,7 +164,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	// show name of file picked with file dialog
 	connect(ui->fileButton, &QPushButton::clicked, [this]() {
 		QUrl fileUrl = QFileDialog::getOpenFileUrl(this,
-									 "Select file to compress",
+									 tr("Select file to compress"),
 									 QDir::currentPath(),
 									 "*");
 
@@ -134,7 +175,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	// show name of file picked with file dialog
 	connect(ui->outputDirButton, &QPushButton::clicked, [this]() {
 		QDir dir = QFileDialog::getExistingDirectory(this,
-									   "Select output directory",
+									   tr("Select output directory"),
 									   QDir::currentPath());
 
 		ui->outputDirLineEdit->setText(dir.absolutePath());
@@ -176,11 +217,12 @@ MainWindow::~MainWindow()
 QVariant MainWindow::setting(const QString &key)
 {
 	if (!settings.contains(key)) {
-		QMessageBox::critical(this,
-					    "Missing configuration",
-					    "The configuration file is missing a key. Please reinstall the "
-					    "program.\n\nMissing key: "
-						    + key + "\nWorking dir: " + QDir::currentPath());
+		QMessageBox::critical(
+			this,
+			tr("Missing configuration"),
+			QString(tr("The configuration file is missing a key. Please reinstall the "
+				     "program.\n\nMissing key: %1\nWorking dir: %2"))
+				.arg(key, QDir::currentPath()));
 		return 0 / 0; // lol
 	}
 

@@ -12,7 +12,7 @@ Compressor::Compressor(QObject* parent) : QObject{parent}
 
 {
 	ffmpeg->setProcessChannelMode(QProcess::MergedChannels);
-	connect(ffmpeg, &QProcess::errorOccurred, [=](QProcess::ProcessError error) {
+	connect(ffmpeg, &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
 		emit compressionFailed("Process " + QVariant::fromValue(error).toString());
 	});
 }
@@ -20,9 +20,9 @@ Compressor::Compressor(QObject* parent) : QObject{parent}
 void Compressor::compress(const QUrl& inputUrl,
 				  const QDir& outputDir,
 				  const QString& fileSuffix,
-				  const Format& videoCodec,
-				  const Format& audioCodec,
-				  const QString& container,
+				  const Codec& videoCodec,
+				  const Codec& audioCodec,
+				  const Container& container,
 				  double sizeKbps,
 				  double audioQualityPercent,
 				  double minVideoBitrateKbps,
@@ -30,19 +30,17 @@ void Compressor::compress(const QUrl& inputUrl,
 				  double maxAudioBitrateKbps,
 				  double overshootCorrectionPercent)
 {
-	if (!videoCodecs.contains(videoCodec)) {
-		emit compressionFailed("Invalid video codec " + videoCodec.name,
-					     "Available codecs: " + Format::stringFromList(videoCodecs));
+	if (!container.supportedCodecs.contains(videoCodec.library)) {
+		emit compressionFailed(
+			tr("Selected container %1 does not support selected video codec %2")
+				.arg(container.name, videoCodec.name));
 		return;
 	}
-	if (!audioCodecs.contains(audioCodec)) {
-		emit compressionFailed("Invalid audio codec " + audioCodec.name,
-					     "Available codecs: " + Format::stringFromList(audioCodecs));
-		return;
-	}
-	if (!containers.contains(container)) {
-		emit compressionFailed("Invalid container " + container,
-					     "Available codecs: " + containers.join(", "));
+
+	if (!container.supportedCodecs.contains(audioCodec.library)) {
+		emit compressionFailed(
+			tr("Selected container %1 does not support selected audio codec %2")
+				.arg(container.name, audioCodec.name));
 		return;
 	}
 
@@ -68,9 +66,10 @@ void Compressor::compress(const QUrl& inputUrl,
 	emit compressionStarted(videoBitrateKpbs, audioBitrateKbps);
 
 	QStringList fileName = inputUrl.fileName().split(".");
-	QString outputPath = outputDir.filePath(fileName.first() + "_" + fileSuffix + "." + container);
+	QString outputPath = outputDir.filePath(fileName.first() + "_" + fileSuffix + "."
+							    + container.name);
 
-	QString command = QString("ffmpeg.exe -i \"%1\" -c:v %2 -c:a %3 -b:v %4k -b:a %5k \"%6\" -y")
+	QString command = QString(R"(ffmpeg.exe -i "%1" -c:v %2 -c:a %3 -b:v %4k -b:a %5k "%6" -y)")
 					.arg(inputUrl.toLocalFile(),
 					     videoCodec.library,
 					     audioCodec.library,
@@ -78,7 +77,7 @@ void Compressor::compress(const QUrl& inputUrl,
 					     QString::number(audioBitrateKbps),
 					     outputPath);
 
-	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [=]() {
+	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [=, this]() {
 		QString line = QString(ffmpeg->readAll());
 		QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
 		QRegularExpressionMatch match = regex.match(line);
@@ -96,7 +95,7 @@ void Compressor::compress(const QUrl& inputUrl,
 		emit compressionProgressUpdate(progressPercent);
 	});
 
-	*processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=](int exitCode) {
+	*processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](int exitCode) {
 		if (exitCode != 0) {
 			disconnect(*processUpdateConnection);
 			disconnect(*processFinishedConnection);
@@ -139,16 +138,16 @@ QString Compressor::parseOutput()
 		.trimmed();
 }
 
-bool Compressor::Format::operator==(const Format& rhs) const
+bool Compressor::Codec::operator==(const Codec& rhs) const
 {
 	return this->name == rhs.name && this->library == rhs.library;
 }
 
-QString Compressor::Format::stringFromList(const QList<Format>& list)
+QString Compressor::Codec::stringFromList(const QList<Codec>& list)
 {
 	QString str;
 
-	for (const Format& format : list)
+	for (const Codec& format : list)
 		str += format.name % ", ";
 
 	str.chop(2);
