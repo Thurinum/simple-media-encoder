@@ -1,9 +1,12 @@
+#include <QClipboard>
 #include <QCloseEvent>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
 #include <QGraphicsDropShadowEffect>
 #include <QMenu>
+#include <QMimeData>
+#include <QMimeDatabase>
 #include <QMovie>
 #include <QPixmap>
 #include <QProcess>
@@ -13,6 +16,202 @@
 
 #include "mainwindow.hpp"
 #include "ui_mainwindow.h"
+
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
+{
+	ui->setupUi(this);
+
+	progressBarAnimation = new QPropertyAnimation(ui->progressBar, "value");
+	progressBarAnimation->setDuration(100);
+	ui->progressWidget->setVisible(false);
+
+	// menu
+	QMenu *menu = new QMenu(this);
+	menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
+	menu->addSeparator();
+	menu->addAction(tr("About"));
+	menu->addAction(tr("About Qt"), &QApplication::aboutQt);
+	ui->toolButton->setMenu(menu);
+	connect(ui->toolButton, &QToolButton::pressed, ui->toolButton, &QToolButton::showMenu);
+
+	// detect nvidia
+	QProcess process;
+	process.setProcessChannelMode(QProcess::MergedChannels);
+
+	if (QSysInfo::kernelType() == "winnt") {
+		process.startCommand("wmic path win32_VideoController get name");
+		process.waitForFinished();
+
+		if (process.readAllStandardOutput().toLower().contains("nvidia"))
+			isNvidia = true;
+	}
+
+	// parse codecs
+	QList<Codec> videoCodecs;
+	QList<Codec> audioCodecs;
+	QList<Container> containers;
+
+	parseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
+	parseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecCombobox);
+	parseContainers(&containers, ui->containerCombobox);
+
+	// start compression button
+	connect(ui->startButton, &QPushButton::clicked, [=, this]() {
+		if (!selectedUrl.isValid()) {
+			Notify(Severity::Info,
+				 tr("No file selected"),
+				 tr("Please select a file to compress."));
+			return;
+		}
+
+		double sizeKbpsConversionFactor = -1;
+		switch (ui->sizeUnitComboBox->currentIndex()) {
+		case 0: //
+			sizeKbpsConversionFactor = 8;
+			break;
+		case 1: // MB to kb
+			sizeKbpsConversionFactor = 8000;
+			break;
+		case 2: //
+			sizeKbpsConversionFactor = 8e+6;
+			break;
+		}
+
+		showProgress();
+		compressor->compress(selectedUrl,
+					   ui->outputDirLineEdit->text().isEmpty()
+						   ? QDir::currentPath()
+						   : ui->outputDirLineEdit->text(),
+					   ui->fileSuffix->text(),
+					   videoCodecs.at(ui->videoCodecComboBox->currentIndex()),
+					   audioCodecs.at(ui->audioCodecCombobox->currentIndex()),
+					   containers.at(ui->containerCombobox->currentIndex()),
+					   ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
+					   ui->qualityRatioSlider->value() / 100.0);
+	});
+
+	// handle displaying target bitrates during compression
+	connect(compressor,
+		  &Compressor::compressionStarted,
+		  [this](double videoBitrateKbps, double audioBitrateKbps) {
+			  ui->progressLabel->setText(
+				  QString(tr("Video bitrate: %1 kbps | Audio bitrate: %2 kbps"))
+					  .arg(QString::number(qRound(videoBitrateKbps)),
+						 QString::number(qRound(audioBitrateKbps))));
+		  });
+
+	// handle successful compression
+	connect(compressor,
+		  &Compressor::compressionSucceeded,
+		  [this](double requestedSizeKbps, double actualSizeKbps, QFile *outputFile) {
+			  setProgress(100);
+			  Notify(Severity::Info,
+				   tr("Compressed successfully"),
+				   QString(tr("Requested size was %1 kb.\nActual "
+						  "compression achieved is %2 kb."))
+					   .arg(QString::number(requestedSizeKbps),
+						  QString::number(actualSizeKbps)));
+
+			  setProgress(0);
+			  hideProgress();
+
+			  QFileInfo fileInfo(*outputFile);
+			  if (ui->openInExplorerCheckbox->isChecked()) {
+				  QProcess::execute(
+					  QString(R"(explorer.exe "%1")").arg(fileInfo.dir().path()));
+			  }
+
+			  if (ui->playCheckbox->isChecked()) {
+				  QProcess::execute(
+					  QString(R"(explorer.exe "%1")").arg(fileInfo.absoluteFilePath()));
+			  }
+
+			  if (ui->closeToolCheckbox->isChecked()) {
+				  QApplication::exit(0);
+			  }
+
+			  // Looks like windows clipboard doesn't support either videos or large clipboard items
+			  //			  if (ui->copyToClipboardCheckbox->isChecked()) {
+			  //				  QFileInfo fileInfo(*outputFile);
+			  //				  QMimeType type = QMimeDatabase().mimeTypeForFile(fileInfo);
+			  //				  QMimeData *mimeData = new QMimeData();
+			  //				  QByteArray data = outputFile->readAll();
+			  //				  QClipboard *clippy = QGuiApplication::clipboard();
+
+			  //				  mimeData->setData("text/plain", data);
+			  //				  clippy->setMimeData(mimeData);
+			  //				  outputFile->close();
+			  //			  }
+		  });
+
+	// handle failed compression
+	connect(compressor,
+		  &Compressor::compressionFailed,
+		  [this](QString shortError, QString longError) {
+			  setProgress(0);
+			  Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
+			  hideProgress();
+		  });
+
+	// handle compression progress updates
+	connect(compressor, &Compressor::compressionProgressUpdate, this, &MainWindow::setProgress);
+
+	// show name of file picked with file dialog
+	connect(ui->fileButton, &QPushButton::clicked, [this]() {
+		QUrl fileUrl = QFileDialog::getOpenFileUrl(this,
+									 tr("Select file to compress"),
+									 QDir::currentPath(),
+									 "*");
+
+		ui->fileName->setText(fileUrl.toLocalFile());
+		selectedUrl = fileUrl;
+	});
+
+	// show name of file picked with file dialog
+	connect(ui->outputDirButton, &QPushButton::clicked, [this]() {
+		QDir dir = QFileDialog::getExistingDirectory(this,
+									   tr("Select output directory"),
+									   QDir::currentPath());
+
+		ui->outputDirLineEdit->setText(dir.absolutePath());
+		selectedDir = dir;
+	});
+
+	// show value in kbps of audio quality slider
+	connect(ui->qualityRatioSlider, &QSlider::valueChanged, [this]() {
+		double currentValue = qMax(16.0,
+						   ui->qualityRatioSlider->value() / 100.0
+							   * setting("Main/dMaxBitrateAudioKbps").toDouble());
+		ui->qualityRatioSliderLabel->setText(QString::number(qRound(currentValue)) + " kbps");
+	});
+
+	// restore UI state on run
+	selectedUrl = QUrl(setting("LastDesired/sInputFile").toString());
+	selectedDir = QDir(setting("LastDesired/sOutputDir").toString());
+
+	if (QFile::exists(selectedUrl.toLocalFile()))
+		ui->fileName->setText(selectedUrl.toLocalFile());
+	if (selectedDir.exists())
+		ui->outputDirLineEdit->setText(selectedDir.absolutePath());
+
+	ui->sizeSpinBox->setValue(setting("LastDesired/dFileSize").toDouble());
+	ui->fileSuffix->setText(setting("LastDesired/sFileSuffix").toString());
+	ui->sizeUnitComboBox->setCurrentText(setting("LastDesired/sFileSizeUnit").toString());
+	ui->qualityRatioSlider->setValue(setting("LastDesired/iQualityRatio").toInt());
+	ui->videoCodecComboBox->setCurrentText(setting("LastDesired/sVideoCodec").toString());
+	ui->audioCodecCombobox->setCurrentText(setting("LastDesired/sAudioCodec").toString());
+	ui->containerCombobox->setCurrentText(setting("LastDesired/sContainer").toString());
+	ui->openInExplorerCheckbox->setChecked(
+		setting("LastDesired/bOpenInExplorerOnSuccess").toBool());
+	ui->playCheckbox->setChecked(setting("LastDesired/bPlayResultOnSuccess").toBool());
+	ui->closeToolCheckbox->setChecked(setting("LastDesired/bCloseOnSuccess").toBool());
+	emit ui->qualityRatioSlider->valueChanged(ui->qualityRatioSlider->value());
+}
+
+MainWindow::~MainWindow()
+{
+	delete ui;
+}
 
 void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBox *comboBox)
 {
@@ -105,170 +304,6 @@ void MainWindow::parseContainers(QList<Container> *containers, QComboBox *comboB
 	settings.endGroup();
 }
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
-{
-	ui->setupUi(this);
-
-	progressBarAnimation = new QPropertyAnimation(ui->progressBar, "value");
-	progressBarAnimation->setDuration(100);
-	ui->progressWidget->setVisible(false);
-
-	// menu
-	QMenu *menu = new QMenu(this);
-	menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
-	menu->addSeparator();
-	menu->addAction(tr("About"));
-	menu->addAction(tr("About Qt"), &QApplication::aboutQt);
-	ui->toolButton->setMenu(menu);
-	connect(ui->toolButton, &QToolButton::pressed, ui->toolButton, &QToolButton::showMenu);
-
-	// detect nvidia
-	QProcess process;
-	process.setProcessChannelMode(QProcess::MergedChannels);
-
-	if (QSysInfo::kernelType() == "winnt") {
-		process.startCommand("wmic path win32_VideoController get name");
-		process.waitForFinished();
-
-		if (process.readAllStandardOutput().toLower().contains("nvidia"))
-			isNvidia = true;
-	}
-
-	// parse codecs
-	QList<Codec> videoCodecs;
-	QList<Codec> audioCodecs;
-	QList<Container> containers;
-
-	parseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
-	parseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecCombobox);
-	parseContainers(&containers, ui->containerCombobox);
-
-	// start compression button
-	connect(ui->startButton, &QPushButton::clicked, [=, this]() {
-		if (!selectedUrl.isValid()) {
-			Notify(Severity::Info,
-				 tr("No file selected"),
-				 tr("Please select a file to compress."));
-			return;
-		}
-
-		double sizeKbpsConversionFactor = -1;
-		switch (ui->sizeUnitComboBox->currentIndex()) {
-		case 0: //
-			sizeKbpsConversionFactor = 8;
-			break;
-		case 1: // MB to kb
-			sizeKbpsConversionFactor = 8000;
-			break;
-		case 2: //
-			sizeKbpsConversionFactor = 8e+6;
-			break;
-		}
-
-		showProgress();
-		compressor->compress(selectedUrl,
-					   ui->outputDirLineEdit->text().isEmpty()
-						   ? QDir::currentPath()
-						   : ui->outputDirLineEdit->text(),
-					   ui->fileSuffix->text(),
-					   videoCodecs.at(ui->videoCodecComboBox->currentIndex()),
-					   audioCodecs.at(ui->audioCodecCombobox->currentIndex()),
-					   containers.at(ui->containerCombobox->currentIndex()),
-					   ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
-					   ui->qualityRatioSlider->value() / 100.0);
-	});
-
-	// handle displaying target bitrates during compression
-	connect(compressor,
-		  &Compressor::compressionStarted,
-		  [this](double videoBitrateKbps, double audioBitrateKbps) {
-			  ui->progressLabel->setText(
-				  QString(tr("Video bitrate: %1 kbps | Audio bitrate: %2 kbps"))
-					  .arg(QString::number(qRound(videoBitrateKbps)),
-						 QString::number(qRound(audioBitrateKbps))));
-		  });
-
-	// handle successful compression
-	connect(compressor,
-		  &Compressor::compressionSucceeded,
-		  [this](double requestedSizeKbps, double actualSizeKbps) {
-			  setProgress(100);
-			  Notify(Severity::Info,
-				   tr("Compressed successfully"),
-				   QString(tr("Requested size was %1 kb.\nActual "
-						  "compression achieved is %2 kb."))
-					   .arg(QString::number(requestedSizeKbps),
-						  QString::number(actualSizeKbps)));
-
-			  setProgress(0);
-			  hideProgress();
-		  });
-
-	// handle failed compression
-	connect(compressor,
-		  &Compressor::compressionFailed,
-		  [this](QString shortError, QString longError) {
-			  setProgress(0);
-			  Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
-			  hideProgress();
-		  });
-
-	// handle compression progress updates
-	connect(compressor, &Compressor::compressionProgressUpdate, this, &MainWindow::setProgress);
-
-	// show name of file picked with file dialog
-	connect(ui->fileButton, &QPushButton::clicked, [this]() {
-		QUrl fileUrl = QFileDialog::getOpenFileUrl(this,
-									 tr("Select file to compress"),
-									 QDir::currentPath(),
-									 "*");
-
-		ui->fileName->setText(fileUrl.toLocalFile());
-		selectedUrl = fileUrl;
-	});
-
-	// show name of file picked with file dialog
-	connect(ui->outputDirButton, &QPushButton::clicked, [this]() {
-		QDir dir = QFileDialog::getExistingDirectory(this,
-									   tr("Select output directory"),
-									   QDir::currentPath());
-
-		ui->outputDirLineEdit->setText(dir.absolutePath());
-		selectedDir = dir;
-	});
-
-	// show value in kbps of audio quality slider
-	connect(ui->qualityRatioSlider, &QSlider::valueChanged, [this]() {
-		double currentValue = qMax(16.0,
-						   ui->qualityRatioSlider->value() / 100.0
-							   * setting("Main/dMaxBitrateAudioKbps").toDouble());
-		ui->qualityRatioSliderLabel->setText(QString::number(qRound(currentValue)) + " kbps");
-	});
-
-	// restore UI state on run
-	selectedUrl = QUrl(setting("Main/sLastFile").toString());
-	selectedDir = QDir(setting("Main/sLastDir").toString());
-
-	if (QFile::exists(selectedUrl.toLocalFile()))
-		ui->fileName->setText(selectedUrl.toLocalFile());
-	if (selectedDir.exists())
-		ui->outputDirLineEdit->setText(selectedDir.absolutePath());
-
-	ui->sizeSpinBox->setValue(setting("Main/dLastDesiredFileSize").toDouble());
-	ui->fileSuffix->setText(setting("Main/sLastDesiredFileSuffix").toString());
-	ui->sizeUnitComboBox->setCurrentText(setting("Main/sLastDesiredFileSizeUnit").toString());
-	ui->qualityRatioSlider->setValue(setting("Main/iLastDesiredQualityRatio").toInt());
-	ui->videoCodecComboBox->setCurrentText(setting("Main/sLastDesiredVideoCodec").toString());
-	ui->audioCodecCombobox->setCurrentText(setting("Main/sLastDesiredAudioCodec").toString());
-	ui->containerCombobox->setCurrentText(setting("Main/sLastDesiredContainer").toString());
-	emit ui->qualityRatioSlider->valueChanged(ui->qualityRatioSlider->value());
-}
-
-MainWindow::~MainWindow()
-{
-	delete ui;
-}
-
 QVariant MainWindow::setting(const QString &key)
 {
 	if (!settings.contains(key)) {
@@ -343,16 +378,20 @@ void MainWindow::Notify(Severity severity,
 void MainWindow::closeEvent(QCloseEvent *event)
 {
 	// save current parameters for next program run
-	setSetting("Main/sLastFile", selectedUrl);
-	setSetting("Main/sLastDir", selectedDir.absolutePath());
-	setSetting("Main/dLastDesiredFileSize", ui->sizeSpinBox->value());
-	setSetting("Main/sLastDesiredFileSizeUnit", ui->sizeUnitComboBox->currentText());
-	setSetting("Main/sLastDesiredFileSuffix", ui->fileSuffix->text());
-	setSetting("Main/iLastDesiredQualityRatio", ui->qualityRatioSlider->value());
+	setSetting("LastDesired/sInputFile", selectedUrl);
+	setSetting("LastDesired/sOutputDir", selectedDir.absolutePath());
+	setSetting("LastDesired/dFileSize", ui->sizeSpinBox->value());
+	setSetting("LastDesired/sFileSizeUnit", ui->sizeUnitComboBox->currentText());
+	setSetting("LastDesired/sFileSuffix", ui->fileSuffix->text());
+	setSetting("LastDesired/iQualityRatio", ui->qualityRatioSlider->value());
 
-	setSetting("Main/sLastDesiredVideoCodec", ui->videoCodecComboBox->currentText());
-	setSetting("Main/sLastDesiredAudioCodec", ui->audioCodecCombobox->currentText());
-	setSetting("Main/sLastDesiredContainer", ui->containerCombobox->currentText());
+	setSetting("LastDesired/sVideoCodec", ui->videoCodecComboBox->currentText());
+	setSetting("LastDesired/sAudioCodec", ui->audioCodecCombobox->currentText());
+	setSetting("LastDesired/sContainer", ui->containerCombobox->currentText());
+
+	setSetting("LastDesired/bOpenInExplorerOnSuccess", ui->openInExplorerCheckbox->isChecked());
+	setSetting("LastDesired/bPlayResultOnSuccess", ui->playCheckbox->isChecked());
+	setSetting("LastDesired/bCloseOnSuccess", ui->closeToolCheckbox->isChecked());
 
 	event->accept();
 }

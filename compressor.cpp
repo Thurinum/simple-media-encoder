@@ -121,13 +121,15 @@ void Compressor::compress(const QUrl& inputUrl,
 			emit compressionFailed("Could not open the compressed media.",
 						     media.errorString());
 			output.clear();
+			media.close();
 			return;
 		}
 
 		disconnect(*processUpdateConnection);
 		disconnect(*processFinishedConnection);
-		emit compressionSucceeded(sizeKbps, media.size() / 125.0);
+		emit compressionSucceeded(sizeKbps, media.size() / 125.0, &media);
 		output.clear();
+		media.close();
 	});
 
 	ffmpeg->startCommand(command);

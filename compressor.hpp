@@ -48,7 +48,7 @@ public:
 
 signals:
 	void compressionStarted(double videoBitrateKbps, double audioBitrateKbps);
-	void compressionSucceeded(double requestedSizeKbps, double actualSizeKbps);
+	void compressionSucceeded(double requestedSizeKbps, double actualSizeKbps, QFile* outputFile);
 	void compressionProgressUpdate(double progressPercent);
 	void compressionFailed(QString error, QString errorDetails = "");
 
