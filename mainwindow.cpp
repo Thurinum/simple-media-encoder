@@ -39,6 +39,9 @@ void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 			continue;
 		}
 
+		if (codecLibrary.contains("nvenc") && !isNvidia)
+			continue;
+
 		if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
 			Notify(Severity::Critical,
 				 tr("Could not parse codec"),
@@ -118,6 +121,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	menu->addAction(tr("About Qt"), &QApplication::aboutQt);
 	ui->toolButton->setMenu(menu);
 	connect(ui->toolButton, &QToolButton::pressed, ui->toolButton, &QToolButton::showMenu);
+
+	// detect nvidia
+	QProcess process;
+	process.setProcessChannelMode(QProcess::MergedChannels);
+
+	if (QSysInfo::kernelType() == "winnt") {
+		process.startCommand("wmic path win32_VideoController get name");
+		process.waitForFinished();
+
+		if (process.readAllStandardOutput().toLower().contains("nvidia"))
+			isNvidia = true;
+	}
 
 	// parse codecs
 	QList<Codec> videoCodecs;

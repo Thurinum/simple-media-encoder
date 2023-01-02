@@ -61,5 +61,7 @@ private:
 
 	void parseCodecs(QList<Codec>* codecs, const QString& type, QComboBox* comboBox);
 	void parseContainers(QList<Container>* containers, QComboBox* comboBox);
+
+	bool isNvidia = false;
 };
 #endif // MAINWINDOW_HPP
