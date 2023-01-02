@@ -54,14 +54,14 @@ private:
 	QEventLoop eventLoop;
 	QProcess* ffprobe = new QProcess();
 	QProcess* ffmpeg = new QProcess(&eventLoop);
+
 	QMetaObject::Connection* const processUpdateConnection = new QMetaObject::Connection();
 	QMetaObject::Connection* const processFinishedConnection = new QMetaObject::Connection();
 
-	QString parseOutput();
-
+	QString output = "";
 	double durationSeconds = -1;
 
-	QString output = "";
+	QString parseOutput();
 };
 
 #endif // COMPRESSOR_HPP

@@ -27,8 +27,37 @@ void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 	}
 
 	for (const QString &codecLibrary : settings.childKeys()) {
-		QString codecName = setting(codecLibrary).toString();
-		Codec codec{codecName, codecLibrary};
+		if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
+			ShowMessageBox(
+				Severity::Critical,
+				tr("Could not parse codec"),
+				tr("Codec library %1 could not be parsed. Please validate the INI config.")
+					.arg(codecLibrary));
+			QApplication::exit(1);
+		}
+
+		QStringList values
+			= setting(codecLibrary).toString().split(QRegularExpression("(\\s*),(\\s*)"));
+
+		QString codecName = values.first();
+
+		bool isConversionOk = false;
+		double codecMinBitrateKbps = values.size() == 2
+							     ? values.last().toDouble(&isConversionOk)
+							     : 0;
+
+		if (values.size() == 2 && !isConversionOk) {
+			ShowMessageBox(Severity::Critical,
+					   tr("Invalid codec bitrate"),
+					   tr("Minimum codec bitrate %1 could not be parsed. Please validate "
+						"the INI config.")
+						   .arg(values.last()));
+			QApplication::exit(1);
+		}
+
+		qDebug() << values.last();
+
+		Codec codec{codecName, codecLibrary, codecMinBitrateKbps};
 		codecs->append(codec);
 		comboBox->addItem(codecName);
 	}
@@ -50,6 +79,15 @@ void MainWindow::parseContainers(QList<Container> *containers, QComboBox *comboB
 	}
 
 	for (const QString &containerName : settings.childKeys()) {
+		if (QRegularExpression("[^-_a-z0-9]").match(containerName).hasMatch()) {
+			ShowMessageBox(
+				Severity::Critical,
+				tr("Could not parse container name"),
+				tr("Container name %1 could not be parsed. Please validate the INI config.")
+					.arg(containerName));
+			QApplication::exit(1);
+		}
+
 		QStringList supportedCodecs
 			= setting(containerName).toString().split(QRegularExpression("(\\s*),(\\s*)"));
 		Container container{containerName, supportedCodecs};

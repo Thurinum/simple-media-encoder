@@ -63,6 +63,15 @@ void Compressor::compress(const QUrl& inputUrl,
 	double audioBitrateKbps = qMax(minAudioBitrateKbps, audioQualityPercent * maxAudioBitrateKbps);
 	double videoBitrateKpbs = qMax(minVideoBitrateKbps, bitrateKbps - audioBitrateKbps);
 
+	if (audioBitrateKbps < audioCodec.minBitrateKbps) {
+		emit compressionFailed(tr("Selected audio codec %1 requires a minimum bitrate of %2 "
+						  "kbps, but requested was %3 kbps.")
+						     .arg(audioCodec.name,
+							    QString::number(audioCodec.minBitrateKbps),
+							    QString::number(audioBitrateKbps)));
+		return;
+	}
+
 	emit compressionStarted(videoBitrateKpbs, audioBitrateKbps);
 
 	QStringList fileName = inputUrl.fileName().split(".");
