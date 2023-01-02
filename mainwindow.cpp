@@ -26,7 +26,19 @@ void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 				 .arg(type));
 	}
 
+	QString availableCodecs = compressor->availableFormats();
+
 	for (const QString &codecLibrary : settings.childKeys()) {
+		if (!availableCodecs.contains(codecLibrary)) {
+			Notify(Severity::Warning,
+				 tr("Unsupported codec"),
+				 tr("Codec library '%1' does not appear to be supported by our version of "
+				    "FFMPEG. It has been skipped. Please validate the "
+				    "configuration in %2.")
+					 .arg(codecLibrary, CONFIG_FILE));
+			continue;
+		}
+
 		if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
 			Notify(Severity::Critical,
 				 tr("Could not parse codec"),

@@ -44,6 +44,8 @@ public:
 			  double maxAudioBitrateKbps = 256,
 			  double overshootCorrectionPercent = 0.02);
 
+	QString availableFormats();
+
 signals:
 	void compressionStarted(double videoBitrateKbps, double audioBitrateKbps);
 	void compressionSucceeded(double requestedSizeKbps, double actualSizeKbps);

@@ -133,6 +133,13 @@ void Compressor::compress(const QUrl& inputUrl,
 	ffmpeg->startCommand(command);
 }
 
+QString Compressor::availableFormats()
+{
+	ffmpeg->startCommand("ffmpeg.exe -encoders");
+	ffmpeg->waitForFinished();
+	return ffmpeg->readAllStandardOutput();
+}
+
 QString Compressor::parseOutput()
 {
 	QStringList split = output.split("Press [q] to stop, [?] for help");
