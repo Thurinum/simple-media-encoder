@@ -57,13 +57,17 @@ void Compressor::compress(const QUrl& inputUrl,
 		return;
 	}
 
-	ffprobe->startCommand(QString("ffprobe.exe -v error -show_entries format=duration -of "
+	// get media info
+	ffprobe->startCommand(QString("ffprobe.exe -v error -select_streams v:0 -show_entries "
+						"stream=width,height,duration -of "
 						"default=noprint_wrappers=1:nokey=1 \"%1\"")
 					    .arg(inputUrl.toLocalFile()));
 	ffprobe->waitForFinished();
 
+	// TODO: Refactor to use key value pairs
+	QStringList metadata = QString(ffprobe->readAll()).split("\r\n");
 	bool couldParseDuration = false;
-	QString durationOutput = ffprobe->readAll();
+	QString durationOutput = metadata[2];
 	double durationSeconds = durationOutput.toDouble(&couldParseDuration);
 
 	if (!couldParseDuration) {
@@ -72,9 +76,33 @@ void Compressor::compress(const QUrl& inputUrl,
 		return;
 	}
 
+	// width and height scaling
+	QString widthParam;
+
+	if (width == AUTO_SIZE)
+		widthParam = height == AUTO_SIZE ? "iw" : "-1";
+	else
+		widthParam = QString::number(width);
+
+	QString heightParam = height == AUTO_SIZE ? "-2" : QString::number(height + height % 2);
+
+	// pixel ratio
+	double pixelRatio = 1;
+
+	if (width != AUTO_SIZE && height != AUTO_SIZE) {
+		double inputPixelCount = metadata[0].toInt() * metadata[1].toInt(); // w h
+		double outputPixelCount = width * height;
+
+		// TODO: Add option to enable bitrate compensation even when upscaling (will result in bigger files)
+		if (outputPixelCount > inputPixelCount)
+			pixelRatio = outputPixelCount / inputPixelCount;
+	}
+
+	// calculate bitrate
 	double bitrateKbps = sizeKbps / durationSeconds * (1.0 - overshootCorrectionPercent);
 	double audioBitrateKbps = qMax(minAudioBitrateKbps, audioQualityPercent * maxAudioBitrateKbps);
-	double videoBitrateKpbs = qMax(minVideoBitrateKbps, bitrateKbps - audioBitrateKbps);
+	double videoBitrateKpbs = qMax(minVideoBitrateKbps,
+						 pixelRatio * (bitrateKbps - audioBitrateKbps));
 
 	if (audioBitrateKbps < audioCodec.minBitrateKbps) {
 		emit compressionFailed(tr("Selected audio codec %1 requires a minimum bitrate of %2 "
@@ -86,15 +114,6 @@ void Compressor::compress(const QUrl& inputUrl,
 	}
 
 	emit compressionStarted(videoBitrateKpbs, audioBitrateKbps);
-
-	QString widthParam;
-
-	if (width == AUTO_SIZE)
-		widthParam = height == AUTO_SIZE ? "iw" : "-1";
-	else
-		widthParam = QString::number(width);
-
-	QString heightParam = height == AUTO_SIZE ? "-2" : QString::number(height + height % 2);
 
 	QStringList fileName = inputUrl.fileName().split(".");
 	QString outputPath = outputDir.filePath(fileName.first() + "_" + fileSuffix + "."
@@ -111,8 +130,6 @@ void Compressor::compress(const QUrl& inputUrl,
 				 heightParam,
 				 width != AUTO_SIZE && height != AUTO_SIZE ? ",setsar=1/1" : "",
 				 outputPath);
-
-	qDebug() << command;
 
 	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [=, this]() {
 		QString line = QString(ffmpeg->readAll());
