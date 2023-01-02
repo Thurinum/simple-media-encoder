@@ -125,9 +125,11 @@ void Compressor::compress(const QUrl& inputUrl,
 			return;
 		}
 
+		const double BYTES_TO_KB = 125.0; // or smt like that anyway lol
+
 		disconnect(*processUpdateConnection);
 		disconnect(*processFinishedConnection);
-		emit compressionSucceeded(sizeKbps, media.size() / 125.0, &media);
+		emit compressionSucceeded(sizeKbps, media.size() / BYTES_TO_KB, &media);
 		output.clear();
 		media.close();
 	});

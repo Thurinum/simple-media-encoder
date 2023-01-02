@@ -22,7 +22,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	ui->setupUi(this);
 
 	progressBarAnimation = new QPropertyAnimation(ui->progressBar, "value");
-	progressBarAnimation->setDuration(100);
+	progressBarAnimation->setDuration(setting("Main/iProgressBarAnimDurationMs").toInt());
+	progressBarAnimation->setEasingCurve(QEasingCurve::InQuad);
 	ui->progressWidget->setVisible(false);
 
 	// menu
@@ -66,13 +67,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 		double sizeKbpsConversionFactor = -1;
 		switch (ui->sizeUnitComboBox->currentIndex()) {
-		case 0: //
+		case 0: // KB to kb
 			sizeKbpsConversionFactor = 8;
 			break;
 		case 1: // MB to kb
 			sizeKbpsConversionFactor = 8000;
 			break;
-		case 2: //
+		case 2: // GB to kb
 			sizeKbpsConversionFactor = 8e+6;
 			break;
 		}
@@ -87,7 +88,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 					   audioCodecs.at(ui->audioCodecCombobox->currentIndex()),
 					   containers.at(ui->containerCombobox->currentIndex()),
 					   ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
-					   ui->qualityRatioSlider->value() / 100.0);
+					   ui->qualityRatioSlider->value() / 100.0,
+					   setting("Main/dMinBitrateVideoKbps").toDouble(),
+					   setting("Main/dMinBitrateAudioKbps").toDouble(),
+					   setting("Main/dMaxBitrateAudioKbps").toDouble());
 	});
 
 	// handle displaying target bitrates during compression
@@ -147,7 +151,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	// handle failed compression
 	connect(compressor,
 		  &Compressor::compressionFailed,
-		  [this](QString shortError, QString longError) {
+		  [this](const QString &shortError, const QString &longError) {
 			  setProgress(0);
 			  Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
 			  hideProgress();
@@ -179,7 +183,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	// show value in kbps of audio quality slider
 	connect(ui->qualityRatioSlider, &QSlider::valueChanged, [this]() {
-		double currentValue = qMax(16.0,
+		double currentValue = qMax(setting("Main/dMinBitrateAudioKbps").toDouble(),
 						   ui->qualityRatioSlider->value() / 100.0
 							   * setting("Main/dMaxBitrateAudioKbps").toDouble());
 		ui->qualityRatioSliderLabel->setText(QString::number(qRound(currentValue)) + " kbps");
@@ -376,7 +380,7 @@ void MainWindow::Notify(Severity severity,
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
-{
+{	
 	// save current parameters for next program run
 	setSetting("LastDesired/sInputFile", selectedUrl);
 	setSetting("LastDesired/sOutputDir", selectedDir.absolutePath());
