@@ -12,7 +12,6 @@
 #include <QSettings>
 #include <QUrl>
 
-using Severity = QMessageBox::Icon;
 using Codec = Compressor::Codec;
 using Container = Compressor::Container;
 
@@ -31,28 +30,36 @@ public:
 	QVariant setting(const QString& key);
 	void setSetting(const QString& key, const QVariant& value);
 
+	enum Severity {
+		Info = QMessageBox::Information,
+		Warning = QMessageBox::Warning,
+		Error = QMessageBox::Critical,
+		Critical // Will terminate program
+	};
+
+protected:
+	void closeEvent(QCloseEvent* event) override;
+
 private:
+	const QString CONFIG_FILE = "config.ini";
+	Ui::MainWindow* ui;
+	QPropertyAnimation* progressBarAnimation;
+
 	QUrl selectedUrl;
 	QDir selectedDir;
 	Compressor* compressor = new Compressor(this);
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
 
-	Ui::MainWindow* ui;
-	QPropertyAnimation* progressBarAnimation;
-
-	void setProgress(int progressPercent);
 	void showProgress();
+	void setProgress(int progressPercent);
 	void hideProgress();
 
-	void ShowMessageBox(Severity severity,
-				  const QString& title,
-				  const QString& message,
-				  const QString& details = "");
+	void Notify(Severity severity,
+			const QString& title,
+			const QString& message,
+			const QString& details = "");
 
 	void parseCodecs(QList<Codec>* codecs, const QString& type, QComboBox* comboBox);
 	void parseContainers(QList<Container>* containers, QComboBox* comboBox);
-
-protected:
-	void closeEvent(QCloseEvent* event) override;
 };
 #endif // MAINWINDOW_HPP

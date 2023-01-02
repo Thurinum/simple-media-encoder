@@ -13,7 +13,7 @@ Compressor::Compressor(QObject* parent) : QObject{parent}
 {
 	ffmpeg->setProcessChannelMode(QProcess::MergedChannels);
 	connect(ffmpeg, &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
-		emit compressionFailed("Process " + QVariant::fromValue(error).toString());
+		emit compressionFailed(tr("Process %1").arg(QVariant::fromValue(error).toString()));
 	});
 }
 
@@ -54,7 +54,7 @@ void Compressor::compress(const QUrl& inputUrl,
 	double durationSeconds = durationOutput.toDouble(&couldParseDuration);
 
 	if (!couldParseDuration) {
-		emit compressionFailed("Media file is not found, invalid, or corrupted.",
+		emit compressionFailed(tr("Media file is not found, invalid, or corrupted."),
 					     durationOutput);
 		return;
 	}

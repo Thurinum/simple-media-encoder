@@ -19,21 +19,20 @@ void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 	settings.beginGroup(type);
 
 	if (settings.childKeys().empty()) {
-		ShowMessageBox(Severity::Critical,
-				   tr("No %1").arg(type),
-				   tr("Could not find %1 in the INI. Please check the config. Aborting.")
-					   .arg(type));
-		QApplication::exit(1);
+		Notify(Severity::Critical,
+			 tr("Missing codecs definition").arg(type),
+			 tr("Could not find codecs list of type '%1' in the configuration file. "
+			    "Please validate the configuration in %2. Exiting.")
+				 .arg(type));
 	}
 
 	for (const QString &codecLibrary : settings.childKeys()) {
 		if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
-			ShowMessageBox(
-				Severity::Critical,
-				tr("Could not parse codec"),
-				tr("Codec library %1 could not be parsed. Please validate the INI config.")
-					.arg(codecLibrary));
-			QApplication::exit(1);
+			Notify(Severity::Critical,
+				 tr("Could not parse codec"),
+				 tr("Codec library '%1' could not be parsed. Please validate the "
+				    "configuration in %2. Exiting.")
+					 .arg(codecLibrary, CONFIG_FILE));
 		}
 
 		QStringList values
@@ -47,15 +46,12 @@ void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 							     : 0;
 
 		if (values.size() == 2 && !isConversionOk) {
-			ShowMessageBox(Severity::Critical,
-					   tr("Invalid codec bitrate"),
-					   tr("Minimum codec bitrate %1 could not be parsed. Please validate "
-						"the INI config.")
-						   .arg(values.last()));
-			QApplication::exit(1);
+			Notify(Severity::Critical,
+				 tr("Invalid codec bitrate"),
+				 tr("Minimum bitrate of codec '%1' could not be parsed. Please "
+				    "validate the configuration in %2. Exiting.")
+					 .arg(values.last(), CONFIG_FILE));
 		}
-
-		qDebug() << values.last();
 
 		Codec codec{codecName, codecLibrary, codecMinBitrateKbps};
 		codecs->append(codec);
@@ -66,26 +62,23 @@ void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 
 void MainWindow::parseContainers(QList<Container> *containers, QComboBox *comboBox)
 {
-	QString type = "Containers";
-
-	settings.beginGroup(type);
+	settings.beginGroup("Containers");
 
 	if (settings.childKeys().empty()) {
-		ShowMessageBox(Severity::Critical,
-				   tr("No %1").arg(type),
-				   tr("Could not find %1 in the INI. Please check the config. Aborting.")
-					   .arg(type));
-		QApplication::exit(1);
+		Notify(Severity::Critical,
+			 tr("Missing containers definition"),
+			 tr("Could not find list of container in the configuration file. Please "
+			    "validate the configuration in %1. Exiting.")
+				 .arg(CONFIG_FILE));
 	}
 
 	for (const QString &containerName : settings.childKeys()) {
 		if (QRegularExpression("[^-_a-z0-9]").match(containerName).hasMatch()) {
-			ShowMessageBox(
-				Severity::Critical,
-				tr("Could not parse container name"),
-				tr("Container name %1 could not be parsed. Please validate the INI config.")
-					.arg(containerName));
-			QApplication::exit(1);
+			Notify(Severity::Critical,
+				 tr("Invalid container name"),
+				 tr("Name of container '%1' could not be parsed. Please "
+				    "validate the configuration in %2. Exiting.")
+					 .arg(containerName, CONFIG_FILE));
 		}
 
 		QStringList supportedCodecs
@@ -126,9 +119,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	// start compression button
 	connect(ui->startButton, &QPushButton::clicked, [=, this]() {
 		if (!selectedUrl.isValid()) {
-			QMessageBox::information(this,
-							 tr("No file selected"),
-							 tr("Please select a file to compress."));
+			Notify(Severity::Info,
+				 tr("No file selected"),
+				 tr("Please select a file to compress."));
 			return;
 		}
 
@@ -173,12 +166,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  &Compressor::compressionSucceeded,
 		  [this](double requestedSizeKbps, double actualSizeKbps) {
 			  setProgress(100);
-			  ShowMessageBox(Severity::Information,
-					     tr("Compressed successfully"),
-					     QString(tr("Requested size was %1 kb.\nActual "
-							    "compression achieved is %2 kb."))
-						     .arg(QString::number(requestedSizeKbps),
-							    QString::number(actualSizeKbps)));
+			  Notify(Severity::Info,
+				   tr("Compressed successfully"),
+				   QString(tr("Requested size was %1 kb.\nActual "
+						  "compression achieved is %2 kb."))
+					   .arg(QString::number(requestedSizeKbps),
+						  QString::number(actualSizeKbps)));
 
 			  setProgress(0);
 			  hideProgress();
@@ -189,10 +182,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  &Compressor::compressionFailed,
 		  [this](QString shortError, QString longError) {
 			  setProgress(0);
-			  ShowMessageBox(Severity::Critical,
-					     tr("Compression failed"),
-					     shortError,
-					     longError);
+			  Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
 			  hideProgress();
 		  });
 
@@ -255,13 +245,12 @@ MainWindow::~MainWindow()
 QVariant MainWindow::setting(const QString &key)
 {
 	if (!settings.contains(key)) {
-		QMessageBox::critical(
-			this,
-			tr("Missing configuration"),
-			QString(tr("The configuration file is missing a key. Please reinstall the "
-				     "program.\n\nMissing key: %1\nWorking dir: %2"))
-				.arg(key, QDir::currentPath()));
-		return 0 / 0; // lol
+		Notify(Severity::Critical,
+			 tr("Missing configuration"),
+			 tr("Configuration file is missing key '%1'. Please validate the "
+			    "configuration in %2. Exiting.")
+				 .arg(key, CONFIG_FILE),
+			 tr("Missing key: %1\nWorking directory: %2").arg(key, QDir::currentPath()));
 	}
 
 	return settings.value(key);
@@ -270,11 +259,11 @@ QVariant MainWindow::setting(const QString &key)
 void MainWindow::setSetting(const QString &key, const QVariant &value)
 {
 	if (!settings.contains(key)) {
-		QMessageBox::warning(this,
-					   "Suspicious setting",
-					   "Attempted to create setting that doesn't already "
-					   "exist: "
-						   + key + ". Is this a typo?");
+		Notify(Severity::Warning,
+			 tr("New setting created"),
+			 tr("Request to set configuration key '%1' which does not already "
+			    "exist. Please report this warning to the developers.")
+				 .arg(key));
 	}
 
 	settings.setValue(key, value);
@@ -291,32 +280,37 @@ void MainWindow::showProgress()
 {
 	ui->owo->setEnabled(false);
 	ui->progressWidget->setVisible(true);
-	ui->startButton->setText("Compressing...");
+	ui->startButton->setText(tr("Compressing..."));
 }
 
 void MainWindow::hideProgress()
 {
 	ui->owo->setEnabled(true);
 	ui->progressWidget->setVisible(false);
-	ui->startButton->setText("Start compression");
+	ui->startButton->setText(tr("Start compression"));
 }
 
-void MainWindow::ShowMessageBox(QMessageBox::Icon severity,
-					  const QString &title,
-					  const QString &message,
-					  const QString &details)
+void MainWindow::Notify(Severity severity,
+				const QString &title,
+				const QString &message,
+				const QString &details)
 {
 	QFont font;
 	font.setBold(true);
 
 	QMessageBox dialog;
 	dialog.setWindowTitle(ui->owo->windowTitle());
-	dialog.setIcon(severity);
+	dialog.setIcon(severity == Severity::Critical ? QMessageBox::Critical
+								    : (QMessageBox::Icon) severity);
 	dialog.setText("<font size=5><b>" + title + ".</b></font>");
 	dialog.setInformativeText(message);
 	dialog.setDetailedText(details);
 	dialog.setStandardButtons(QMessageBox::Ok);
 	dialog.exec();
+
+	// wait until event loop has begun before attempting to exit
+	if (severity == Severity::Critical)
+		QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
