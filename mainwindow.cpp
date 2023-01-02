@@ -54,7 +54,7 @@ void MainWindow::parseContainers(QList<Container> *containers, QComboBox *comboB
 			= setting(containerName).toString().split(QRegularExpression("(\\s*),(\\s*)"));
 		Container container{containerName, supportedCodecs};
 		containers->append(container);
-		comboBox->addItem(containerName);
+		comboBox->addItem(containerName.toUpper());
 	}
 	settings.endGroup();
 }

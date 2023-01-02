@@ -32,15 +32,15 @@ void Compressor::compress(const QUrl& inputUrl,
 {
 	if (!container.supportedCodecs.contains(videoCodec.library)) {
 		emit compressionFailed(
-			tr("Selected container %1 does not support selected video codec %2")
-				.arg(container.name, videoCodec.name));
+			tr("Selected container %1 does not support selected video codec: %2.")
+				.arg(container.name.toUpper(), videoCodec.name));
 		return;
 	}
 
 	if (!container.supportedCodecs.contains(audioCodec.library)) {
 		emit compressionFailed(
-			tr("Selected container %1 does not support selected audio codec %2")
-				.arg(container.name, audioCodec.name));
+			tr("Selected container %1 does not support selected audio codec: %2.")
+				.arg(container.name.toUpper(), audioCodec.name));
 		return;
 	}
 
