@@ -25,6 +25,8 @@ void Compressor::compress(const QUrl& inputUrl,
 				  const Container& container,
 				  double sizeKbps,
 				  double audioQualityPercent,
+				  int width,
+				  int height,
 				  double minVideoBitrateKbps,
 				  double minAudioBitrateKbps,
 				  double maxAudioBitrateKbps,
@@ -41,6 +43,17 @@ void Compressor::compress(const QUrl& inputUrl,
 		emit compressionFailed(
 			tr("Selected container %1 does not support selected audio codec: %2.")
 				.arg(container.name.toUpper(), audioCodec.name));
+		return;
+	}
+
+	if (width < 0) {
+		emit compressionFailed(
+			tr("Output width must be greater than 0, but was %1").arg(QString::number(width)));
+		return;
+	}
+	if (height < 0) {
+		emit compressionFailed(tr("Output height must be greater than 0, but was %1")
+						     .arg(QString::number(height)));
 		return;
 	}
 
@@ -74,17 +87,32 @@ void Compressor::compress(const QUrl& inputUrl,
 
 	emit compressionStarted(videoBitrateKpbs, audioBitrateKbps);
 
+	QString widthParam;
+
+	if (width == AUTO_SIZE)
+		widthParam = height == AUTO_SIZE ? "iw" : "-1";
+	else
+		widthParam = QString::number(width);
+
+	QString heightParam = height == AUTO_SIZE ? "-2" : QString::number(height + height % 2);
+
 	QStringList fileName = inputUrl.fileName().split(".");
 	QString outputPath = outputDir.filePath(fileName.first() + "_" + fileSuffix + "."
 							    + container.name);
+	QString command
+		= QString(
+			  R"(ffmpeg.exe -i "%1" -c:v %2 -c:a %3 -b:v %4k -b:a %5k -vf scale=%6:%7%8 "%9" -y)")
+			  .arg(inputUrl.toLocalFile(),
+				 videoCodec.library,
+				 audioCodec.library,
+				 QString::number(videoBitrateKpbs),
+				 QString::number(audioBitrateKbps),
+				 widthParam,
+				 heightParam,
+				 width != AUTO_SIZE && height != AUTO_SIZE ? ",setsar=1/1" : "",
+				 outputPath);
 
-	QString command = QString(R"(ffmpeg.exe -i "%1" -c:v %2 -c:a %3 -b:v %4k -b:a %5k "%6" -y)")
-					.arg(inputUrl.toLocalFile(),
-					     videoCodec.library,
-					     audioCodec.library,
-					     QString::number(videoBitrateKpbs),
-					     QString::number(audioBitrateKbps),
-					     outputPath);
+	qDebug() << command;
 
 	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [=, this]() {
 		QString line = QString(ffmpeg->readAll());

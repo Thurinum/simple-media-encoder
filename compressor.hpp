@@ -31,6 +31,8 @@ public:
 		QStringList supportedCodecs;
 	};
 
+	static const int AUTO_SIZE = 0;
+
 	void compress(const QUrl& inputUrl,
 			  const QDir& outputDir,
 			  const QString& fileSuffix,
@@ -39,6 +41,8 @@ public:
 			  const Container& container,
 			  double sizeKbps,
 			  double audioQualityPercent,
+			  int width,
+			  int height,
 			  double minVideoBitrateKbps = 64,
 			  double minAudioBitrateKbps = 16,
 			  double maxAudioBitrateKbps = 256,

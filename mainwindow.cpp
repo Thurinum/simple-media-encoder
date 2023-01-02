@@ -20,7 +20,6 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
-
 	progressBarAnimation = new QPropertyAnimation(ui->progressBar, "value");
 	progressBarAnimation->setDuration(setting("Main/iProgressBarAnimDurationMs").toInt());
 	progressBarAnimation->setEasingCurve(QEasingCurve::InQuad);
@@ -89,6 +88,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 					   containers.at(ui->containerCombobox->currentIndex()),
 					   ui->sizeSpinBox->value() * sizeKbpsConversionFactor,
 					   ui->qualityRatioSlider->value() / 100.0,
+					   ui->widthSpinBox->value(),
+					   ui->heightSpinBox->value(),
 					   setting("Main/dMinBitrateVideoKbps").toDouble(),
 					   setting("Main/dMinBitrateAudioKbps").toDouble(),
 					   setting("Main/dMaxBitrateAudioKbps").toDouble());
