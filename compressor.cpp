@@ -25,8 +25,8 @@ void Compressor::compress(const QUrl& inputUrl,
 				  const Container& container,
 				  double sizeKbps,
 				  double audioQualityPercent,
-				  int width,
-				  int height,
+				  int outputWidth,
+				  int outputHeight,
 				  double minVideoBitrateKbps,
 				  double minAudioBitrateKbps,
 				  double maxAudioBitrateKbps,
@@ -46,20 +46,20 @@ void Compressor::compress(const QUrl& inputUrl,
 		return;
 	}
 
-	if (width < 0) {
-		emit compressionFailed(
-			tr("Output width must be greater than 0, but was %1").arg(QString::number(width)));
+	if (outputWidth < 0) {
+		emit compressionFailed(tr("Output width must be greater than 0, but was %1")
+						     .arg(QString::number(outputWidth)));
 		return;
 	}
-	if (height < 0) {
+	if (outputHeight < 0) {
 		emit compressionFailed(tr("Output height must be greater than 0, but was %1")
-						     .arg(QString::number(height)));
+						     .arg(QString::number(outputHeight)));
 		return;
 	}
 
 	// get media info
 	ffprobe->startCommand(QString("ffprobe.exe -v error -select_streams v:0 -show_entries "
-						"stream=width,height,duration -of "
+						"stream=width,height,display_aspect_ratio,duration -of "
 						"default=noprint_wrappers=1:nokey=1 \"%1\"")
 					    .arg(inputUrl.toLocalFile()));
 	ffprobe->waitForFinished();
@@ -67,7 +67,7 @@ void Compressor::compress(const QUrl& inputUrl,
 	// TODO: Refactor to use key value pairs
 	QStringList metadata = QString(ffprobe->readAll()).split("\r\n");
 	bool couldParseDuration = false;
-	QString durationOutput = metadata[2];
+	QString durationOutput = metadata[3];
 	double durationSeconds = durationOutput.toDouble(&couldParseDuration);
 
 	if (!couldParseDuration) {
@@ -79,24 +79,37 @@ void Compressor::compress(const QUrl& inputUrl,
 	// width and height scaling
 	QString widthParam;
 
-	if (width == AUTO_SIZE)
-		widthParam = height == AUTO_SIZE ? "iw" : "-1";
+	if (outputWidth == AUTO_SIZE)
+		widthParam = outputHeight == AUTO_SIZE ? "iw" : "-1";
 	else
-		widthParam = QString::number(width);
+		widthParam = QString::number(outputWidth);
 
-	QString heightParam = height == AUTO_SIZE ? "-2" : QString::number(height + height % 2);
+	QString heightParam = outputHeight == AUTO_SIZE
+					    ? "-2"
+					    : QString::number(outputHeight + outputHeight % 2);
 
 	// pixel ratio
 	double pixelRatio = 1;
 
-	if (width != AUTO_SIZE && height != AUTO_SIZE) {
-		double inputPixelCount = metadata[0].toInt() * metadata[1].toInt(); // w h
-		double outputPixelCount = width * height;
+	QStringList aspectRatio = metadata[2].split(":");
+	int aspectRatioW = aspectRatio.first().toInt();
+	int aspectRatioH = aspectRatio.last().toInt();
+	int inputWidth = metadata[0].toInt();
+	int inputHeight = metadata[1].toInt();
 
-		// TODO: Add option to enable bitrate compensation even when upscaling (will result in bigger files)
-		if (outputPixelCount > inputPixelCount)
-			pixelRatio = outputPixelCount / inputPixelCount;
+	double inputPixelCount = inputWidth * inputHeight;
+
+	if (outputWidth == AUTO_SIZE) {
+		outputWidth = outputHeight * aspectRatioW / aspectRatioH;
+	} else {
+		outputHeight = outputWidth * aspectRatioW / aspectRatioH;
 	}
+
+	double outputPixelCount = outputWidth * outputHeight;
+
+	// TODO: Add option to enable bitrate compensation even when upscaling (will result in bigger files)
+	if (outputPixelCount < inputPixelCount)
+		pixelRatio = outputPixelCount / inputPixelCount;
 
 	// calculate bitrate
 	double bitrateKbps = sizeKbps / durationSeconds * (1.0 - overshootCorrectionPercent);
@@ -128,7 +141,7 @@ void Compressor::compress(const QUrl& inputUrl,
 				 QString::number(audioBitrateKbps),
 				 widthParam,
 				 heightParam,
-				 width != AUTO_SIZE && height != AUTO_SIZE ? ",setsar=1/1" : "",
+				 outputWidth != AUTO_SIZE && outputHeight != AUTO_SIZE ? ",setsar=1/1" : "",
 				 outputPath);
 
 	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [=, this]() {
