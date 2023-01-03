@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QToolButton" name="toolButton">
+   <widget class="QToolButton" name="infoMenuToolButton">
     <property name="geometry">
      <rect>
       <x>687</x>
@@ -27,7 +27,7 @@
      <string>ⓘ</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label">
+   <widget class="QLabel" name="mainHeading">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -43,7 +43,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Simple Media Encoder</string>
+     <string>Efficient Media Encoder</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_2">
@@ -65,7 +65,7 @@
      <string>Select file to compress</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit">
+   <widget class="QLineEdit" name="inputFileLineEdit">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -84,7 +84,7 @@
      <string>Input file path</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="inputFileButton">
     <property name="geometry">
      <rect>
       <x>260</x>
@@ -97,7 +97,7 @@
      <string>Open...</string>
     </property>
    </widget>
-   <widget class="QDoubleSpinBox" name="doubleSpinBox">
+   <widget class="QDoubleSpinBox" name="fileSizeSpinBox">
     <property name="geometry">
      <rect>
       <x>380</x>
@@ -119,7 +119,7 @@
      <double>0.000000000000000</double>
     </property>
    </widget>
-   <widget class="QComboBox" name="comboBox">
+   <widget class="QComboBox" name="fileSizeComboBox">
     <property name="geometry">
      <rect>
       <x>440</x>
@@ -147,7 +147,7 @@
      </property>
     </item>
    </widget>
-   <widget class="QSlider" name="horizontalSlider">
+   <widget class="QSlider" name="audioQualitySlider">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -178,7 +178,7 @@
      <number>25</number>
     </property>
    </widget>
-   <widget class="QLabel" name="label_3">
+   <widget class="QLabel" name="audioQualityDisplayLabel">
     <property name="geometry">
      <rect>
       <x>300</x>
@@ -289,7 +289,7 @@
      <string>Scaled height</string>
     </property>
    </widget>
-   <widget class="QSpinBox" name="spinBox">
+   <widget class="QSpinBox" name="widthComboBox">
     <property name="geometry">
      <rect>
       <x>170</x>
@@ -311,7 +311,7 @@
      <number>0</number>
     </property>
    </widget>
-   <widget class="QSpinBox" name="spinBox_2">
+   <widget class="QSpinBox" name="heightComboBox">
     <property name="geometry">
      <rect>
       <x>260</x>
@@ -330,20 +330,20 @@
      <number>99999</number>
     </property>
    </widget>
-   <widget class="Line" name="line">
+   <widget class="Line" name="verticalLine">
     <property name="geometry">
      <rect>
       <x>350</x>
       <y>60</y>
       <width>20</width>
-      <height>331</height>
+      <height>321</height>
      </rect>
     </property>
     <property name="orientation">
      <enum>Qt::Vertical</enum>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_2">
+   <widget class="QPushButton" name="startCompressionButton">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -377,20 +377,23 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QLabel" name="label_11">
+   <widget class="QLabel" name="progressBarLabel">
     <property name="geometry">
      <rect>
       <x>330</x>
       <y>480</y>
-      <width>61</width>
+      <width>71</width>
       <height>16</height>
      </rect>
     </property>
     <property name="text">
      <string>Compressing...</string>
     </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
    </widget>
-   <widget class="QComboBox" name="comboBox_2">
+   <widget class="QComboBox" name="videoQualityPresetComboBox">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -420,7 +423,7 @@
      </property>
     </item>
    </widget>
-   <widget class="QLineEdit" name="lineEdit_2">
+   <widget class="QLineEdit" name="outputFolderField">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -458,7 +461,7 @@
      <string>Select output folder</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_3">
+   <widget class="QPushButton" name="outputFolderButton">
     <property name="geometry">
      <rect>
       <x>260</x>
@@ -490,7 +493,7 @@
      <string>After compression</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox">
+   <widget class="QCheckBox" name="openInExplorerCheckBox">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -503,7 +506,7 @@
      <string>Open in explorer</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox_2">
+   <widget class="QCheckBox" name="playCompressedMediaCheckBox">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -516,7 +519,7 @@
      <string>Play compressed media</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox_3">
+   <widget class="QCheckBox" name="closeUtilityCheckBox">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -529,7 +532,7 @@
      <string>Close this utility</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit_3">
+   <widget class="QLineEdit" name="outputFileNameLineEdit">
     <property name="geometry">
      <rect>
       <x>160</x>
@@ -567,7 +570,7 @@
      <string>Output file name</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox_6">
+   <widget class="QCheckBox" name="advancedModeCheckBox">
     <property name="geometry">
      <rect>
       <x>510</x>
@@ -608,7 +611,7 @@
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QComboBox" name="comboBox_5">
+   <widget class="QComboBox" name="containerComboBox">
     <property name="geometry">
      <rect>
       <x>620</x>
@@ -675,7 +678,7 @@
      <string>Video Codec</string>
     </property>
    </widget>
-   <widget class="QPlainTextEdit" name="plainTextEdit">
+   <widget class="QPlainTextEdit" name="customCommandTextEdit">
     <property name="geometry">
      <rect>
       <x>530</x>
@@ -707,7 +710,7 @@
      <string>Container</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox_4">
+   <widget class="QCheckBox" name="warnOnOverwriteCheckBox">
     <property name="geometry">
      <rect>
       <x>530</x>
@@ -720,7 +723,7 @@
      <string>Warn when overwriting the input file</string>
     </property>
    </widget>
-   <widget class="QComboBox" name="comboBox_4">
+   <widget class="QComboBox" name="audioCodecComboBox">
     <property name="geometry">
      <rect>
       <x>500</x>
@@ -730,7 +733,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QComboBox" name="comboBox_3">
+   <widget class="QComboBox" name="videoCodecComboBox">
     <property name="geometry">
      <rect>
       <x>380</x>
@@ -762,7 +765,7 @@
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox_5">
+   <widget class="QCheckBox" name="deleteOnSuccessCheckBox">
     <property name="geometry">
      <rect>
       <x>530</x>
@@ -775,7 +778,7 @@
      <string>Delete input file on success</string>
     </property>
    </widget>
-   <widget class="QTextEdit" name="textEdit">
+   <widget class="QTextEdit" name="statisticsTextEdit">
     <property name="geometry">
      <rect>
       <x>380</x>
@@ -810,7 +813,7 @@
      <string>Output file suffix</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="lineEdit_4">
+   <widget class="QLineEdit" name="outputFileSuffixLineEdit">
     <property name="geometry">
      <rect>
       <x>380</x>
@@ -826,7 +829,7 @@
      <string>Will be added to output name</string>
     </property>
    </widget>
-   <widget class="QCheckBox" name="checkBox_7">
+   <widget class="QCheckBox" name="noAutoFillCheckBox">
     <property name="geometry">
      <rect>
       <x>530</x>
