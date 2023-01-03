@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>732</width>
-    <height>560</height>
+    <width>730</width>
+    <height>511</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,7 +43,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Simple Media Compressor</string>
+     <string>Simple Media Encoder</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_2">
@@ -75,6 +75,12 @@
      </rect>
     </property>
     <property name="text">
+     <string/>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+    <property name="placeholderText">
      <string>Input file path</string>
     </property>
    </widget>
@@ -94,11 +100,14 @@
    <widget class="QDoubleSpinBox" name="doubleSpinBox">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>310</y>
+      <x>380</x>
+      <y>250</y>
       <width>51</width>
       <height>22</height>
      </rect>
+    </property>
+    <property name="specialValueText">
+     <string>Auto</string>
     </property>
     <property name="minimum">
      <double>0.000000000000000</double>
@@ -113,11 +122,14 @@
    <widget class="QComboBox" name="comboBox">
     <property name="geometry">
      <rect>
-      <x>80</x>
-      <y>310</y>
+      <x>440</x>
+      <y>250</y>
       <width>71</width>
       <height>22</height>
      </rect>
+    </property>
+    <property name="currentIndex">
+     <number>1</number>
     </property>
     <item>
      <property name="text">
@@ -185,8 +197,8 @@
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>290</y>
+      <x>380</x>
+      <y>230</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -324,7 +336,7 @@
       <x>350</x>
       <y>60</y>
       <width>20</width>
-      <height>371</height>
+      <height>331</height>
      </rect>
     </property>
     <property name="orientation">
@@ -335,7 +347,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>450</y>
+      <y>400</y>
       <width>691</width>
       <height>41</height>
      </rect>
@@ -353,7 +365,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>500</y>
+      <y>450</y>
       <width>691</width>
       <height>23</height>
      </rect>
@@ -369,7 +381,7 @@
     <property name="geometry">
      <rect>
       <x>330</x>
-      <y>530</y>
+      <y>480</y>
       <width>61</width>
       <height>16</height>
      </rect>
@@ -389,17 +401,17 @@
     </property>
     <item>
      <property name="text">
-      <string>Fastest compression</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
       <string>Smallest file size</string>
      </property>
     </item>
     <item>
      <property name="text">
       <string>Highest quality</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>Fastest compression</string>
      </property>
     </item>
     <item>
@@ -418,6 +430,12 @@
      </rect>
     </property>
     <property name="text">
+     <string/>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+    <property name="placeholderText">
      <string>Output folder path</string>
     </property>
    </widget>
@@ -457,7 +475,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>350</y>
+      <y>290</y>
       <width>91</width>
       <height>16</height>
      </rect>
@@ -476,7 +494,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>370</y>
+      <y>310</y>
       <width>91</width>
       <height>18</height>
      </rect>
@@ -489,7 +507,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>390</y>
+      <y>330</y>
       <width>111</width>
       <height>18</height>
      </rect>
@@ -502,7 +520,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>410</y>
+      <y>350</y>
       <width>111</width>
       <height>18</height>
      </rect>
@@ -514,20 +532,26 @@
    <widget class="QLineEdit" name="lineEdit_3">
     <property name="geometry">
      <rect>
-      <x>170</x>
+      <x>160</x>
       <y>310</y>
-      <width>171</width>
+      <width>181</width>
       <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>Leave empty to overwrite</string>
+     <string/>
+    </property>
+    <property name="readOnly">
+     <bool>false</bool>
+    </property>
+    <property name="placeholderText">
+     <string>Leave empty to keep original</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_16">
     <property name="geometry">
      <rect>
-      <x>170</x>
+      <x>160</x>
       <y>290</y>
       <width>131</width>
       <height>16</height>
@@ -540,7 +564,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Output file suffix</string>
+     <string>Output file name</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="checkBox_6">
@@ -556,7 +580,7 @@
      <enum>Qt::RightToLeft</enum>
     </property>
     <property name="text">
-     <string>Advanced mode </string>
+     <string>Expert mode </string>
     </property>
     <property name="checked">
      <bool>true</bool>
@@ -588,7 +612,7 @@
     <property name="geometry">
      <rect>
       <x>620</x>
-      <y>350</y>
+      <y>190</y>
       <width>91</width>
       <height>22</height>
      </rect>
@@ -597,7 +621,7 @@
    <widget class="QLabel" name="label_17">
     <property name="geometry">
      <rect>
-      <x>380</x>
+      <x>530</x>
       <y>230</y>
       <width>101</width>
       <height>16</height>
@@ -616,8 +640,8 @@
    <widget class="QLabel" name="label_12">
     <property name="geometry">
      <rect>
-      <x>620</x>
-      <y>280</y>
+      <x>500</x>
+      <y>170</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -632,102 +656,11 @@
      <string>Audio Codec</string>
     </property>
    </widget>
-   <widget class="QTableWidget" name="tableWidget">
-    <property name="geometry">
-     <rect>
-      <x>380</x>
-      <y>80</y>
-      <width>331</width>
-      <height>131</height>
-     </rect>
-    </property>
-    <property name="frameShadow">
-     <enum>QFrame::Plain</enum>
-    </property>
-    <property name="showGrid">
-     <bool>true</bool>
-    </property>
-    <property name="gridStyle">
-     <enum>Qt::SolidLine</enum>
-    </property>
-    <property name="sortingEnabled">
-     <bool>false</bool>
-    </property>
-    <attribute name="horizontalHeaderCascadingSectionResizes">
-     <bool>false</bool>
-    </attribute>
-    <attribute name="horizontalHeaderDefaultSectionSize">
-     <number>125</number>
-    </attribute>
-    <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-     <bool>false</bool>
-    </attribute>
-    <attribute name="horizontalHeaderStretchLastSection">
-     <bool>true</bool>
-    </attribute>
-    <attribute name="verticalHeaderStretchLastSection">
-     <bool>false</bool>
-    </attribute>
-    <row>
-     <property name="text">
-      <string>Width</string>
-     </property>
-    </row>
-    <row>
-     <property name="text">
-      <string>Height</string>
-     </property>
-    </row>
-    <row>
-     <property name="text">
-      <string>Aspect ratio</string>
-     </property>
-    </row>
-    <row>
-     <property name="text">
-      <string>Duration</string>
-     </property>
-    </row>
-    <row>
-     <property name="text">
-      <string>Video bitrate</string>
-     </property>
-    </row>
-    <row>
-     <property name="text">
-      <string>Audio bitrate</string>
-     </property>
-    </row>
-    <column>
-     <property name="text">
-      <string>Input</string>
-     </property>
-     <property name="background">
-      <color>
-       <red>233</red>
-       <green>233</green>
-       <blue>233</blue>
-      </color>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Output</string>
-     </property>
-     <property name="background">
-      <color>
-       <red>249</red>
-       <green>249</green>
-       <blue>249</blue>
-      </color>
-     </property>
-    </column>
-   </widget>
    <widget class="QLabel" name="label_8">
     <property name="geometry">
      <rect>
-      <x>620</x>
-      <y>230</y>
+      <x>380</x>
+      <y>170</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -745,9 +678,9 @@
    <widget class="QPlainTextEdit" name="plainTextEdit">
     <property name="geometry">
      <rect>
-      <x>380</x>
+      <x>530</x>
       <y>250</y>
-      <width>221</width>
+      <width>181</width>
       <height>31</height>
      </rect>
     </property>
@@ -759,7 +692,7 @@
     <property name="geometry">
      <rect>
       <x>620</x>
-      <y>330</y>
+      <y>170</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -777,21 +710,21 @@
    <widget class="QCheckBox" name="checkBox_4">
     <property name="geometry">
      <rect>
-      <x>380</x>
+      <x>530</x>
       <y>320</y>
       <width>161</width>
       <height>18</height>
      </rect>
     </property>
     <property name="text">
-     <string>Empty all your bank account</string>
+     <string>Warn when overwriting the input file</string>
     </property>
    </widget>
    <widget class="QComboBox" name="comboBox_4">
     <property name="geometry">
      <rect>
-      <x>620</x>
-      <y>300</y>
+      <x>500</x>
+      <y>190</y>
       <width>91</width>
       <height>22</height>
      </rect>
@@ -800,8 +733,8 @@
    <widget class="QComboBox" name="comboBox_3">
     <property name="geometry">
      <rect>
-      <x>620</x>
-      <y>250</y>
+      <x>380</x>
+      <y>190</y>
       <width>91</width>
       <height>22</height>
      </rect>
@@ -810,7 +743,7 @@
    <widget class="QLabel" name="label_15">
     <property name="geometry">
      <rect>
-      <x>380</x>
+      <x>530</x>
       <y>300</y>
       <width>131</width>
       <height>16</height>
@@ -827,6 +760,83 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBox_5">
+    <property name="geometry">
+     <rect>
+      <x>530</x>
+      <y>340</y>
+      <width>171</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Delete input file on success</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="textEdit">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>80</y>
+      <width>331</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+    <property name="placeholderText">
+     <string>Statistics on selected file will show up here</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_18">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>290</y>
+      <width>131</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Segoe UI</family>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Output file suffix</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_4">
+    <property name="geometry">
+     <rect>
+      <x>380</x>
+      <y>310</y>
+      <width>131</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="placeholderText">
+     <string>Will be added to output name</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="checkBox_7">
+    <property name="geometry">
+     <rect>
+      <x>530</x>
+      <y>360</y>
+      <width>171</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Don't autofill on input file selection</string>
     </property>
    </widget>
   </widget>
