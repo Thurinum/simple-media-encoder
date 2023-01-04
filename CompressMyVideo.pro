@@ -14,7 +14,7 @@ HEADERS += \
 
 FORMS += \
     mainwindow.ui \
-    mainwindow2.ui
+    mainwindow.ui.old
 
 DISTFILES += \
 	config.ini

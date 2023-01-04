@@ -54,6 +54,8 @@ private:
 	void setProgress(int progressPercent);
 	void hideProgress();
 
+	void SetAdvancedMode(bool enabled);
+
 	void Notify(Severity severity,
 			const QString& title,
 			const QString& message,
