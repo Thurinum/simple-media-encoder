@@ -373,10 +373,10 @@ void MainWindow::SetAdvancedMode(bool enabled)
 										 "maximumWidth",
 										 this);
 	QPropertyAnimation *windowAnimation = new QPropertyAnimation(this, "size");
-	animation->setDuration(1000);
-	windowAnimation->setDuration(1000);
-	animation->setEasingCurve(QEasingCurve::InOutBounce);
-	windowAnimation->setEasingCurve(QEasingCurve::InOutBounce);
+	animation->setDuration(250);
+	windowAnimation->setDuration(250);
+	animation->setEasingCurve(QEasingCurve::InOutQuad);
+	windowAnimation->setEasingCurve(QEasingCurve::InOutQuad);
 
 	connect(animation, &QPropertyAnimation::finished, [this, windowAnimation]() {
 		windowAnimation->setStartValue(this->size());
@@ -388,7 +388,7 @@ void MainWindow::SetAdvancedMode(bool enabled)
 		animation->setStartValue(0);
 		animation->setEndValue(1000);
 	} else {
-		animation->setStartValue(1000);
+		animation->setStartValue(ui->advancedSection->width());
 		animation->setEndValue(0);
 	}
 
