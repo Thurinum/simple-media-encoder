@@ -320,6 +320,7 @@ void MainWindow::SetProgressShown(bool shown, int progressPercent)
 	if (shown && ui->progressWidget->maximumHeight() == 0) {
 		ui->centralWidget->setEnabled(false);
 		ui->startCompressionButton->setText(tr("Compressing..."));
+		ui->progressWidgetTopSpacer->changeSize(0, 10);
 		heightAnimation->setStartValue(0);
 		heightAnimation->setEndValue(500);
 		heightAnimation->start();
@@ -328,6 +329,7 @@ void MainWindow::SetProgressShown(bool shown, int progressPercent)
 	if (!shown && ui->progressWidget->maximumHeight() > 0) {
 		ui->centralWidget->setEnabled(true);
 		ui->startCompressionButton->setText(tr("Start compression"));
+		ui->progressWidgetTopSpacer->changeSize(0, 0);
 		heightAnimation->setStartValue(ui->progressWidget->height());
 		heightAnimation->setEndValue(0);
 		heightAnimation->start();
