@@ -108,7 +108,7 @@ void Compressor::compress(const QUrl& inputUrl,
 	double outputPixelCount = outputWidth * outputHeight;
 
 	// TODO: Add option to enable bitrate compensation even when upscaling (will result in bigger files)
-	if (outputPixelCount < inputPixelCount)
+	if (outputPixelCount > 0 && outputPixelCount < inputPixelCount)
 		pixelRatio = outputPixelCount / inputPixelCount;
 
 	// calculate bitrate
