@@ -369,30 +369,30 @@ void MainWindow::hideProgress()
 
 void MainWindow::SetAdvancedMode(bool enabled)
 {
-	QPropertyAnimation *animation = new QPropertyAnimation(ui->advancedSection,
-										 "maximumWidth",
-										 this);
-	QPropertyAnimation *windowAnimation = new QPropertyAnimation(this, "size");
-	animation->setDuration(250);
-	windowAnimation->setDuration(250);
-	animation->setEasingCurve(QEasingCurve::InOutQuad);
+	auto *sectionAnimation = new QPropertyAnimation(ui->advancedSection, "maximumWidth", this);
+	auto *windowAnimation = new QPropertyAnimation(this, "size");
+	int duration = setting("Main/iSectionAnimDurationMs").toInt();
+
+	sectionAnimation->setDuration(duration);
+	sectionAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+	windowAnimation->setDuration(duration);
 	windowAnimation->setEasingCurve(QEasingCurve::InOutQuad);
 
-	connect(animation, &QPropertyAnimation::finished, [this, windowAnimation]() {
+	connect(sectionAnimation, &QPropertyAnimation::finished, [this, windowAnimation]() {
 		windowAnimation->setStartValue(this->size());
 		windowAnimation->setEndValue(this->minimumSizeHint());
 		windowAnimation->start();
 	});
 
 	if (enabled) {
-		animation->setStartValue(0);
-		animation->setEndValue(1000);
+		sectionAnimation->setStartValue(0);
+		sectionAnimation->setEndValue(1000);
 	} else {
-		animation->setStartValue(ui->advancedSection->width());
-		animation->setEndValue(0);
+		sectionAnimation->setStartValue(ui->advancedSection->width());
+		sectionAnimation->setEndValue(0);
 	}
 
-	animation->start();
+	sectionAnimation->start();
 }
 
 void MainWindow::Notify(Severity severity,
