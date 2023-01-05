@@ -21,12 +21,9 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
-	progressBarAnimation = new QPropertyAnimation(ui->progressBar, "value");
-	progressBarAnimation->setDuration(setting("Main/iProgressBarAnimDurationMs").toInt());
-	progressBarAnimation->setEasingCurve(QEasingCurve::InQuad);
-	ui->progressWidget->setVisible(false);
 
-	QTimer::singleShot(0, this, [this]() { SetAdvancedMode(false); });
+	SetProgressShown(false);
+	SetAdvancedMode(false);
 
 	// menu
 	QMenu *menu = new QMenu(this);
@@ -85,7 +82,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			break;
 		}
 
-		showProgress();
+		SetProgressShown(true);
 		compressor->compress(selectedUrl,
 					   ui->outputFolderLineEdit->text().isEmpty()
 						   ? QDir::currentPath()
@@ -117,7 +114,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	connect(compressor,
 		  &Compressor::compressionSucceeded,
 		  [this](double requestedSizeKbps, double actualSizeKbps, QFile *outputFile) {
-			  setProgress(100);
+			  SetProgressShown(true, 100);
 			  Notify(Severity::Info,
 				   tr("Compressed successfully"),
 				   QString(tr("Requested size was %1 kb.\nActual "
@@ -125,8 +122,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 					   .arg(QString::number(requestedSizeKbps),
 						  QString::number(actualSizeKbps)));
 
-			  setProgress(0);
-			  hideProgress();
+			  SetProgressShown(false);
 
 			  QFileInfo fileInfo(*outputFile);
 			  if (ui->openExplorerOnSuccessCheckBox->isChecked()) {
@@ -142,32 +138,20 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			  if (ui->closeOnSuccessCheckBox->isChecked()) {
 				  QApplication::exit(0);
 			  }
-
-			  // Looks like windows clipboard doesn't support either videos or large clipboard items
-			  //			  if (ui->copyToClipboardCheckbox->isChecked()) {
-			  //				  QFileInfo fileInfo(*outputFile);
-			  //				  QMimeType type = QMimeDatabase().mimeTypeForFile(fileInfo);
-			  //				  QMimeData *mimeData = new QMimeData();
-			  //				  QByteArray data = outputFile->readAll();
-			  //				  QClipboard *clippy = QGuiApplication::clipboard();
-
-			  //				  mimeData->setData("text/plain", data);
-			  //				  clippy->setMimeData(mimeData);
-			  //				  outputFile->close();
-			  //			  }
 		  });
 
 	// handle failed compression
 	connect(compressor,
 		  &Compressor::compressionFailed,
 		  [this](const QString &shortError, const QString &longError) {
-			  setProgress(0);
 			  Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
-			  hideProgress();
+			  SetProgressShown(true);
 		  });
 
 	// handle compression progress updates
-	connect(compressor, &Compressor::compressionProgressUpdate, this, &MainWindow::setProgress);
+	connect(compressor, &Compressor::compressionProgressUpdate, this, [this](int progress) {
+		SetProgressShown(true, progress);
+	});
 
 	// show name of file picked with file dialog
 	connect(ui->inputFileButton, &QPushButton::clicked, [this]() {
@@ -346,25 +330,35 @@ void MainWindow::setSetting(const QString &key, const QVariant &value)
 	settings.setValue(key, value);
 }
 
-void MainWindow::setProgress(int progressPercent)
+void MainWindow::SetProgressShown(bool shown, int progressPercent)
 {
-	progressBarAnimation->setStartValue(ui->progressBar->value());
-	progressBarAnimation->setEndValue(progressPercent);
-	progressBarAnimation->start();
-}
+	auto *valueAnimation = new QPropertyAnimation(ui->progressBar, "value");
+	valueAnimation->setDuration(setting("Main/iProgressBarAnimDurationMs").toInt());
+	valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
 
-void MainWindow::showProgress()
-{
-	ui->centralWidget->setEnabled(false);
-	ui->progressWidget->setVisible(true);
-	ui->startCompressionButton->setText(tr("Compressing..."));
-}
+	auto *heightAnimation = new QPropertyAnimation(ui->progressWidget, "maximumHeight");
+	valueAnimation->setDuration(setting("Main/iProgressWidgetAnimDurationMs").toInt());
+	valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
 
-void MainWindow::hideProgress()
-{
-	ui->centralWidget->setEnabled(true);
-	ui->progressWidget->setVisible(false);
-	ui->startCompressionButton->setText(tr("Start compression"));
+	if (shown && ui->progressWidget->maximumHeight() == 0) {
+		ui->centralWidget->setEnabled(false);
+		ui->startCompressionButton->setText(tr("Compressing..."));
+		heightAnimation->setStartValue(0);
+		heightAnimation->setEndValue(500);
+		heightAnimation->start();
+	}
+
+	if (!shown && ui->progressWidget->maximumHeight() > 0) {
+		ui->centralWidget->setEnabled(true);
+		ui->startCompressionButton->setText(tr("Start compression"));
+		heightAnimation->setStartValue(ui->progressWidget->height());
+		heightAnimation->setEndValue(0);
+		heightAnimation->start();
+	}
+
+	valueAnimation->setStartValue(ui->progressBar->value());
+	valueAnimation->setEndValue(progressPercent);
+	valueAnimation->start();
 }
 
 void MainWindow::SetAdvancedMode(bool enabled)

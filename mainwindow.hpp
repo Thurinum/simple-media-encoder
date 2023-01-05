@@ -43,16 +43,13 @@ protected:
 private:
 	const QString CONFIG_FILE = "config.ini";
 	Ui::MainWindow* ui;
-	QPropertyAnimation* progressBarAnimation;
 
 	QUrl selectedUrl;
 	QDir selectedDir;
 	Compressor* compressor = new Compressor(this);
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
 
-	void showProgress();
-	void setProgress(int progressPercent);
-	void hideProgress();
+	void SetProgressShown(bool shown, int progressPercent = 0);
 
 	void SetAdvancedMode(bool enabled);
 
