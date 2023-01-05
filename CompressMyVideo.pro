@@ -13,8 +13,7 @@ HEADERS += \
     mainwindow.hpp
 
 FORMS += \
-    mainwindow.ui \
-    mainwindow.ui.old
+    mainwindow.ui
 
 DISTFILES += \
 	config.ini
