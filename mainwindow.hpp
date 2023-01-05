@@ -44,8 +44,6 @@ private:
 	const QString CONFIG_FILE = "config.ini";
 	Ui::MainWindow* ui;
 
-	QUrl selectedUrl;
-	QDir selectedDir;
 	Compressor* compressor = new Compressor(this);
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
 

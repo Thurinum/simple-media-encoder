@@ -259,10 +259,13 @@
                <string/>
               </property>
               <property name="readOnly">
-               <bool>true</bool>
+               <bool>false</bool>
               </property>
               <property name="placeholderText">
-               <string>Input file path</string>
+               <string>Please open a file</string>
+              </property>
+              <property name="clearButtonEnabled">
+               <bool>true</bool>
               </property>
              </widget>
             </item>
@@ -343,10 +346,13 @@
                <string/>
               </property>
               <property name="readOnly">
-               <bool>true</bool>
+               <bool>false</bool>
               </property>
               <property name="placeholderText">
-               <string>Output folder path</string>
+               <string>Leave empty to use input path</string>
+              </property>
+              <property name="clearButtonEnabled">
+               <bool>true</bool>
               </property>
              </widget>
             </item>

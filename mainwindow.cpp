@@ -61,6 +61,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	// start compression button
 	connect(ui->startCompressionButton, &QPushButton::clicked, [=, this]() {
+		QUrl selectedUrl(ui->inputFileLineEdit->text());
+
 		if (!selectedUrl.isValid()) {
 			Notify(Severity::Info,
 				 tr("No file selected"),
@@ -160,7 +162,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 									 "*");
 
 		ui->inputFileLineEdit->setText(fileUrl.toLocalFile());
-		selectedUrl = fileUrl;
 	});
 
 	// show name of file picked with file dialog
@@ -170,7 +171,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 									   QDir::currentPath());
 
 		ui->outputFolderLineEdit->setText(dir.absolutePath());
-		selectedDir = dir;
 	});
 
 	// show value in kbps of audio quality slider
@@ -396,8 +396,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	// save current parameters for next program run
 	setSetting("LastDesired/bAdvancedMode", ui->advancedModeCheckBox->isChecked());
 
-	setSetting("LastDesired/sInputFile", selectedUrl);
-	setSetting("LastDesired/sOutputDir", selectedDir.absolutePath());
+	setSetting("LastDesired/sInputFile", ui->inputFileLineEdit->text());
+	setSetting("LastDesired/sOutputDir", ui->outputFolderLineEdit->text());
 	setSetting("LastDesired/dFileSize", ui->fileSizeSpinBox->value());
 	setSetting("LastDesired/sFileSizeUnit", ui->fileSizeUnitComboBox->currentText());
 	setSetting("LastDesired/sFileSuffix", ui->outputFileSuffixLineEdit->text());
@@ -423,13 +423,13 @@ void MainWindow::LoadState()
 	if (setting("LastDesired/bAdvancedMode").toBool())
 		ui->advancedModeCheckBox->click();
 
-	selectedUrl = QUrl(setting("LastDesired/sInputFile").toString());
-	selectedDir = QDir(setting("LastDesired/sOutputDir").toString());
+	QString selectedUrl = setting("LastDesired/sInputFile").toString();
+	QString selectedDir = setting("LastDesired/sOutputDir").toString();
 
-	if (QFile::exists(selectedUrl.toLocalFile()))
-		ui->inputFileLineEdit->setText(selectedUrl.toLocalFile());
-	if (selectedDir.exists())
-		ui->outputFolderLineEdit->setText(selectedDir.absolutePath());
+	if (QFile::exists(selectedUrl))
+		ui->inputFileLineEdit->setText(selectedUrl);
+	if (QDir(selectedDir).exists())
+		ui->outputFolderLineEdit->setText(selectedDir);
 
 	ui->outputFileSuffixLineEdit->setText(setting("LastDesired/sFileSuffix").toString());
 
