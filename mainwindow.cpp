@@ -61,12 +61,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	// start compression button
 	connect(ui->startCompressionButton, &QPushButton::clicked, [=, this]() {
-		QUrl selectedUrl(ui->inputFileLineEdit->text());
+		QString selectedPath = ui->inputFileLineEdit->text();
+		QUrl selectedUrl(selectedPath);
 
 		if (!selectedUrl.isValid()) {
 			Notify(Severity::Info,
 				 tr("No file selected"),
 				 tr("Please select a file to compress."));
+			return;
+		}
+
+		if (!QFile::exists(selectedPath)) {
+			Notify(Severity::Info,
+				 tr("File not found"),
+				 tr("File '%1' does not exist. Please select a valid file.")
+					 .arg(selectedPath));
 			return;
 		}
 
