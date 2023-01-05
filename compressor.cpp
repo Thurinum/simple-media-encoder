@@ -57,9 +57,6 @@ void Compressor::compress(const QUrl& inputUrl,
 		return;
 	}
 
-	// get media info
-	QString commandPrefix = QSysInfo::kernelType() == "winnt" ? ".exe" : "";
-
 	ffprobe->startCommand(QString("ffprobe%1 -v error -select_streams v:0 -show_entries "
 						"stream=width,height,display_aspect_ratio,duration -of "
 						"default=noprint_wrappers=1:nokey=1 \"%2\"")
@@ -207,7 +204,7 @@ void Compressor::compress(const QUrl& inputUrl,
 
 QString Compressor::availableFormats()
 {
-    ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(QSysInfo::kernelType() == "winnt" ? ".exe" : ""));
+    ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(commandPrefix));
 	ffmpeg->waitForFinished();
 	return ffmpeg->readAllStandardOutput();
 }
