@@ -49,8 +49,9 @@ private:
 	Compressor* compressor = new Compressor(this);
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
 
-	void SetProgressShown(bool shown, int progressPercent = 0);
+	void LoadState();
 
+	void SetProgressShown(bool shown, int progressPercent = 0);
 	void SetAdvancedMode(bool enabled);
 
 	void Notify(Severity severity,

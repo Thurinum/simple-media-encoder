@@ -181,29 +181,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
 	});
 
-	// restore UI state on run
-	selectedUrl = QUrl(setting("LastDesired/sInputFile").toString());
-	selectedDir = QDir(setting("LastDesired/sOutputDir").toString());
-
-	if (QFile::exists(selectedUrl.toLocalFile()))
-		ui->inputFileLineEdit->setText(selectedUrl.toLocalFile());
-	if (selectedDir.exists())
-		ui->outputFolderLineEdit->setText(selectedDir.absolutePath());
-
-	ui->fileSizeSpinBox->setValue(setting("LastDesired/dFileSize").toDouble());
-	ui->outputFileSuffixLineEdit->setText(setting("LastDesired/sFileSuffix").toString());
-	ui->fileSizeUnitComboBox->setCurrentText(setting("LastDesired/sFileSizeUnit").toString());
-	ui->audioQualitySlider->setValue(setting("LastDesired/iQualityRatio").toInt());
-	ui->videoCodecComboBox->setCurrentText(setting("LastDesired/sVideoCodec").toString());
-	ui->audioCodecComboBox->setCurrentText(setting("LastDesired/sAudioCodec").toString());
-	ui->containerComboBox->setCurrentText(setting("LastDesired/sContainer").toString());
-	ui->widthSpinBox->setValue(setting("LastDesired/iWidth").toInt());
-	ui->heightSpinBox->setValue(setting("LastDesired/iHeight").toInt());
-	ui->openExplorerOnSuccessCheckBox->setChecked(
-		setting("LastDesired/bOpenInExplorerOnSuccess").toBool());
-	ui->playOnSuccessCheckBox->setChecked(setting("LastDesired/bPlayResultOnSuccess").toBool());
-	ui->closeOnSuccessCheckBox->setChecked(setting("LastDesired/bCloseOnSuccess").toBool());
-	emit ui->audioQualitySlider->valueChanged(ui->audioQualitySlider->value());
+	LoadState();
 }
 
 MainWindow::~MainWindow()
@@ -414,6 +392,8 @@ void MainWindow::Notify(Severity severity,
 void MainWindow::closeEvent(QCloseEvent *event)
 {	
 	// save current parameters for next program run
+	setSetting("LastDesired/bAdvancedMode", ui->advancedModeCheckBox->isChecked());
+
 	setSetting("LastDesired/sInputFile", selectedUrl);
 	setSetting("LastDesired/sOutputDir", selectedDir.absolutePath());
 	setSetting("LastDesired/dFileSize", ui->fileSizeSpinBox->value());
@@ -434,4 +414,37 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	setSetting("LastDesired/bCloseOnSuccess", ui->closeOnSuccessCheckBox->isChecked());
 
 	event->accept();
+}
+
+void MainWindow::LoadState()
+{
+	if (setting("LastDesired/bAdvancedMode").toBool())
+		ui->advancedModeCheckBox->click();
+
+	selectedUrl = QUrl(setting("LastDesired/sInputFile").toString());
+	selectedDir = QDir(setting("LastDesired/sOutputDir").toString());
+
+	if (QFile::exists(selectedUrl.toLocalFile()))
+		ui->inputFileLineEdit->setText(selectedUrl.toLocalFile());
+	if (selectedDir.exists())
+		ui->outputFolderLineEdit->setText(selectedDir.absolutePath());
+
+	ui->outputFileSuffixLineEdit->setText(setting("LastDesired/sFileSuffix").toString());
+
+	ui->fileSizeSpinBox->setValue(setting("LastDesired/dFileSize").toDouble());
+	ui->fileSizeUnitComboBox->setCurrentText(setting("LastDesired/sFileSizeUnit").toString());
+	ui->audioQualitySlider->setValue(setting("LastDesired/iQualityRatio").toInt());
+	emit ui->audioQualitySlider->valueChanged(ui->audioQualitySlider->value());
+
+	ui->videoCodecComboBox->setCurrentText(setting("LastDesired/sVideoCodec").toString());
+	ui->audioCodecComboBox->setCurrentText(setting("LastDesired/sAudioCodec").toString());
+	ui->containerComboBox->setCurrentText(setting("LastDesired/sContainer").toString());
+
+	ui->widthSpinBox->setValue(setting("LastDesired/iWidth").toInt());
+	ui->heightSpinBox->setValue(setting("LastDesired/iHeight").toInt());
+
+	ui->openExplorerOnSuccessCheckBox->setChecked(
+		setting("LastDesired/bOpenInExplorerOnSuccess").toBool());
+	ui->playOnSuccessCheckBox->setChecked(setting("LastDesired/bPlayResultOnSuccess").toBool());
+	ui->closeOnSuccessCheckBox->setChecked(setting("LastDesired/bCloseOnSuccess").toBool());
 }
