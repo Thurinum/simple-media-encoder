@@ -144,7 +144,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  &Compressor::compressionFailed,
 		  [this](const QString &shortError, const QString &longError) {
 			  Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
-			  SetProgressShown(true);
+			  SetProgressShown(false);
 		  });
 
 	// handle compression progress updates
