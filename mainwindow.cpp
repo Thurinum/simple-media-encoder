@@ -426,9 +426,9 @@ void MainWindow::LoadState()
 	QString selectedUrl = setting("LastDesired/sInputFile").toString();
 	QString selectedDir = setting("LastDesired/sOutputDir").toString();
 
-	if (QFile::exists(selectedUrl))
+	if (selectedUrl == "" || QFile::exists(selectedUrl))
 		ui->inputFileLineEdit->setText(selectedUrl);
-	if (QDir(selectedDir).exists())
+	if (selectedDir == "" || QDir(selectedDir).exists())
 		ui->outputFolderLineEdit->setText(selectedDir);
 
 	ui->outputFileSuffixLineEdit->setText(setting("LastDesired/sFileSuffix").toString());
