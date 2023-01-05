@@ -66,13 +66,20 @@ void Compressor::compress(const QUrl& inputUrl,
 
 	// TODO: Refactor to use key value pairs
 	QStringList metadata = QString(ffprobe->readAll()).split("\r\n");
+
+	if (metadata.count() != 5) {
+		emit compressionFailed(tr("Could not retrieve media metadata. Is the file corrupted?"),
+					     tr("Found metadata: %1").arg(metadata.join(", ")));
+		return;
+	}
+
 	bool couldParseDuration = false;
 	QString durationOutput = metadata[3];
 	double durationSeconds = durationOutput.toDouble(&couldParseDuration);
 
 	if (!couldParseDuration) {
-		emit compressionFailed(tr("Media file is not found, invalid, or corrupted."),
-					     durationOutput);
+		emit compressionFailed(tr("Failed to parse media duration. Is the file corrupted?"),
+					     tr("Invalid media duration '%1'.").arg(durationOutput));
 		return;
 	}
 
