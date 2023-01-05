@@ -207,7 +207,7 @@ void Compressor::compress(const QUrl& inputUrl,
 
 QString Compressor::availableFormats()
 {
-	ffmpeg->startCommand("ffmpeg.exe -encoders");
+    ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(QSysInfo::kernelType() == "winnt" ? ".exe" : ""));
 	ffmpeg->waitForFinished();
 	return ffmpeg->readAllStandardOutput();
 }
