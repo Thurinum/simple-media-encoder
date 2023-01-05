@@ -22,8 +22,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 {
 	ui->setupUi(this);
 
-	SetProgressShown(false);
-	SetAdvancedMode(false);
+	this->resize(this->minimumSizeHint());
 
 	// menu
 	QMenu *menu = new QMenu(this);
