@@ -32,6 +32,7 @@ public:
 	};
 
 	static const int AUTO_SIZE = 0;
+	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
 
 	void compress(const QUrl& inputUrl,
 			  const QDir& outputDir,
@@ -57,7 +58,7 @@ signals:
 	void compressionFailed(QString error, QString errorDetails = "");
 
 private:
-	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
+	QString parseOutput();
 
 	QEventLoop eventLoop;
 	QProcess* ffprobe = new QProcess();
@@ -68,8 +69,6 @@ private:
 
 	QString output = "";
 	double durationSeconds = -1;
-
-	QString parseOutput();
 };
 
 #endif // COMPRESSOR_HPP

@@ -27,9 +27,6 @@ public:
 	explicit MainWindow(QWidget* parent = nullptr);
 	~MainWindow() override;
 
-	QVariant setting(const QString& key);
-	void setSetting(const QString& key, const QVariant& value);
-
 	enum Severity {
 		Info = QMessageBox::Information,
 		Warning = QMessageBox::Warning,
@@ -38,30 +35,30 @@ public:
 	};
 
 	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
-
-protected:
-	void closeEvent(QCloseEvent* event) override;
-
-private:
 	const QString CONFIG_FILE = "config.ini";
-	Ui::MainWindow* ui;
 
-	Compressor* compressor = new Compressor(this);
-	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
-
-	void LoadState();
-
-	void SetProgressShown(bool shown, int progressPercent = 0);
-	void SetAdvancedMode(bool enabled);
+	QVariant setting(const QString& key);
+	void setSetting(const QString& key, const QVariant& value);
 
 	void Notify(Severity severity,
 			const QString& title,
 			const QString& message,
 			const QString& details = "");
 
-	void parseCodecs(QList<Codec>* codecs, const QString& type, QComboBox* comboBox);
-	void parseContainers(QList<Container>* containers, QComboBox* comboBox);
+protected:
+	void closeEvent(QCloseEvent* event) override;
 
+private:
+	void LoadState();
+	void SetProgressShown(bool shown, int progressPercent = 0);
+	void SetAdvancedMode(bool enabled);
+
+	void ParseCodecs(QList<Codec>* codecs, const QString& type, QComboBox* comboBox);
+	void ParseContainers(QList<Container>* containers, QComboBox* comboBox);
+
+	Ui::MainWindow* ui;
+	Compressor* compressor = new Compressor(this);
+	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
 	bool isNvidia = false;
 };
 #endif // MAINWINDOW_HPP

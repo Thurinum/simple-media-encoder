@@ -54,9 +54,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	QList<Codec> audioCodecs;
 	QList<Container> containers;
 
-	parseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
-	parseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecComboBox);
-	parseContainers(&containers, ui->containerComboBox);
+	ParseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
+	ParseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecComboBox);
+	ParseContainers(&containers, ui->containerComboBox);
 
 	connect(ui->advancedModeCheckBox, &QCheckBox::clicked, this, &MainWindow::SetAdvancedMode);
 
@@ -200,7 +200,7 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBox *comboBox)
+void MainWindow::ParseCodecs(QList<Codec> *codecs, const QString &type, QComboBox *comboBox)
 {
 	settings.beginGroup(type);
 
@@ -261,7 +261,7 @@ void MainWindow::parseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 	settings.endGroup();
 }
 
-void MainWindow::parseContainers(QList<Container> *containers, QComboBox *comboBox)
+void MainWindow::ParseContainers(QList<Container> *containers, QComboBox *comboBox)
 {
 	settings.beginGroup("Containers");
 
