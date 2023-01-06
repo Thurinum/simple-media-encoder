@@ -139,13 +139,14 @@ void Compressor::compress(const QUrl& inputUrl,
 	QString outputPath = outputDir.filePath(fileName.first() + "_" + fileSuffix + "."
 							    + container.name);
 	QString command
-		= QString(
-			  R"(ffmpeg%1 -i "%2" -c:v %3 -c:a %4 -b:v %5k -b:a %6k -vf scale=%7:%8%9 "%10" -y)")
+		= QString(R"(ffmpeg%1 -i "%2" -c:v %3 -c:a %4 %5 -b:a %6k -vf scale=%7:%8%9 "%10" -y)")
 			  .arg(IS_WINDOWS ? ".exe" : "",
 				 inputUrl.toLocalFile(),
 				 videoCodec.library,
 				 audioCodec.library,
-				 QString::number(videoBitrateKpbs),
+				 sizeKbps > AUTO_SIZE
+					 ? QString("-b:v %1").arg(QString::number(videoBitrateKpbs))
+					 : "",
 				 QString::number(audioBitrateKbps),
 				 widthParam,
 				 heightParam,
