@@ -68,7 +68,8 @@ void Compressor::compress(const QUrl& inputUrl,
 
 	if (metadata.count() != 5) {
 		emit compressionFailed(tr("Could not retrieve media metadata. Is the file corrupted?"),
-					     tr("Found metadata: %1").arg(metadata.join(", ")));
+					     tr("Input file: %1\nFound metadata: %2")
+						     .arg(inputUrl.toLocalFile(), metadata.join(", ")));
 		return;
 	}
 
@@ -204,7 +205,7 @@ void Compressor::compress(const QUrl& inputUrl,
 
 QString Compressor::availableFormats()
 {
-    ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(commandPrefix));
+	ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(commandPrefix));
 	ffmpeg->waitForFinished();
 	return ffmpeg->readAllStandardOutput();
 }

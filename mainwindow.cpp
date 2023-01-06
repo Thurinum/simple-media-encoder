@@ -40,13 +40,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	QProcess process;
 	process.setProcessChannelMode(QProcess::MergedChannels);
 
-	if (QSysInfo::kernelType() == "winnt") {
-		process.startCommand("wmic path win32_VideoController get name");
-		process.waitForFinished();
+#ifdef Q_OS_WINDOWS
+	process.startCommand("wmic path win32_VideoController get name");
+#elif Q_OS_LINUX
+	process.startCommand("lspci");
+#endif
+	process.waitForFinished();
 
-		if (process.readAllStandardOutput().toLower().contains("nvidia"))
-			isNvidia = true;
-	}
+	if (process.readAllStandardOutput().toLower().contains("nvidia"))
+		isNvidia = true;
 
 	// parse codecs
 	QList<Codec> videoCodecs;
@@ -62,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	// start compression button
 	connect(ui->startCompressionButton, &QPushButton::clicked, [=, this]() {
 		QString selectedPath = ui->inputFileLineEdit->text();
-		QUrl selectedUrl(selectedPath);
+		QUrl selectedUrl = QUrl::fromLocalFile(selectedPath);
 
 		if (!selectedUrl.isValid()) {
 			Notify(Severity::Info,
