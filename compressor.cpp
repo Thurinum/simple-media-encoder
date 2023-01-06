@@ -64,7 +64,7 @@ void Compressor::compress(const QUrl& inputUrl,
 	ffprobe->waitForFinished();
 
 	// TODO: Refactor to use key value pairs
-	QStringList metadata = QString(ffprobe->readAll()).split("\r\n");
+	QStringList metadata = QString(ffprobe->readAll()).split(QRegularExpression("[\n\r]+"));
 
 	if (metadata.count() != 5) {
 		emit compressionFailed(tr("Could not retrieve media metadata. Is the file corrupted?"),
