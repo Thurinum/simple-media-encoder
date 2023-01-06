@@ -40,10 +40,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	QProcess process;
 	process.setProcessChannelMode(QProcess::MergedChannels);
 
-#ifdef Q_OS_WINDOWS
-	process.startCommand("wmic path win32_VideoController get name");
-#elif Q_OS_LINUX
+#ifdef Q_OS_LINUX
 	process.startCommand("lspci");
+#elif defined(Q_OS_WINDOWS)
+	process.startCommand("wmic path win32_VideoController get name");
 #endif
 	process.waitForFinished();
 
