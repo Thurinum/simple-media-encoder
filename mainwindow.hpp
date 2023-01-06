@@ -37,6 +37,8 @@ public:
 		Critical // Will terminate program
 	};
 
+	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
+
 protected:
 	void closeEvent(QCloseEvent* event) override;
 

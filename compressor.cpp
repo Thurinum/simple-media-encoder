@@ -60,7 +60,7 @@ void Compressor::compress(const QUrl& inputUrl,
 	ffprobe->startCommand(QString("ffprobe%1 -v error -select_streams v:0 -show_entries "
 						"stream=width,height,display_aspect_ratio,duration -of "
 						"default=noprint_wrappers=1:nokey=1 \"%2\"")
-					    .arg(commandPrefix, inputUrl.toLocalFile()));
+					    .arg(IS_WINDOWS ? ".exe" : "", inputUrl.toLocalFile()));
 	ffprobe->waitForFinished();
 
 	// TODO: Refactor to use key value pairs
@@ -141,7 +141,7 @@ void Compressor::compress(const QUrl& inputUrl,
 	QString command
 		= QString(
 			  R"(ffmpeg%1 -i "%2" -c:v %3 -c:a %4 -b:v %5k -b:a %6k -vf scale=%7:%8%9 "%10" -y)")
-			  .arg(commandPrefix,
+			  .arg(IS_WINDOWS ? ".exe" : "",
 				 inputUrl.toLocalFile(),
 				 videoCodec.library,
 				 audioCodec.library,
@@ -205,7 +205,7 @@ void Compressor::compress(const QUrl& inputUrl,
 
 QString Compressor::availableFormats()
 {
-	ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(commandPrefix));
+	ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(IS_WINDOWS ? ".exe" : ""));
 	ffmpeg->waitForFinished();
 	return ffmpeg->readAllStandardOutput();
 }

@@ -21,7 +21,6 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
-
 	this->resize(this->minimumSizeHint());
 
 	// menu
@@ -40,11 +39,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	QProcess process;
 	process.setProcessChannelMode(QProcess::MergedChannels);
 
-#ifdef Q_OS_LINUX
-	process.startCommand("lspci");
-#elif defined(Q_OS_WINDOWS)
-	process.startCommand("wmic path win32_VideoController get name");
-#endif
+	if (IS_WINDOWS)
+		process.startCommand("wmic path win32_VideoController get name");
+	else
+		process.startCommand("lspci");
+
 	process.waitForFinished();
 
 	if (process.readAllStandardOutput().toLower().contains("nvidia"))
@@ -137,14 +136,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			  SetProgressShown(false);
 
 			  QFileInfo fileInfo(*outputFile);
+			  QString command = IS_WINDOWS ? "explorer.exe" : "xdg-open";
 			  if (ui->openExplorerOnSuccessCheckBox->isChecked()) {
 				  QProcess::execute(
-					  QString(R"(explorer.exe "%1")").arg(fileInfo.dir().path()));
+					  QString(R"(%1 "%2")").arg(command, fileInfo.dir().path()));
 			  }
 
 			  if (ui->playOnSuccessCheckBox->isChecked()) {
 				  QProcess::execute(
-					  QString(R"(explorer.exe "%1")").arg(fileInfo.absoluteFilePath()));
+					  QString(R"(%1 "%2")").arg(command, fileInfo.absoluteFilePath()));
 			  }
 
 			  if (ui->closeOnSuccessCheckBox->isChecked()) {

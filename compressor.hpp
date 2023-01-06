@@ -57,10 +57,11 @@ signals:
 	void compressionFailed(QString error, QString errorDetails = "");
 
 private:
+	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
+
 	QEventLoop eventLoop;
 	QProcess* ffprobe = new QProcess();
 	QProcess* ffmpeg = new QProcess(&eventLoop);
-	QString commandPrefix = QSysInfo::kernelType() == "winnt" ? ".exe" : "";
 
 	QMetaObject::Connection* const processUpdateConnection = new QMetaObject::Connection();
 	QMetaObject::Connection* const processFinishedConnection = new QMetaObject::Connection();
