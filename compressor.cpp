@@ -22,11 +22,10 @@ void Compressor::compress(Options options)
 	if (!validateOptions(options))
 		return;
 
-	auto metadataResult = mediaMetadata(options.inputUrl.toLocalFile());
-	if (!metadataResult.has_value())
-		return;
+	QStringList metadata = mediaMetadata(options.inputUrl.toLocalFile());
 
-	QStringList metadata = metadataResult.value();
+	if (metadata.isEmpty())
+		return;
 
 	bool couldParseDuration = false;
 	QString durationOutput = metadata[3];
@@ -208,7 +207,7 @@ bool Compressor::validateOptions(const Options& options)
 	return error.isEmpty();
 }
 
-std::optional<QStringList> Compressor::mediaMetadata(const QString& path)
+QStringList Compressor::mediaMetadata(const QString& path)
 {
 	ffprobe->startCommand(QString("ffprobe%1 -v error -select_streams v:0 -show_entries "
 						"stream=width,height,display_aspect_ratio,duration -of "
@@ -223,7 +222,7 @@ std::optional<QStringList> Compressor::mediaMetadata(const QString& path)
 		emit compressionFailed(tr("Could not retrieve media metadata. Is the file corrupted?"),
 					     tr("Input file: %1\nFound metadata: %2")
 						     .arg(path, metadata.join(", ")));
-		return std::optional<QStringList>();
+		return QStringList();
 	}
 
 	return metadata;
