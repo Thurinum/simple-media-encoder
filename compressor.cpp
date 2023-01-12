@@ -212,36 +212,43 @@ void Compressor::PerformCompression(const Options& options, const ComputedOption
 			     outputPath);
 
 	*processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](int exitCode) {
-		if (exitCode != 0) {
-			disconnect(*processUpdateConnection);
-			disconnect(*processFinishedConnection);
-
-			emit compressionFailed(parseOutput(), command + "\n\n" + output);
-			output.clear();
-			return;
-		}
-
-		QFile media(outputPath);
-		if (!media.open(QIODevice::ReadOnly)) {
-			disconnect(*processUpdateConnection);
-			disconnect(*processFinishedConnection);
-			emit compressionFailed("Could not open the compressed media.",
-						     media.errorString());
-			output.clear();
-			media.close();
-			return;
-		}
-
-		const double BYTES_TO_KB = 125.0; // or smt like that anyway lol
-
-		disconnect(*processUpdateConnection);
-		disconnect(*processFinishedConnection);
-		emit compressionSucceeded(options.sizeKbps, media.size() / BYTES_TO_KB, &media);
-		output.clear();
-		media.close();
+		EndCompression(options, outputPath, command, exitCode);
 	});
 
 	ffmpeg->startCommand(command);
+}
+
+void Compressor::EndCompression(const Options& options,
+					  QString outputPath,
+					  QString command,
+					  int exitCode)
+{
+	if (exitCode != 0) {
+		disconnect(*processUpdateConnection);
+		disconnect(*processFinishedConnection);
+
+		emit compressionFailed(parseOutput(), command + "\n\n" + output);
+		output.clear();
+		return;
+	}
+
+	QFile media(outputPath);
+	if (!media.open(QIODevice::ReadOnly)) {
+		disconnect(*processUpdateConnection);
+		disconnect(*processFinishedConnection);
+		emit compressionFailed("Could not open the compressed media.", media.errorString());
+		output.clear();
+		media.close();
+		return;
+	}
+
+	const double BYTES_TO_KB = 125.0; // or smt like that anyway lol
+
+	disconnect(*processUpdateConnection);
+	disconnect(*processFinishedConnection);
+	emit compressionSucceeded(options.sizeKbps, media.size() / BYTES_TO_KB, &media);
+	output.clear();
+	media.close();
 }
 
 bool Compressor::Codec::operator==(const Codec& rhs) const

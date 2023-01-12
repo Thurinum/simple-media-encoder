@@ -87,6 +87,8 @@ private:
 	QStringList mediaMetadata(const QString& path);
 	double mediaDurationSeconds(const QStringList& metadata);
 	void PerformCompression(const Options& options, const ComputedOptions& computedOptions);
+
+	void EndCompression(const Options& options, QString outputPath, QString command, int exitCode);
 };
 
 #endif // COMPRESSOR_HPP
