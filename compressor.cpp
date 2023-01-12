@@ -19,30 +19,8 @@ Compressor::Compressor(QObject* parent) : QObject{parent}
 
 void Compressor::compress(Options options)
 {
-	if (!options.container.supportedCodecs.contains(options.videoCodec.library)) {
-		emit compressionFailed(
-			tr("Selected options.container %1 does not support selected video codec: %2.")
-				.arg(options.container.name.toUpper(), options.videoCodec.name));
+	if (!validateOptions(options))
 		return;
-	}
-
-	if (!options.container.supportedCodecs.contains(options.audioCodec.library)) {
-		emit compressionFailed(
-			tr("Selected options.container %1 does not support selected audio codec: %2.")
-				.arg(options.container.name.toUpper(), options.audioCodec.name));
-		return;
-	}
-
-	if (options.outputWidth < 0) {
-		emit compressionFailed(tr("Output width must be greater than 0, but was %1")
-						     .arg(QString::number(options.outputWidth)));
-		return;
-	}
-	if (options.outputHeight < 0) {
-		emit compressionFailed(tr("Output height must be greater than 0, but was %1")
-						     .arg(QString::number(options.outputHeight)));
-		return;
-	}
 
 	ffprobe->startCommand(QString("ffprobe%1 -v error -select_streams v:0 -show_entries "
 						"stream=width,height,display_aspect_ratio,duration -of "
@@ -214,6 +192,30 @@ QString Compressor::parseOutput()
 				R"((\[.*\]|(?:Conversion failed!)|(?:v\d\.\d.*)|(?: (?:\s)+)|(?:- (?:\s)+(?1))))"),
 			"")
 		.trimmed();
+}
+
+bool Compressor::validateOptions(const Options& options)
+{
+	QString error;
+
+	if (!options.container.supportedCodecs.contains(options.videoCodec.library)) {
+		error = tr("Selected options.container %1 does not support selected video codec: %2.")
+				  .arg(options.container.name.toUpper(), options.videoCodec.name);
+	}
+	if (!options.container.supportedCodecs.contains(options.audioCodec.library)) {
+		error = tr("Selected options.container %1 does not support selected audio codec: %2.")
+				  .arg(options.container.name.toUpper(), options.audioCodec.name);
+	}
+	if (options.outputWidth < 0) {
+		error = tr("Output width must be greater than 0, but was %1")
+				  .arg(QString::number(options.outputWidth));
+	}
+	if (options.outputHeight < 0) {
+		error = tr("Output height must be greater than 0, but was %1")
+				  .arg(QString::number(options.outputHeight));
+	}
+
+	return error.isEmpty();
 }
 
 bool Compressor::Codec::operator==(const Codec& rhs) const

@@ -74,6 +74,8 @@ private:
 
 	QString output = "";
 	double durationSeconds = -1;
+
+	bool validateOptions(const Options& options);
 };
 
 #endif // COMPRESSOR_HPP
