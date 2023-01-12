@@ -10,6 +10,7 @@ SOURCES += \
 
 HEADERS += \
     compressor.hpp \
+    expected.hpp \
     mainwindow.hpp
 
 FORMS += \

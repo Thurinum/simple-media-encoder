@@ -76,6 +76,7 @@ private:
 	double durationSeconds = -1;
 
 	bool validateOptions(const Options& options);
+	std::optional<QStringList> mediaMetadata(const QString& path);
 };
 
 #endif // COMPRESSOR_HPP

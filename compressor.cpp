@@ -22,21 +22,11 @@ void Compressor::compress(Options options)
 	if (!validateOptions(options))
 		return;
 
-	ffprobe->startCommand(QString("ffprobe%1 -v error -select_streams v:0 -show_entries "
-						"stream=width,height,display_aspect_ratio,duration -of "
-						"default=noprint_wrappers=1:nokey=1 \"%2\"")
-					    .arg(IS_WINDOWS ? ".exe" : "", options.inputUrl.toLocalFile()));
-	ffprobe->waitForFinished();
-
-	// TODO: Refactor to use key value pairs
-	QStringList metadata = QString(ffprobe->readAll()).split(QRegularExpression("[\n\r]+"));
-
-	if (metadata.count() != 5) {
-		emit compressionFailed(tr("Could not retrieve media metadata. Is the file corrupted?"),
-					     tr("Input file: %1\nFound metadata: %2")
-						     .arg(options.inputUrl.toLocalFile(), metadata.join(", ")));
+	auto metadataResult = mediaMetadata(options.inputUrl.toLocalFile());
+	if (!metadataResult.has_value())
 		return;
-	}
+
+	QStringList metadata = metadataResult.value();
 
 	bool couldParseDuration = false;
 	QString durationOutput = metadata[3];
@@ -216,6 +206,27 @@ bool Compressor::validateOptions(const Options& options)
 	}
 
 	return error.isEmpty();
+}
+
+std::optional<QStringList> Compressor::mediaMetadata(const QString& path)
+{
+	ffprobe->startCommand(QString("ffprobe%1 -v error -select_streams v:0 -show_entries "
+						"stream=width,height,display_aspect_ratio,duration -of "
+						"default=noprint_wrappers=1:nokey=1 \"%2\"")
+					    .arg(IS_WINDOWS ? ".exe" : "", path));
+	ffprobe->waitForFinished();
+
+	// TODO: Refactor to use key value pairs
+	QStringList metadata = QString(ffprobe->readAll()).split(QRegularExpression("[\n\r]+"));
+
+	if (metadata.count() != 5) {
+		emit compressionFailed(tr("Could not retrieve media metadata. Is the file corrupted?"),
+					     tr("Input file: %1\nFound metadata: %2")
+						     .arg(path, metadata.join(", ")));
+		return std::optional<QStringList>();
+	}
+
+	return metadata;
 }
 
 bool Compressor::Codec::operator==(const Codec& rhs) const
