@@ -63,6 +63,14 @@ signals:
 	void compressionFailed(QString error, QString errorDetails = "");
 
 private:
+	struct ComputedOptions
+	{
+		double videoBitrateKbps;
+		double audioBitrateKbps;
+		QString scaledWidthParameter;
+		QString scaledHeightParameter;
+	};
+
 	QString parseOutput();
 
 	QEventLoop eventLoop;
@@ -77,6 +85,8 @@ private:
 
 	bool validateOptions(const Options& options);
 	QStringList mediaMetadata(const QString& path);
+	double mediaDurationSeconds(const QStringList& metadata);
+	void PerformCompression(const Options& options, const ComputedOptions& computedOptions);
 };
 
 #endif // COMPRESSOR_HPP

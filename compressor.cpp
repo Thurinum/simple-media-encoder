@@ -23,20 +23,15 @@ void Compressor::compress(Options options)
 		return;
 
 	QStringList metadata = mediaMetadata(options.inputUrl.toLocalFile());
-
 	if (metadata.isEmpty())
 		return;
 
-	bool couldParseDuration = false;
-	QString durationOutput = metadata[3];
-	double durationSeconds = durationOutput.toDouble(&couldParseDuration);
-
-	if (!couldParseDuration) {
-		emit compressionFailed(tr("Failed to parse media duration. Is the file corrupted?"),
-					     tr("Invalid media duration '%1'.").arg(durationOutput));
+	double durationSeconds = mediaDurationSeconds(metadata);
+	if (durationSeconds == -1)
 		return;
-	}
 
+	// FIXME: This whole section makes no sense. Why are we calculating width parameter
+	// but then also recalculating output width conditionally? Both parts should be linked
 	// width and height scaling
 	QString widthParam;
 
@@ -89,28 +84,7 @@ void Compressor::compress(Options options)
 		return;
 	}
 
-	emit compressionStarted(videoBitrateKpbs, audioBitrateKbps);
-
-	QStringList fileName = options.inputUrl.fileName().split(".");
-	QString outputPath = options.outputDir.filePath(fileName.first() + "_" + options.fileSuffix
-									+ "." + options.container.name);
-	QString command =
-		QString(R"(ffmpeg%1 -i "%2" -c:v %3 -c:a %4 %5 -b:a %6k -vf scale=%7:%8%9 "%10" -y)")
-			.arg(IS_WINDOWS ? ".exe" : "",
-			     options.inputUrl.toLocalFile(),
-			     options.videoCodec.library,
-			     options.audioCodec.library,
-			     options.sizeKbps > AUTO_SIZE
-				     ? QString("-b:v %1").arg(QString::number(videoBitrateKpbs))
-				     : "",
-			     QString::number(audioBitrateKbps),
-			     widthParam,
-			     heightParam,
-			     options.outputWidth != AUTO_SIZE && options.outputHeight != AUTO_SIZE
-				     ? ",setsar=1/1"
-				     : "",
-			     outputPath);
-
+	// FIXME: For some reason, can't go inside PerformCompression
 	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [=, this]() {
 		QString line = QString(ffmpeg->readAll());
 		QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
@@ -129,37 +103,7 @@ void Compressor::compress(Options options)
 		emit compressionProgressUpdate(progressPercent);
 	});
 
-	*processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](int exitCode) {
-		if (exitCode != 0) {
-			disconnect(*processUpdateConnection);
-			disconnect(*processFinishedConnection);
-
-			emit compressionFailed(parseOutput(), command + "\n\n" + output);
-			output.clear();
-			return;
-		}
-
-		QFile media(outputPath);
-		if (!media.open(QIODevice::ReadOnly)) {
-			disconnect(*processUpdateConnection);
-			disconnect(*processFinishedConnection);
-			emit compressionFailed("Could not open the compressed media.",
-						     media.errorString());
-			output.clear();
-			media.close();
-			return;
-		}
-
-		const double BYTES_TO_KB = 125.0; // or smt like that anyway lol
-
-		disconnect(*processUpdateConnection);
-		disconnect(*processFinishedConnection);
-		emit compressionSucceeded(options.sizeKbps, media.size() / BYTES_TO_KB, &media);
-		output.clear();
-		media.close();
-	});
-
-	ffmpeg->startCommand(command);
+	PerformCompression(options, {videoBitrateKpbs, audioBitrateKbps, widthParam, heightParam});
 }
 
 QString Compressor::availableFormats()
@@ -226,6 +170,78 @@ QStringList Compressor::mediaMetadata(const QString& path)
 	}
 
 	return metadata;
+}
+
+double Compressor::mediaDurationSeconds(const QStringList& metadata)
+{
+	bool couldParse = false;
+	QString input = metadata[3];
+	double durationSeconds = input.toDouble(&couldParse);
+
+	if (!couldParse) {
+		emit compressionFailed(tr("Failed to parse media duration. Is the file corrupted?"),
+					     tr("Invalid media duration '%1'.").arg(input));
+		return -1;
+	}
+
+	return durationSeconds;
+}
+
+void Compressor::PerformCompression(const Options& options, const ComputedOptions& computedOptions)
+{
+	emit compressionStarted(computedOptions.videoBitrateKbps, computedOptions.audioBitrateKbps);
+
+	QStringList fileName = options.inputUrl.fileName().split(".");
+	QString outputPath = options.outputDir.filePath(fileName.first() + "_" + options.fileSuffix
+									+ "." + options.container.name);
+	QString command =
+		QString(R"(ffmpeg%1 -i "%2" -c:v %3 -c:a %4 %5 -b:a %6k -vf scale=%7:%8%9 "%10" -y)")
+			.arg(IS_WINDOWS ? ".exe" : "",
+			     options.inputUrl.toLocalFile(),
+			     options.videoCodec.library,
+			     options.audioCodec.library,
+			     options.sizeKbps > AUTO_SIZE ? QString("-b:v %1").arg(
+				     QString::number(computedOptions.videoBitrateKbps))
+								    : "",
+			     QString::number(computedOptions.audioBitrateKbps),
+			     computedOptions.scaledWidthParameter,
+			     computedOptions.scaledHeightParameter,
+			     options.outputWidth != AUTO_SIZE && options.outputHeight != AUTO_SIZE
+				     ? ",setsar=1/1"
+				     : "",
+			     outputPath);
+
+	*processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](int exitCode) {
+		if (exitCode != 0) {
+			disconnect(*processUpdateConnection);
+			disconnect(*processFinishedConnection);
+
+			emit compressionFailed(parseOutput(), command + "\n\n" + output);
+			output.clear();
+			return;
+		}
+
+		QFile media(outputPath);
+		if (!media.open(QIODevice::ReadOnly)) {
+			disconnect(*processUpdateConnection);
+			disconnect(*processFinishedConnection);
+			emit compressionFailed("Could not open the compressed media.",
+						     media.errorString());
+			output.clear();
+			media.close();
+			return;
+		}
+
+		const double BYTES_TO_KB = 125.0; // or smt like that anyway lol
+
+		disconnect(*processUpdateConnection);
+		disconnect(*processFinishedConnection);
+		emit compressionSucceeded(options.sizeKbps, media.size() / BYTES_TO_KB, &media);
+		output.clear();
+		media.close();
+	});
+
+	ffmpeg->startCommand(command);
 }
 
 bool Compressor::Codec::operator==(const Codec& rhs) const
