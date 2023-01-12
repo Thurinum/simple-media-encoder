@@ -82,9 +82,13 @@ void Compressor::compress(Options options)
 							    QString::number(options.audioCodec.minBitrateKbps),
 							    QString::number(audioBitrateKbps)));
 		return;
-	}	
+	}
 
-	PerformCompression(options, {videoBitrateKpbs, audioBitrateKbps, widthParam, heightParam});
+	PerformCompression(options,
+				 ComputedOptions{.videoBitrateKbps = videoBitrateKpbs,
+						     .audioBitrateKbps = audioBitrateKbps,
+						     .scaledWidthParameter = widthParam,
+						     .scaledHeightParameter = heightParam});
 }
 
 QString Compressor::availableFormats()
@@ -172,24 +176,30 @@ void Compressor::PerformCompression(const Options& options, const ComputedOption
 {
 	emit compressionStarted(computedOptions.videoBitrateKbps, computedOptions.audioBitrateKbps);
 
+	QString videoBitrateParam = options.sizeKbps != AUTO_SIZE
+						    ? "-b:v "
+								+ QString::number(computedOptions.videoBitrateKbps)
+								+ "k"
+						    : "";
+	QString aspectRatioParam = options.outputWidth != AUTO_SIZE
+							   && options.outputHeight != AUTO_SIZE
+						   ? ",setsar=1/1"
+						   : "";
 	QStringList fileName = options.inputUrl.fileName().split(".");
 	QString outputPath = options.outputDir.filePath(fileName.first() + "_" + options.fileSuffix
 									+ "." + options.container.name);
+
 	QString command =
 		QString(R"(ffmpeg%1 -i "%2" -c:v %3 -c:a %4 %5 -b:a %6k -vf scale=%7:%8%9 "%10" -y)")
 			.arg(IS_WINDOWS ? ".exe" : "",
 			     options.inputUrl.toLocalFile(),
 			     options.videoCodec.library,
 			     options.audioCodec.library,
-			     options.sizeKbps > AUTO_SIZE ? QString("-b:v %1").arg(
-				     QString::number(computedOptions.videoBitrateKbps))
-								    : "",
+			     videoBitrateParam,
 			     QString::number(computedOptions.audioBitrateKbps),
 			     computedOptions.scaledWidthParameter,
 			     computedOptions.scaledHeightParameter,
-			     options.outputWidth != AUTO_SIZE && options.outputHeight != AUTO_SIZE
-				     ? ",setsar=1/1"
-				     : "",
+			     aspectRatioParam,
 			     outputPath);
 
 	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [this]() {
