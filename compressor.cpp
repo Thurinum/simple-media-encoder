@@ -26,8 +26,8 @@ void Compressor::compress(Options options)
 	if (metadata.isEmpty())
 		return;
 
-	double durationSeconds = mediaDurationSeconds(metadata);
-	if (durationSeconds == -1)
+	m_durationSeconds = mediaDurationSeconds(metadata);
+	if (m_durationSeconds == -1)
 		return;
 
 	// FIXME: This whole section makes no sense. Why are we calculating width parameter
@@ -68,7 +68,7 @@ void Compressor::compress(Options options)
 		pixelRatio = outputPixelCount / inputPixelCount;
 
 	// calculate bitrate
-	double bitrateKbps = options.sizeKbps / durationSeconds
+	double bitrateKbps = options.sizeKbps / m_durationSeconds
 				   * (1.0 - options.overshootCorrectionPercent);
 	double audioBitrateKbps = qMax(options.minAudioBitrateKbps,
 						 options.audioQualityPercent * options.maxAudioBitrateKbps);
@@ -82,26 +82,7 @@ void Compressor::compress(Options options)
 							    QString::number(options.audioCodec.minBitrateKbps),
 							    QString::number(audioBitrateKbps)));
 		return;
-	}
-
-	// FIXME: For some reason, can't go inside PerformCompression
-	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [=, this]() {
-		QString line = QString(ffmpeg->readAll());
-		QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
-		QRegularExpressionMatch match = regex.match(line);
-
-		output += line;
-
-		if (!match.hasMatch())
-			return;
-
-		QTime timestamp = QTime::fromString(match.captured(1));
-		int currentDuration = timestamp.second() + timestamp.minute() * 60
-					    + timestamp.hour() * 3600;
-		int progressPercent = currentDuration * 100 / durationSeconds;
-
-		emit compressionProgressUpdate(progressPercent);
-	});
+	}	
 
 	PerformCompression(options, {videoBitrateKpbs, audioBitrateKbps, widthParam, heightParam});
 }
@@ -115,9 +96,9 @@ QString Compressor::availableFormats()
 
 QString Compressor::parseOutput()
 {
-	QStringList split = output.split("Press [q] to stop, [?] for help");
+	QStringList split = m_output.split("Press [q] to stop, [?] for help");
 	if (split.length() == 1)
-		split = output.split("[0][0][0][0]");
+		split = m_output.split("[0][0][0][0]");
 
 	return split.last()
 		.replace(
@@ -211,11 +192,33 @@ void Compressor::PerformCompression(const Options& options, const ComputedOption
 				     : "",
 			     outputPath);
 
+	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [this]() {
+		UpdateProgress();
+	});
+
 	*processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](int exitCode) {
 		EndCompression(options, outputPath, command, exitCode);
 	});
 
 	ffmpeg->startCommand(command);
+}
+
+void Compressor::UpdateProgress()
+{
+	QString line = QString(ffmpeg->readAll());
+	QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
+	QRegularExpressionMatch match = regex.match(line);
+
+	m_output += line;
+
+	if (!match.hasMatch())
+		return;
+
+	QTime timestamp = QTime::fromString(match.captured(1));
+	int currentDuration = timestamp.second() + timestamp.minute() * 60 + timestamp.hour() * 3600;
+	int progressPercent = currentDuration * 100 / m_durationSeconds;
+
+	emit compressionProgressUpdate(progressPercent);
 }
 
 void Compressor::EndCompression(const Options& options,
@@ -227,8 +230,8 @@ void Compressor::EndCompression(const Options& options,
 		disconnect(*processUpdateConnection);
 		disconnect(*processFinishedConnection);
 
-		emit compressionFailed(parseOutput(), command + "\n\n" + output);
-		output.clear();
+		emit compressionFailed(parseOutput(), command + "\n\n" + m_output);
+		m_output.clear();
 		return;
 	}
 
@@ -237,7 +240,7 @@ void Compressor::EndCompression(const Options& options,
 		disconnect(*processUpdateConnection);
 		disconnect(*processFinishedConnection);
 		emit compressionFailed("Could not open the compressed media.", media.errorString());
-		output.clear();
+		m_output.clear();
 		media.close();
 		return;
 	}
@@ -247,7 +250,7 @@ void Compressor::EndCompression(const Options& options,
 	disconnect(*processUpdateConnection);
 	disconnect(*processFinishedConnection);
 	emit compressionSucceeded(options.sizeKbps, media.size() / BYTES_TO_KB, &media);
-	output.clear();
+	m_output.clear();
 	media.close();
 }
 

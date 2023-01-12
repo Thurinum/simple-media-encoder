@@ -80,14 +80,14 @@ private:
 	QMetaObject::Connection* const processUpdateConnection = new QMetaObject::Connection();
 	QMetaObject::Connection* const processFinishedConnection = new QMetaObject::Connection();
 
-	QString output = "";
-	double durationSeconds = -1;
+	QString m_output = "";
+	double m_durationSeconds = -1;
 
 	bool validateOptions(const Options& options);
 	QStringList mediaMetadata(const QString& path);
 	double mediaDurationSeconds(const QStringList& metadata);
 	void PerformCompression(const Options& options, const ComputedOptions& computedOptions);
-
+	void UpdateProgress();
 	void EndCompression(const Options& options, QString outputPath, QString command, int exitCode);
 };
 
