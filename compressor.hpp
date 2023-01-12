@@ -31,23 +31,28 @@ public:
 		QStringList supportedCodecs;
 	};
 
+	struct Options
+	{
+		const QUrl& inputUrl;
+		const QDir& outputDir;
+		const QString& fileSuffix;
+		const Codec& videoCodec;
+		const Codec& audioCodec;
+		const Container& container;
+		double sizeKbps;
+		double audioQualityPercent;
+		int outputWidth;
+		int outputHeight;
+		double minVideoBitrateKbps = 64;
+		double minAudioBitrateKbps = 16;
+		double maxAudioBitrateKbps = 256;
+		double overshootCorrectionPercent = 0.02;
+	};
+
 	static const int AUTO_SIZE = 0;
 	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
 
-	void compress(const QUrl& inputUrl,
-			  const QDir& outputDir,
-			  const QString& fileSuffix,
-			  const Codec& videoCodec,
-			  const Codec& audioCodec,
-			  const Container& container,
-			  double sizeKbps,
-			  double audioQualityPercent,
-			  int width,
-			  int height,
-			  double minVideoBitrateKbps = 64,
-			  double minAudioBitrateKbps = 16,
-			  double maxAudioBitrateKbps = 256,
-			  double overshootCorrectionPercent = 0.02);
+	void compress(Options options);
 
 	QString availableFormats();
 

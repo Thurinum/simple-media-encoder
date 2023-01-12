@@ -94,21 +94,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		}
 
 		SetProgressShown(true);
-		compressor->compress(selectedUrl,
-					   ui->outputFolderLineEdit->text().isEmpty()
-						   ? QDir::currentPath()
-						   : ui->outputFolderLineEdit->text(),
-					   ui->outputFileSuffixLineEdit->text(),
-					   videoCodecs.at(ui->videoCodecComboBox->currentIndex()),
-					   audioCodecs.at(ui->audioCodecComboBox->currentIndex()),
-					   containers.at(ui->containerComboBox->currentIndex()),
-					   ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
-					   ui->audioQualitySlider->value() / 100.0,
-					   ui->widthSpinBox->value(),
-					   ui->heightSpinBox->value(),
-					   setting("Main/dMinBitrateVideoKbps").toDouble(),
-					   setting("Main/dMinBitrateAudioKbps").toDouble(),
-					   setting("Main/dMaxBitrateAudioKbps").toDouble());
+		compressor->compress(
+			Compressor::Options{selectedUrl,
+						  ui->outputFolderLineEdit->text().isEmpty()
+							  ? QDir::currentPath()
+							  : ui->outputFolderLineEdit->text(),
+						  ui->outputFileSuffixLineEdit->text(),
+						  videoCodecs.at(ui->videoCodecComboBox->currentIndex()),
+						  audioCodecs.at(ui->audioCodecComboBox->currentIndex()),
+						  containers.at(ui->containerComboBox->currentIndex()),
+						  ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
+						  ui->audioQualitySlider->value() / 100.0,
+						  ui->widthSpinBox->value(),
+						  ui->heightSpinBox->value(),
+						  setting("Main/dMinBitrateVideoKbps").toDouble(),
+						  setting("Main/dMinBitrateAudioKbps").toDouble(),
+						  setting("Main/dMaxBitrateAudioKbps").toDouble()});
 	});
 
 	// handle displaying target bitrates during compression
