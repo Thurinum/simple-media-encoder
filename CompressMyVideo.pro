@@ -15,6 +15,6 @@ FORMS += \
 	$$files("$$PWD/ui/*.ui", true)
 
 DISTFILES += \
-	$$files("$$PWD/bin/*", true)
+	$$files("$$PWD/bin/*	", true)
 
 DESTDIR = $$PWD/bin
