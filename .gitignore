@@ -1,3 +1,5 @@
 *.pro.user
 build/
 .qtc_clangd/
+*.dll
+*.exe
