@@ -1,20 +1,17 @@
 QT = core gui widgets
 
 CONFIG += c++20
-DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
+
+INCLUDEPATH += $$PWD/include
 
 SOURCES += \
-    compressor.cpp \
-    main.cpp \
-    mainwindow.cpp
+    $$files("$$PWD/src/*.cpp", true)
 
 HEADERS += \
-    compressor.hpp \
-    expected.hpp \
-    mainwindow.hpp
+    $$files("$$PWD/include/*.hpp", true)
 
 FORMS += \
-    mainwindow.ui
+    $$files("$$PWD/ui/*.ui", true)
 
-DISTFILES += \
-	config.ini
+DESTDIR = $$PWD/bin
