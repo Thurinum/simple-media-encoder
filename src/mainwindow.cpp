@@ -27,7 +27,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	QMenu *menu = new QMenu(this);
 	menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
 	menu->addSeparator();
-	menu->addAction(tr("About"));
+	menu->addAction(tr("About"), [this]() {
+		Notify(Severity::Info,
+			 "About " + QApplication::applicationName(),
+			 setting("Main/sAbout").toString());
+	});
 	menu->addAction(tr("About Qt"), &QApplication::aboutQt);
 	ui->infoMenuToolButton->setMenu(menu);
 	connect(ui->infoMenuToolButton,
@@ -47,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	process.waitForFinished();
 
 	if (process.readAllStandardOutput().toLower().contains("nvidia"))
-		isNvidia = true;
+		m_isNvidia = true;
 
 	// parse codecs
 	QList<Codec> videoCodecs;
@@ -226,7 +230,7 @@ void MainWindow::ParseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 			continue;
 		}
 
-		if (codecLibrary.contains("nvenc") && !isNvidia)
+		if (codecLibrary.contains("nvenc") && !m_isNvidia)
 			continue;
 
 		if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {

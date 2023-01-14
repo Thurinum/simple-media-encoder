@@ -59,6 +59,6 @@ private:
 	Ui::MainWindow* ui;
 	Compressor* compressor = new Compressor(this);
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
-	bool isNvidia = false;
+	bool m_isNvidia = false;
 };
 #endif // MAINWINDOW_HPP

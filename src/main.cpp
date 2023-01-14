@@ -5,7 +5,7 @@
 int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
-	a.setApplicationName("Video Compressor");
+	a.setApplicationName("Efficient Video Compressor");
 
 	MainWindow w;
 	w.setWindowIcon(QIcon("appicon.png"));
