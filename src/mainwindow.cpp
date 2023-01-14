@@ -436,7 +436,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::LoadState()
 {
-	if (setting("LastDesired/bAdvancedMode").toBool())
+	if (!setting("LastDesired/bAdvancedMode").toBool())
 		ui->advancedModeCheckBox->click();
 
 	QString selectedUrl = setting("LastDesired/sInputFile").toString();
