@@ -358,30 +358,38 @@ void MainWindow::SetProgressShown(bool shown, int progressPercent)
 
 void MainWindow::SetAdvancedMode(bool enabled)
 {
-	auto *sectionAnimation = new QPropertyAnimation(ui->advancedSection, "maximumWidth", this);
-	auto *windowAnimation = new QPropertyAnimation(this, "size");
+	auto *sectionWidthAnim = new QPropertyAnimation(ui->advancedSection, "maximumWidth", this);
+	auto *sectionHeightAnim = new QPropertyAnimation(ui->advancedSection, "maximumHeight", this);
+	auto *windowSizeAnim = new QPropertyAnimation(this, "size");
 	int duration = setting("Main/iSectionAnimDurationMs").toInt();
 
-	sectionAnimation->setDuration(duration);
-	sectionAnimation->setEasingCurve(QEasingCurve::InOutQuad);
-	windowAnimation->setDuration(duration);
-	windowAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+	sectionWidthAnim->setDuration(duration);
+	sectionWidthAnim->setEasingCurve(QEasingCurve::InOutQuad);
+	sectionHeightAnim->setDuration(duration);
+	sectionHeightAnim->setEasingCurve(QEasingCurve::InOutQuad);
+	windowSizeAnim->setDuration(duration);
+	windowSizeAnim->setEasingCurve(QEasingCurve::InOutQuad);
 
-	connect(sectionAnimation, &QPropertyAnimation::finished, [this, windowAnimation]() {
-		windowAnimation->setStartValue(this->size());
-		windowAnimation->setEndValue(this->minimumSizeHint());
-		windowAnimation->start();
+	connect(sectionWidthAnim, &QPropertyAnimation::finished, [this, windowSizeAnim]() {
+		windowSizeAnim->setStartValue(this->size());
+		windowSizeAnim->setEndValue(this->minimumSizeHint());
+		windowSizeAnim->start();
 	});
 
 	if (enabled) {
-		sectionAnimation->setStartValue(0);
-		sectionAnimation->setEndValue(1000);
+		sectionWidthAnim->setStartValue(0);
+		sectionWidthAnim->setEndValue(1000);
+		sectionHeightAnim->setStartValue(0);
+		sectionHeightAnim->setEndValue(1000);
 	} else {
-		sectionAnimation->setStartValue(ui->advancedSection->width());
-		sectionAnimation->setEndValue(0);
+		sectionWidthAnim->setStartValue(ui->advancedSection->width());
+		sectionWidthAnim->setEndValue(0);
+		sectionHeightAnim->setStartValue(ui->advancedSection->width());
+		sectionHeightAnim->setEndValue(0);
 	}
 
-	sectionAnimation->start();
+	sectionWidthAnim->start();
+	sectionHeightAnim->start();
 }
 
 void MainWindow::Notify(Severity severity,
