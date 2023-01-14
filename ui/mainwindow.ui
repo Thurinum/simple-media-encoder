@@ -16,6 +16,12 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+  <property name="maximumSize">
+   <size>
+    <width>1000</width>
+    <height>1000</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string/>
   </property>
@@ -26,7 +32,7 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0">
+   <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0">
     <property name="spacing">
      <number>0</number>
     </property>
@@ -144,7 +150,7 @@
           <item row="4" column="1" colspan="3">
            <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0">
             <property name="spacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <property name="sizeConstraint">
              <enum>QLayout::SetDefaultConstraint</enum>
@@ -159,8 +165,9 @@
               </property>
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -198,7 +205,7 @@
               <property name="sizeHint" stdset="0">
                <size>
                 <width>20</width>
-                <height>35</height>
+                <height>40</height>
                </size>
               </property>
              </spacer>
@@ -208,14 +215,15 @@
           <item row="1" column="3">
            <layout class="QGridLayout" name="gridLayout_3">
             <property name="verticalSpacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_23">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -238,14 +246,15 @@
              <number>10</number>
             </property>
             <property name="verticalSpacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_2">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -287,14 +296,31 @@
              <widget class="QLabel" name="label_14">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
                <string>After compression</string>
               </property>
              </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_6">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>5</height>
+               </size>
+              </property>
+             </spacer>
             </item>
             <item>
              <widget class="QCheckBox" name="openExplorerOnSuccessCheckBox">
@@ -325,14 +351,15 @@
              <number>10</number>
             </property>
             <property name="verticalSpacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_7">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -368,14 +395,15 @@
           <item row="1" column="0">
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <property name="spacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item>
              <widget class="QLabel" name="label_5">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -415,14 +443,15 @@
              <number>4</number>
             </property>
             <property name="verticalSpacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_6">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -473,14 +502,15 @@
              <number>10</number>
             </property>
             <property name="verticalSpacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_9">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -492,8 +522,9 @@
              <widget class="QLabel" name="label_10">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -581,97 +612,34 @@
           <property name="spacing">
            <number>20</number>
           </property>
-          <item row="2" column="4">
-           <layout class="QVBoxLayout" name="verticalLayout_7">
-            <property name="spacing">
-             <number>2</number>
+          <item row="5" column="1">
+           <spacer name="verticalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
             </property>
-            <item>
-             <widget class="QLabel" name="label_22">
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>Frame rate</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QSpinBox" name="fpsSpinBox">
-              <property name="suffix">
-               <string> fps</string>
-              </property>
-              <property name="prefix">
-               <string/>
-              </property>
-              <property name="minimum">
-               <number>1</number>
-              </property>
-              <property name="maximum">
-               <number>999</number>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item row="4" column="1" colspan="2">
-           <layout class="QVBoxLayout" name="verticalLayout_10">
-            <property name="spacing">
-             <number>1</number>
+            <property name="sizeType">
+             <enum>QSizePolicy::Preferred</enum>
             </property>
-            <item>
-             <widget class="QLabel" name="label_15">
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>Advanced options</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="deleteOnSuccessCheckBox">
-              <property name="text">
-               <string>Delete input file on success</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="warnOnOverwriteCheckBox">
-              <property name="text">
-               <string>Warn when overwriting the input file</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="noAutoFillCheckBox">
-              <property name="text">
-               <string>Don't autofill on input file selection</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
           </item>
           <item row="0" column="1" colspan="4">
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <property name="spacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item>
              <widget class="QLabel" name="label_19">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -694,17 +662,10 @@
             </item>
            </layout>
           </item>
-          <item row="0" column="0" rowspan="5">
-           <widget class="Line" name="sectionSeparator">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-           </widget>
-          </item>
           <item row="3" column="3" colspan="2">
            <layout class="QVBoxLayout" name="verticalLayout_9">
             <property name="spacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item>
              <widget class="QLabel" name="label_18">
@@ -716,8 +677,9 @@
               </property>
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -750,20 +712,297 @@
             </item>
            </layout>
           </item>
-          <item row="2" column="2" colspan="2">
+          <item row="4" column="1" colspan="2">
+           <layout class="QVBoxLayout" name="verticalLayout_10">
+            <property name="spacing">
+             <number>1</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_15">
+              <property name="font">
+               <font>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Advanced options</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="verticalSpacer_5">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeType">
+               <enum>QSizePolicy::Fixed</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>4</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="deleteOnSuccessCheckBox">
+              <property name="text">
+               <string>Delete input file on success</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="warnOnOverwriteCheckBox">
+              <property name="text">
+               <string>Warn when overwriting the input file</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="noAutoFillCheckBox">
+              <property name="text">
+               <string>Don't autofill on input file selection</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="3" column="1" colspan="2">
+           <layout class="QVBoxLayout" name="verticalLayout_8">
+            <property name="spacing">
+             <number>5</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_17">
+              <property name="font">
+               <font>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Custom command</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPlainTextEdit" name="customCommandTextEdit">
+              <property name="placeholderText">
+               <string>Additional FFMPEG arguments</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="0" column="0" rowspan="6">
+           <widget class="Line" name="sectionSeparator">
+            <property name="frameShadow">
+             <enum>QFrame::Plain</enum>
+            </property>
+            <property name="lineWidth">
+             <number>0</number>
+            </property>
+            <property name="midLineWidth">
+             <number>1</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1" colspan="4">
+           <widget class="QGroupBox" name="groupBox">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <family>Segoe UI Semibold</family>
+              <pointsize>10</pointsize>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="title">
+             <string>Choose codecs manually</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_11">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>8</number>
+             </property>
+             <property name="topMargin">
+              <number>8</number>
+             </property>
+             <property name="rightMargin">
+              <number>8</number>
+             </property>
+             <property name="bottomMargin">
+              <number>8</number>
+             </property>
+             <item>
+              <layout class="QGridLayout" name="gridLayout_7">
+               <property name="horizontalSpacing">
+                <number>16</number>
+               </property>
+               <property name="verticalSpacing">
+                <number>2</number>
+               </property>
+               <item row="1" column="2">
+                <widget class="QLabel" name="label_13">
+                 <property name="font">
+                  <font>
+                   <family>Segoe UI</family>
+                   <pointsize>9</pointsize>
+                   <italic>false</italic>
+                   <bold>false</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Container</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLabel" name="label_12">
+                 <property name="font">
+                  <font>
+                   <family>Segoe UI</family>
+                   <pointsize>9</pointsize>
+                   <italic>false</italic>
+                   <bold>false</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Audio Codec</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QComboBox" name="audioCodecComboBox">
+                 <property name="font">
+                  <font>
+                   <family>Segoe UI</family>
+                   <pointsize>10</pointsize>
+                   <bold>false</bold>
+                  </font>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_8">
+                 <property name="font">
+                  <font>
+                   <family>Segoe UI</family>
+                   <pointsize>9</pointsize>
+                   <italic>false</italic>
+                   <bold>false</bold>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Video Codec</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QComboBox" name="videoCodecComboBox">
+                 <property name="font">
+                  <font>
+                   <family>Segoe UI</family>
+                   <pointsize>10</pointsize>
+                   <bold>false</bold>
+                  </font>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="2">
+                <widget class="QComboBox" name="containerComboBox">
+                 <property name="font">
+                  <font>
+                   <family>Segoe UI</family>
+                   <pointsize>10</pointsize>
+                   <bold>false</bold>
+                  </font>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="2" column="4">
+           <layout class="QVBoxLayout" name="verticalLayout_7">
+            <property name="spacing">
+             <number>5</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_22">
+              <property name="font">
+               <font>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Frame rate</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="fpsSpinBox">
+              <property name="specialValueText">
+               <string/>
+              </property>
+              <property name="suffix">
+               <string> fps</string>
+              </property>
+              <property name="prefix">
+               <string/>
+              </property>
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>999</number>
+              </property>
+              <property name="value">
+               <number>1</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="2" column="3">
            <layout class="QGridLayout" name="gridLayout_9">
             <property name="horizontalSpacing">
              <number>7</number>
             </property>
             <property name="verticalSpacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item row="0" column="0" colspan="3">
              <widget class="QLabel" name="label_20">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -804,75 +1043,21 @@
             </item>
            </layout>
           </item>
-          <item row="1" column="1" colspan="4">
-           <layout class="QGridLayout" name="gridLayout_7">
-            <property name="horizontalSpacing">
-             <number>30</number>
-            </property>
-            <property name="verticalSpacing">
-             <number>2</number>
-            </property>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_8">
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>Video Codec</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLabel" name="label_12">
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>Audio Codec</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
-             <widget class="QLabel" name="label_13">
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>Container</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QComboBox" name="videoCodecComboBox"/>
-            </item>
-            <item row="1" column="1">
-             <widget class="QComboBox" name="audioCodecComboBox"/>
-            </item>
-            <item row="1" column="2">
-             <widget class="QComboBox" name="containerComboBox"/>
-            </item>
-           </layout>
-          </item>
-          <item row="2" column="1">
+          <item row="2" column="1" colspan="2">
            <layout class="QGridLayout" name="gridLayout_8">
+            <property name="horizontalSpacing">
+             <number>3</number>
+            </property>
             <property name="verticalSpacing">
-             <number>2</number>
+             <number>5</number>
             </property>
             <item row="0" column="0" colspan="2">
              <widget class="QLabel" name="label_4">
               <property name="font">
                <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
+                <family>Segoe UI Semibold</family>
+                <pointsize>10</pointsize>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -882,6 +1067,12 @@
             </item>
             <item row="1" column="0">
              <widget class="QDoubleSpinBox" name="fileSizeSpinBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="specialValueText">
                <string>Auto</string>
               </property>
@@ -898,6 +1089,12 @@
             </item>
             <item row="1" column="1">
              <widget class="QComboBox" name="fileSizeUnitComboBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="currentIndex">
                <number>1</number>
               </property>
@@ -920,49 +1117,6 @@
             </item>
            </layout>
           </item>
-          <item row="3" column="1" colspan="2">
-           <layout class="QVBoxLayout" name="verticalLayout_8">
-            <property name="spacing">
-             <number>2</number>
-            </property>
-            <item>
-             <widget class="QLabel" name="label_17">
-              <property name="font">
-               <font>
-                <family>Segoe UI</family>
-                <pointsize>11</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>Custom command</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QPlainTextEdit" name="customCommandTextEdit">
-              <property name="placeholderText">
-               <string>Additional FFMPEG arguments</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </item>
-          <item row="5" column="1">
-           <spacer name="verticalSpacer_3">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Expanding</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
          </layout>
         </widget>
        </item>
@@ -970,9 +1124,25 @@
      </widget>
     </item>
     <item>
+     <spacer name="verticalSpacer_7">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>10</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item>
      <widget class="QPushButton" name="startCompressionButton">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
         <horstretch>0</horstretch>
         <verstretch>1</verstretch>
        </sizepolicy>
@@ -985,6 +1155,7 @@
       </property>
       <property name="font">
        <font>
+        <family>Segoe UI</family>
         <pointsize>14</pointsize>
        </font>
       </property>
