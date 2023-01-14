@@ -50,10 +50,8 @@ public:
 	};
 
 	static const int AUTO_SIZE = 0;
-	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
 
 	void compress(Options options);
-
 	QString availableFormats();
 
 signals:
@@ -71,7 +69,7 @@ private:
 		QString scaledHeightParameter;
 	};
 
-	QString parseOutput();
+	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
 
 	QEventLoop eventLoop;
 	QProcess* ffprobe = new QProcess();
@@ -82,11 +80,12 @@ private:
 
 	QString m_output = "";
 	double m_durationSeconds = -1;
+	QString parseOutput();
 
-	bool validateOptions(const Options& options);
+	bool areValidOptions(const Options& options);
 	QStringList mediaMetadata(const QString& path);
 	double mediaDurationSeconds(const QStringList& metadata);
-	void PerformCompression(const Options& options, const ComputedOptions& computedOptions);
+	void StartCompression(const Options& options, const ComputedOptions& computedOptions);
 	void UpdateProgress();
 	void EndCompression(const Options& options, QString outputPath, QString command, int exitCode);
 };

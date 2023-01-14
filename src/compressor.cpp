@@ -19,7 +19,7 @@ Compressor::Compressor(QObject* parent) : QObject{parent}
 
 void Compressor::compress(Options options)
 {
-	if (!validateOptions(options))
+	if (!areValidOptions(options))
 		return;
 
 	QStringList metadata = mediaMetadata(options.inputUrl.toLocalFile());
@@ -84,11 +84,11 @@ void Compressor::compress(Options options)
 		return;
 	}
 
-	PerformCompression(options,
-				 ComputedOptions{.videoBitrateKbps = videoBitrateKpbs,
-						     .audioBitrateKbps = audioBitrateKbps,
-						     .scaledWidthParameter = widthParam,
-						     .scaledHeightParameter = heightParam});
+	StartCompression(options,
+			     ComputedOptions{.videoBitrateKbps = videoBitrateKpbs,
+						   .audioBitrateKbps = audioBitrateKbps,
+						   .scaledWidthParameter = widthParam,
+						   .scaledHeightParameter = heightParam});
 }
 
 QString Compressor::availableFormats()
@@ -112,7 +112,7 @@ QString Compressor::parseOutput()
 		.trimmed();
 }
 
-bool Compressor::validateOptions(const Options& options)
+bool Compressor::areValidOptions(const Options& options)
 {
 	QString error;
 
@@ -172,7 +172,7 @@ double Compressor::mediaDurationSeconds(const QStringList& metadata)
 	return durationSeconds;
 }
 
-void Compressor::PerformCompression(const Options& options, const ComputedOptions& computedOptions)
+void Compressor::StartCompression(const Options& options, const ComputedOptions& computedOptions)
 {
 	emit compressionStarted(computedOptions.videoBitrateKbps, computedOptions.audioBitrateKbps);
 
