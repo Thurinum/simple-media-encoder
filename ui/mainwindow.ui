@@ -154,7 +154,7 @@
            <number>20</number>
           </property>
           <item row="3" column="3">
-           <layout class="QGridLayout" name="gridLayout_3">
+           <layout class="QGridLayout" name="speedLayout">
             <property name="verticalSpacing">
              <number>5</number>
             </property>
@@ -173,7 +173,7 @@
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox">
+             <widget class="QDoubleSpinBox" name="speedSpinBox">
               <property name="value">
                <double>1.000000000000000</double>
               </property>
@@ -303,7 +303,7 @@
            </layout>
           </item>
           <item row="3" column="1" colspan="2">
-           <layout class="QGridLayout" name="gridLayout_2">
+           <layout class="QGridLayout" name="scalingLayout">
             <property name="horizontalSpacing">
              <number>10</number>
             </property>
@@ -590,7 +590,7 @@
              </spacer>
             </item>
             <item>
-             <widget class="QRadioButton" name="radioButton">
+             <widget class="QRadioButton" name="radVideoAudio">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
                 <horstretch>0</horstretch>
@@ -609,10 +609,13 @@
               <property name="checked">
                <bool>true</bool>
               </property>
+              <attribute name="buttonGroup">
+               <string notr="true">audioVideoButtonGroup</string>
+              </attribute>
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="radioButton_2">
+             <widget class="QRadioButton" name="radVideoOnly">
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
@@ -622,10 +625,13 @@
               <property name="text">
                <string>Video only</string>
               </property>
+              <attribute name="buttonGroup">
+               <string notr="true">audioVideoButtonGroup</string>
+              </attribute>
              </widget>
             </item>
             <item>
-             <widget class="QRadioButton" name="radioButton_3">
+             <widget class="QRadioButton" name="radAudioOnly">
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
@@ -635,6 +641,9 @@
               <property name="text">
                <string>Audio only</string>
               </property>
+              <attribute name="buttonGroup">
+               <string notr="true">audioVideoButtonGroup</string>
+              </attribute>
              </widget>
             </item>
            </layout>
@@ -976,7 +985,7 @@
            </layout>
           </item>
           <item row="2" column="3">
-           <layout class="QGridLayout" name="gridLayout_9">
+           <layout class="QGridLayout" name="aspectRatioLayout">
             <property name="horizontalSpacing">
              <number>7</number>
             </property>
@@ -1320,6 +1329,6 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
+  <buttongroup name="audioVideoButtonGroup"/>
  </buttongroups>
 </ui>
