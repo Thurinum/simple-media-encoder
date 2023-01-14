@@ -88,7 +88,7 @@
           <string>Expert mode </string>
          </property>
          <property name="checked">
-          <bool>false</bool>
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -561,7 +561,7 @@
          </property>
          <property name="maximumSize">
           <size>
-           <width>0</width>
+           <width>16777215</width>
            <height>16777215</height>
           </size>
          </property>
