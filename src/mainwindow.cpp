@@ -197,6 +197,43 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
 	});
 
+	connect(ui->audioVideoButtonGroup, &QButtonGroup::buttonClicked, [&](QAbstractButton *button) {
+		if (button == ui->radVideoAudio) {
+			ui->widthSpinBox->setEnabled(true);
+			ui->heightSpinBox->setEnabled(true);
+			ui->speedSpinBox->setEnabled(true);
+			ui->videoCodecComboBox->setEnabled(true);
+			ui->audioCodecComboBox->setEnabled(true);
+			ui->containerComboBox->setEnabled(true);
+			ui->audioQualitySlider->setEnabled(true);
+			ui->aspectRatioSpinBoxH->setEnabled(true);
+			ui->aspectRatioSpinBoxV->setEnabled(true);
+			ui->fpsSpinBox->setEnabled(true);
+		} else if (button == ui->radVideoOnly) {
+			ui->widthSpinBox->setEnabled(true);
+			ui->heightSpinBox->setEnabled(true);
+			ui->speedSpinBox->setEnabled(true);
+			ui->videoCodecComboBox->setEnabled(true);
+			ui->audioCodecComboBox->setEnabled(false);
+			ui->containerComboBox->setEnabled(true);
+			ui->audioQualitySlider->setEnabled(false);
+			ui->aspectRatioSpinBoxH->setEnabled(true);
+			ui->aspectRatioSpinBoxV->setEnabled(true);
+			ui->fpsSpinBox->setEnabled(true);
+		} else if (button == ui->radAudioOnly) {
+			ui->widthSpinBox->setEnabled(false);
+			ui->heightSpinBox->setEnabled(false);
+			ui->speedSpinBox->setEnabled(false);
+			ui->videoCodecComboBox->setEnabled(false);
+			ui->audioCodecComboBox->setEnabled(true);
+			ui->containerComboBox->setEnabled(false);
+			ui->audioQualitySlider->setEnabled(true);
+			ui->aspectRatioSpinBoxH->setEnabled(false);
+			ui->aspectRatioSpinBoxV->setEnabled(false);
+			ui->fpsSpinBox->setEnabled(false);
+		}
+	});
+
 	LoadState();
 }
 
