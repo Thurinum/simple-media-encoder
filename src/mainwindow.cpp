@@ -234,6 +234,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		}
 	});
 
+	connect(ui->codecSelectionGroupBox, &QGroupBox::clicked, [this](bool checked) {
+		ui->qualityPresetComboBox->setEnabled(!checked);
+	});
+
 	LoadState();
 }
 
