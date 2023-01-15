@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>743</width>
+    <width>773</width>
     <height>619</height>
    </rect>
   </property>
@@ -389,12 +389,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="videoQualityPresetComboBox">
-              <item>
-               <property name="text">
-                <string>Smallest file size</string>
-               </property>
-              </item>
+             <widget class="QComboBox" name="qualityPresetComboBox">
               <item>
                <property name="text">
                 <string>Best compatibility</string>
@@ -748,7 +743,7 @@
            </widget>
           </item>
           <item row="1" column="1" colspan="4">
-           <widget class="QGroupBox" name="groupBox">
+           <widget class="QGroupBox" name="codecSelectionGroupBox">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
               <horstretch>0</horstretch>
