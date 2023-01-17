@@ -56,6 +56,8 @@ private:
 	void ParseCodecs(QList<Codec>* codecs, const QString& type, QComboBox* comboBox);
 	void ParseContainers(QList<Container>* containers, QComboBox* comboBox);
 
+	QString outputPath(QString inputFileName);
+
 	Ui::MainWindow* ui;
 	Compressor* compressor = new Compressor(this);
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);

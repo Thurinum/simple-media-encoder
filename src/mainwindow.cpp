@@ -67,14 +67,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	// start compression button
 	connect(ui->startCompressionButton, &QPushButton::clicked, [=, this]() {
 		QString selectedPath = ui->inputFileLineEdit->text();
-		QUrl selectedUrl = QUrl::fromLocalFile(selectedPath);
-
-		if (!selectedUrl.isValid()) {
-			Notify(Severity::Info,
-				 tr("No file selected"),
-				 tr("Please select a file to compress."));
-			return;
-		}
 
 		if (!QFile::exists(selectedPath)) {
 			Notify(Severity::Info,
@@ -99,11 +91,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 		SetProgressShown(true);
 		compressor->compress(Compressor::Options{
-			.inputUrl = selectedUrl,
-			.outputDir = ui->outputFolderLineEdit->text().isEmpty()
-						 ? QDir::currentPath()
-						 : ui->outputFolderLineEdit->text(),
-			.fileSuffix = ui->outputFileSuffixLineEdit->text(),
+			.inputPath = selectedPath,
+			.outputPath = outputPath(QFileInfo(selectedPath).baseName()),
 			.videoCodec = videoCodecs.at(ui->videoCodecComboBox->currentIndex()),
 			.audioCodec = audioCodecs.at(ui->audioCodecComboBox->currentIndex()),
 			.container = containers.at(ui->containerComboBox->currentIndex()),
@@ -114,6 +103,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			.minVideoBitrateKbps = setting("Main/dMinBitrateVideoKbps").toDouble(),
 			.minAudioBitrateKbps = setting("Main/dMinBitrateAudioKbps").toDouble(),
 			.maxAudioBitrateKbps = setting("Main/dMaxBitrateAudioKbps").toDouble()});
+
+		qDebug() << outputPath(QFileInfo(selectedPath).baseName());
 	});
 
 	// handle displaying target bitrates during compression
@@ -335,6 +326,25 @@ void MainWindow::ParseContainers(QList<Container> *containers, QComboBox *comboB
 		comboBox->addItem(containerName.toUpper());
 	}
 	settings.endGroup();
+}
+
+QString MainWindow::outputPath(QString inputFileName)
+{
+	QDir folder = ui->outputFolderLineEdit->text();
+	bool hasSuffix = ui->outputFileNameSuffixCheckBox->isChecked();
+	QString fileNameOrSuffix = ui->outputFileNameLineEdit->text();
+
+	QDir resolvedFolder = folder.exists() ? folder : QDir::current();
+	QString resolvedFileName;
+
+	if (fileNameOrSuffix.isEmpty())
+		resolvedFileName = inputFileName;
+	else if (hasSuffix)
+		resolvedFileName = inputFileName + "_" + fileNameOrSuffix;
+	else
+		resolvedFileName = fileNameOrSuffix;
+
+	return resolvedFolder.filePath(resolvedFileName);
 }
 
 QVariant MainWindow::setting(const QString &key)
