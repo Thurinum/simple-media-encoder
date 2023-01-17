@@ -459,7 +459,7 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item alignment="Qt::AlignLeft">
-               <widget class="QCheckBox" name="checkBox">
+               <widget class="QCheckBox" name="outputFileNameAllowOverwritingCheckBox">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -472,7 +472,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QCheckBox" name="checkBox_2">
+               <widget class="QCheckBox" name="outputFileNameSuffixCheckBox">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                   <horstretch>0</horstretch>

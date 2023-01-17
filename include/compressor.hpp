@@ -33,9 +33,8 @@ public:
 
 	struct Options
 	{
-		const QUrl& inputUrl;
-		const QDir& outputDir;
-		const QString& fileSuffix;
+		const QString& inputPath;
+		const QString& outputPath;
 		const Codec& videoCodec;
 		const Codec& audioCodec;
 		const Container& container;

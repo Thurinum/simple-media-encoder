@@ -22,7 +22,7 @@ void Compressor::compress(Options options)
 	if (!areValidOptions(options))
 		return;
 
-	QStringList metadata = mediaMetadata(options.inputUrl.toLocalFile());
+	QStringList metadata = mediaMetadata(options.inputPath);
 	if (metadata.isEmpty())
 		return;
 
@@ -185,14 +185,12 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 							   && options.outputHeight != AUTO_SIZE
 						   ? ",setsar=1/1"
 						   : "";
-	QStringList fileName = options.inputUrl.fileName().split(".");
-	QString outputPath = options.outputDir.filePath(fileName.first() + "_" + options.fileSuffix
-									+ "." + options.container.name);
+	QString outputPath = options.outputPath + "." + options.container.name;
 
 	QString command =
 		QString(R"(ffmpeg%1 -i "%2" -c:v %3 -c:a %4 %5 -b:a %6k -vf scale=%7:%8%9 "%10" -y)")
 			.arg(IS_WINDOWS ? ".exe" : "",
-			     options.inputUrl.toLocalFile(),
+			     options.inputPath,
 			     options.videoCodec.library,
 			     options.audioCodec.library,
 			     videoBitrateParam,
