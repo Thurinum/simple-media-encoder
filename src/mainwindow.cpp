@@ -18,6 +18,8 @@
 #include "mainwindow.hpp"
 #include "ui_mainwindow.h"
 
+using std::optional;
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
@@ -89,12 +91,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			break;
 		}
 
+		bool hasVideo = ui->radVideoAudio->isChecked() || ui->radVideoOnly->isChecked();
+		bool hasAudio = ui->radVideoAudio->isChecked() || ui->radAudioOnly->isChecked();
+
 		SetProgressShown(true);
 		compressor->compress(Compressor::Options{
 			.inputPath = selectedPath,
 			.outputPath = outputPath(QFileInfo(selectedPath).baseName()),
-			.videoCodec = videoCodecs.at(ui->videoCodecComboBox->currentIndex()),
-			.audioCodec = audioCodecs.at(ui->audioCodecComboBox->currentIndex()),
+			.videoCodec = hasVideo ? videoCodecs.at(ui->videoCodecComboBox->currentIndex())
+						     : optional<Codec>(),
+			.audioCodec = hasAudio ? audioCodecs.at(ui->audioCodecComboBox->currentIndex())
+						     : optional<Codec>(),
 			.container = containers.at(ui->containerComboBox->currentIndex()),
 			.sizeKbps = isAutoValue(ui->fileSizeSpinBox)
 						? std::optional<double>()
@@ -492,6 +499,14 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	setSetting("LastDesired/iWidth", ui->widthSpinBox->value());
 	setSetting("LastDesired/iHeight", ui->heightSpinBox->value());
 
+	auto *streamSelection = ui->audioVideoButtonGroup->checkedButton();
+	if (streamSelection == ui->radVideoAudio)
+		setSetting("LastDesired/iSelectedStreams", 0);
+	else if (streamSelection == ui->radVideoOnly)
+		setSetting("LastDesired/iSelectedStreams", 1);
+	else if (streamSelection == ui->radAudioOnly)
+		setSetting("LastDesired/iSelectedStreams", 2);
+
 	setSetting("LastDesired/bOpenInExplorerOnSuccess",
 		     ui->openExplorerOnSuccessCheckBox->isChecked());
 	setSetting("LastDesired/bPlayResultOnSuccess", ui->playOnSuccessCheckBox->isChecked());
@@ -526,6 +541,18 @@ void MainWindow::LoadState()
 
 	ui->widthSpinBox->setValue(setting("LastDesired/iWidth").toInt());
 	ui->heightSpinBox->setValue(setting("LastDesired/iHeight").toInt());
+
+	switch (setting("LastDesired/iSelectedStreams").toInt()) {
+	case 0:
+		ui->radVideoAudio->setChecked(true);
+		break;
+	case 1:
+		ui->radVideoOnly->setChecked(true);
+		break;
+	case 2:
+		ui->radAudioOnly->setChecked(true);
+		break;
+	}
 
 	ui->openExplorerOnSuccessCheckBox->setChecked(
 		setting("LastDesired/bOpenInExplorerOnSuccess").toBool());
