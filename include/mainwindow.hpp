@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <QPropertyAnimation>
 #include <QSettings>
+#include <QSpinBox>
 #include <QUrl>
 
 using Codec = Compressor::Codec;
@@ -57,6 +58,8 @@ private:
 	void ParseContainers(QList<Container>* containers, QComboBox* comboBox);
 
 	QString outputPath(QString inputFileName);
+
+	inline bool isAutoValue(QAbstractSpinBox* spinBox);
 
 	Ui::MainWindow* ui;
 	Compressor* compressor = new Compressor(this);

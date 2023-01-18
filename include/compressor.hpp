@@ -7,6 +7,8 @@
 #include <QObject>
 #include <QProcess>
 
+using std::optional;
+
 class Compressor : public QObject
 {
 	Q_OBJECT
@@ -34,23 +36,21 @@ public:
 	struct Options
 	{
 		const QString& inputPath;
-		const QString& outputPath;
-		const Codec& videoCodec;
-		const Codec& audioCodec;
-		const Container& container;
-		double sizeKbps;
-		double audioQualityPercent;
-		int outputWidth;
-		int outputHeight;
+		const QString outputPath;
+		optional<const Codec> videoCodec;
+		optional<const Codec> audioCodec;
+		optional<const Container> container;
+		optional<double> sizeKbps;
+		optional<double> audioQualityPercent;
+		optional<int> outputWidth;
+		optional<int> outputHeight;
 		double minVideoBitrateKbps = 64;
 		double minAudioBitrateKbps = 16;
 		double maxAudioBitrateKbps = 256;
 		double overshootCorrectionPercent = 0.02;
 	};
 
-	static const int AUTO_SIZE = 0;
-
-	void compress(Options options);
+	void compress(const Options& options);
 	QString availableFormats();
 
 signals:
@@ -62,10 +62,8 @@ signals:
 private:
 	struct ComputedOptions
 	{
-		double videoBitrateKbps;
-		double audioBitrateKbps;
-		QString scaledWidthParameter;
-		QString scaledHeightParameter;
+		optional<double> videoBitrateKbps;
+		optional<double> audioBitrateKbps;
 	};
 
 	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
@@ -87,6 +85,11 @@ private:
 	void StartCompression(const Options& options, const ComputedOptions& computedOptions);
 	void UpdateProgress();
 	void EndCompression(const Options& options, QString outputPath, QString command, int exitCode);
+	bool computeAudioBitrate(const Options& options, ComputedOptions& computed);
+	double computePixelRatio(const Options& options, const QStringList& metadata);
+	void computeVideoBitrate(const Options& options,
+					 ComputedOptions& computed,
+					 const QStringList& metadata);
 };
 
 #endif // COMPRESSOR_HPP

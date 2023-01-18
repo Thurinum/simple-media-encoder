@@ -17,7 +17,70 @@ Compressor::Compressor(QObject* parent) : QObject{parent}
 	});
 }
 
-void Compressor::compress(Options options)
+bool Compressor::computeAudioBitrate(const Options& options, ComputedOptions& computed)
+{
+	double audioBitrateKbps = qMax(options.minAudioBitrateKbps,
+						 options.audioQualityPercent.value_or(1)
+							 * options.maxAudioBitrateKbps);
+	if (audioBitrateKbps < options.audioCodec->minBitrateKbps) {
+		emit compressionFailed(tr("Selected audio codec %1 requires a minimum bitrate of %2 "
+						  "kbps, but requested was %3 kbps.")
+						     .arg(options.audioCodec->name,
+							    QString::number(options.audioCodec->minBitrateKbps),
+							    QString::number(audioBitrateKbps)));
+		return false;
+	}
+
+	computed.audioBitrateKbps = audioBitrateKbps;
+	return true;
+}
+
+double Compressor::computePixelRatio(const Options& options, const QStringList& metadata)
+{
+	double pixelRatio = 1;
+
+	QStringList aspectRatio = metadata[2].split(":");
+	int aspectRatioW = aspectRatio.first().toInt();
+	int aspectRatioH = aspectRatio.last().toInt();
+	int inputWidth = metadata[0].toInt();
+	int inputHeight = metadata[1].toInt();
+	int outputWidth;
+	int outputHeight;
+
+	long inputPixelCount = inputWidth * inputHeight;
+
+	if (options.outputWidth.has_value()) {
+		outputHeight = *options.outputHeight;
+		outputWidth = outputHeight * aspectRatioW / aspectRatioH;
+	} else {
+		outputWidth = *options.outputWidth;
+		outputHeight = outputWidth * aspectRatioW / aspectRatioH;
+	}
+
+	double outputPixelCount = outputWidth * outputHeight;
+
+	// TODO: Add option to enable bitrate compensation even when upscaling (will result in bigger files)
+	if (outputPixelCount > 0 && outputPixelCount < inputPixelCount)
+		pixelRatio = outputPixelCount / inputPixelCount;
+
+	return pixelRatio;
+}
+
+void Compressor::computeVideoBitrate(const Options& options,
+						 ComputedOptions& computed,
+						 const QStringList& metadata)
+{
+	double audioBitrateKbps = computed.audioBitrateKbps.value_or(0);
+
+	double pixelRatio = computePixelRatio(options, metadata);
+	double bitrateKbps = *options.sizeKbps / m_durationSeconds
+				   * (1.0 - options.overshootCorrectionPercent);
+
+	computed.videoBitrateKbps = qMax(options.minVideoBitrateKbps,
+						   pixelRatio * (bitrateKbps - audioBitrateKbps));
+}
+
+void Compressor::compress(const Options& options)
 {
 	if (!areValidOptions(options))
 		return;
@@ -30,65 +93,18 @@ void Compressor::compress(Options options)
 	if (m_durationSeconds == -1)
 		return;
 
-	// FIXME: This whole section makes no sense. Why are we calculating width parameter
-	// but then also recalculating output width conditionally? Both parts should be linked
-	// width and height scaling
-	QString widthParam;
+	ComputedOptions computed;
 
-	if (options.outputWidth == AUTO_SIZE)
-		widthParam = options.outputHeight == AUTO_SIZE ? "iw" : "-1";
-	else
-		widthParam = QString::number(options.outputWidth);
-
-	QString heightParam = options.outputHeight == AUTO_SIZE
-					    ? "-2"
-					    : QString::number(options.outputHeight + options.outputHeight % 2);
-
-	// pixel ratio
-	double pixelRatio = 1;
-
-	QStringList aspectRatio = metadata[2].split(":");
-	int aspectRatioW = aspectRatio.first().toInt();
-	int aspectRatioH = aspectRatio.last().toInt();
-	int inputWidth = metadata[0].toInt();
-	int inputHeight = metadata[1].toInt();
-
-	double inputPixelCount = inputWidth * inputHeight;
-
-	if (options.outputWidth == AUTO_SIZE) {
-		options.outputWidth = options.outputHeight * aspectRatioW / aspectRatioH;
-	} else {
-		options.outputHeight = options.outputWidth * aspectRatioW / aspectRatioH;
+	if (options.audioCodec.has_value()) {
+		if (!computeAudioBitrate(options, computed))
+			return;
 	}
 
-	double outputPixelCount = options.outputWidth * options.outputHeight;
-
-	// TODO: Add option to enable bitrate compensation even when upscaling (will result in bigger files)
-	if (outputPixelCount > 0 && outputPixelCount < inputPixelCount)
-		pixelRatio = outputPixelCount / inputPixelCount;
-
-	// calculate bitrate
-	double bitrateKbps = options.sizeKbps / m_durationSeconds
-				   * (1.0 - options.overshootCorrectionPercent);
-	double audioBitrateKbps = qMax(options.minAudioBitrateKbps,
-						 options.audioQualityPercent * options.maxAudioBitrateKbps);
-	double videoBitrateKpbs = qMax(options.minVideoBitrateKbps,
-						 pixelRatio * (bitrateKbps - audioBitrateKbps));
-
-	if (audioBitrateKbps < options.audioCodec.minBitrateKbps) {
-		emit compressionFailed(tr("Selected audio codec %1 requires a minimum bitrate of %2 "
-						  "kbps, but requested was %3 kbps.")
-						     .arg(options.audioCodec.name,
-							    QString::number(options.audioCodec.minBitrateKbps),
-							    QString::number(audioBitrateKbps)));
-		return;
+	if (options.videoCodec.has_value()) {
+		computeVideoBitrate(options, computed, metadata);
 	}
 
-	StartCompression(options,
-			     ComputedOptions{.videoBitrateKbps = videoBitrateKpbs,
-						   .audioBitrateKbps = audioBitrateKbps,
-						   .scaledWidthParameter = widthParam,
-						   .scaledHeightParameter = heightParam});
+	StartCompression(options, computed);
 }
 
 QString Compressor::availableFormats()
@@ -116,24 +132,37 @@ bool Compressor::areValidOptions(const Options& options)
 {
 	QString error;
 
-	if (!options.container.supportedCodecs.contains(options.videoCodec.library)) {
-		error = tr("Selected options.container %1 does not support selected video codec: %2.")
-				  .arg(options.container.name.toUpper(), options.videoCodec.name);
+	if (!options.videoCodec.has_value() && !options.audioCodec.has_value())
+		error = tr("Neither a video nor an audio codec was selected.");
+
+	if (!options.videoCodec.has_value() && !options.container.has_value())
+		error = tr("A container was selected but audio-only encoding was specified.");
+
+	if (options.videoCodec.has_value()
+	    && !options.container->supportedCodecs.contains(options.videoCodec->library)) {
+		error = tr("Selected container %1 does not support selected video codec: %2.")
+				  .arg(options.container->name.toUpper(), options.videoCodec->name);
 	}
-	if (!options.container.supportedCodecs.contains(options.audioCodec.library)) {
-		error = tr("Selected options.container %1 does not support selected audio codec: %2.")
-				  .arg(options.container.name.toUpper(), options.audioCodec.name);
+	if (options.audioCodec.has_value()
+	    && !options.container->supportedCodecs.contains(options.audioCodec->library)) {
+		error = tr("Selected container %1 does not support selected audio codec: %2.")
+				  .arg(options.container->name.toUpper(), options.audioCodec->name);
 	}
-	if (options.outputWidth < 0) {
+	if (options.outputWidth.has_value() && options.outputWidth < 0) {
 		error = tr("Output width must be greater than 0, but was %1")
-				  .arg(QString::number(options.outputWidth));
+				  .arg(QString::number(*options.outputWidth));
 	}
-	if (options.outputHeight < 0) {
+	if (options.outputHeight.has_value() && options.outputHeight < 0) {
 		error = tr("Output height must be greater than 0, but was %1")
-				  .arg(QString::number(options.outputHeight));
+				  .arg(QString::number(*options.outputHeight));
 	}
 
-	return error.isEmpty();
+	if (!error.isEmpty()) {
+		emit compressionFailed(error, tr("rip bozo"));
+		return false;
+	}
+
+	return true;
 }
 
 QStringList Compressor::mediaMetadata(const QString& path)
@@ -172,33 +201,48 @@ double Compressor::mediaDurationSeconds(const QStringList& metadata)
 	return durationSeconds;
 }
 
-void Compressor::StartCompression(const Options& options, const ComputedOptions& computedOptions)
+void Compressor::StartCompression(const Options& options, const ComputedOptions& computed)
 {
-	emit compressionStarted(computedOptions.videoBitrateKbps, computedOptions.audioBitrateKbps);
+	emit compressionStarted(computed.videoBitrateKbps.value_or(0),
+					computed.audioBitrateKbps.value_or(0));
 
-	QString videoBitrateParam = options.sizeKbps != AUTO_SIZE
-						    ? "-b:v "
-								+ QString::number(computedOptions.videoBitrateKbps)
+	QString videoCodecParam = options.videoCodec.has_value()
+						  ? "-c:v " + options.videoCodec->library
+						  : "-nv";
+	QString audioCodecParam = options.audioCodec.has_value()
+						  ? "-c:a " + options.audioCodec->library
+						  : "-na";
+	QString videoBitrateParam = options.sizeKbps.has_value()
+						    ? "-b:v " + QString::number(*computed.videoBitrateKbps)
 								+ "k"
 						    : "";
-	QString aspectRatioParam = options.outputWidth != AUTO_SIZE
-							   && options.outputHeight != AUTO_SIZE
-						   ? ",setsar=1/1"
-						   : "";
-	QString outputPath = options.outputPath + "." + options.container.name;
+	QString audioBitrateParam = computed.audioBitrateKbps.has_value()
+						    ? "-b:a " + QString::number(*computed.audioBitrateKbps)
+								+ "k"
+						    : "";
+	QString scaleParam;
 
-	QString command =
-		QString(R"(ffmpeg%1 -i "%2" -c:v %3 -c:a %4 %5 -b:a %6k -vf scale=%7:%8%9 "%10" -y)")
-			.arg(IS_WINDOWS ? ".exe" : "",
-			     options.inputPath,
-			     options.videoCodec.library,
-			     options.audioCodec.library,
-			     videoBitrateParam,
-			     QString::number(computedOptions.audioBitrateKbps),
-			     computedOptions.scaledWidthParameter,
-			     computedOptions.scaledHeightParameter,
-			     aspectRatioParam,
-			     outputPath);
+	if (options.outputWidth.has_value() && options.outputHeight.has_value())
+		scaleParam = QString(R"(-vf scale=%1:%2,setsar=1/1)")
+					 .arg(QString::number(*options.outputWidth),
+						QString::number(*options.outputHeight));
+	else if (options.outputWidth.has_value())
+		scaleParam = QString("-vf scale=%1:-2").arg(*options.outputWidth);
+	else if (options.outputHeight.has_value())
+		scaleParam = QString("-vf scale=-1:%1").arg(*options.outputHeight);
+
+	qDebug() << scaleParam << *options.outputWidth << *options.outputHeight;
+	QString outputPath = options.outputPath + "." + options.container->name;
+
+	QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 "%8" -y)")
+					.arg(IS_WINDOWS ? ".exe" : "",
+					     options.inputPath,
+					     videoCodecParam,
+					     audioCodecParam,
+					     videoBitrateParam,
+					     audioBitrateParam,
+					     scaleParam,
+					     outputPath);
 
 	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [this]() {
 		UpdateProgress();
@@ -257,7 +301,7 @@ void Compressor::EndCompression(const Options& options,
 
 	disconnect(*processUpdateConnection);
 	disconnect(*processFinishedConnection);
-	emit compressionSucceeded(options.sizeKbps, media.size() / BYTES_TO_KB, &media);
+	emit compressionSucceeded(*options.sizeKbps, media.size() / BYTES_TO_KB, &media);
 	m_output.clear();
 	media.close();
 }
