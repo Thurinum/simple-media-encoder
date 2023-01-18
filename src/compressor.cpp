@@ -208,10 +208,10 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 
 	QString videoCodecParam = options.videoCodec.has_value()
 						  ? "-c:v " + options.videoCodec->library
-						  : "-nv";
+						  : "-vn";
 	QString audioCodecParam = options.audioCodec.has_value()
 						  ? "-c:a " + options.audioCodec->library
-						  : "-na";
+						  : "-an";
 	QString videoBitrateParam = options.sizeKbps.has_value()
 						    ? "-b:v " + QString::number(*computed.videoBitrateKbps)
 								+ "k"
@@ -231,8 +231,9 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 	else if (options.outputHeight.has_value())
 		scaleParam = QString("-vf scale=-1:%1").arg(*options.outputHeight);
 
-	qDebug() << scaleParam << *options.outputWidth << *options.outputHeight;
-	QString outputPath = options.outputPath + "." + options.container->name;
+	QString fileExtension = options.videoCodec.has_value() ? options.container->name
+										 : options.audioCodec->name;
+	QString outputPath = options.outputPath + "." + fileExtension;
 
 	QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 "%8" -y)")
 					.arg(IS_WINDOWS ? ".exe" : "",
