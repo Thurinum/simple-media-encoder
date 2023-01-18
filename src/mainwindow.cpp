@@ -96,15 +96,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			.videoCodec = videoCodecs.at(ui->videoCodecComboBox->currentIndex()),
 			.audioCodec = audioCodecs.at(ui->audioCodecComboBox->currentIndex()),
 			.container = containers.at(ui->containerComboBox->currentIndex()),
-			.sizeKbps = ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
+			.sizeKbps = isAutoValue(ui->fileSizeSpinBox)
+						? std::optional<double>()
+						: ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
 			.audioQualityPercent = ui->audioQualitySlider->value() / 100.0,
-			.outputWidth = ui->widthSpinBox->value(),
-			.outputHeight = ui->heightSpinBox->value(),
+			.outputWidth = ui->widthSpinBox->value() == 0 ? std::optional<int>()
+										    : ui->widthSpinBox->value(),
+			.outputHeight = ui->heightSpinBox->value() == 0 ? std::optional<int>()
+											: ui->heightSpinBox->value(),
 			.minVideoBitrateKbps = setting("Main/dMinBitrateVideoKbps").toDouble(),
 			.minAudioBitrateKbps = setting("Main/dMinBitrateAudioKbps").toDouble(),
 			.maxAudioBitrateKbps = setting("Main/dMaxBitrateAudioKbps").toDouble()});
-
-		qDebug() << outputPath(QFileInfo(selectedPath).baseName());
 	});
 
 	// handle displaying target bitrates during compression
@@ -345,6 +347,11 @@ QString MainWindow::outputPath(QString inputFileName)
 		resolvedFileName = fileNameOrSuffix;
 
 	return resolvedFolder.filePath(resolvedFileName);
+}
+
+bool MainWindow::isAutoValue(QAbstractSpinBox *spinBox)
+{
+	return spinBox->text() == spinBox->specialValueText();
 }
 
 QVariant MainWindow::setting(const QString &key)
