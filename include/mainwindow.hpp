@@ -56,7 +56,7 @@ private:
 	void ParseCodecs(QList<Codec>* codecs, const QString& type, QComboBox* comboBox);
 	void ParseContainers(QList<Container>* containers, QComboBox* comboBox);
 
-	QString outputPath(QString inputFileName);
+	QString getOutputPath(QString inputFilePath);
 
 	inline bool isAutoValue(QAbstractSpinBox* spinBox);
 

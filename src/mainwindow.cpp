@@ -87,13 +87,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	// start compression button
 	connect(ui->startCompressionButton, &QPushButton::clicked, [=, this]() {
-		QString selectedPath = ui->inputFileLineEdit->text();
+		QString inputPath = ui->inputFileLineEdit->text();
 
-		if (!QFile::exists(selectedPath)) {
+		if (!QFile::exists(inputPath)) {
 			Notify(Severity::Info,
 				 tr("File not found"),
-				 tr("File '%1' does not exist. Please select a valid file.")
-					 .arg(selectedPath));
+				 tr("File '%1' does not exist. Please select a valid file.").arg(inputPath));
 			return;
 		}
 
@@ -112,14 +111,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 		bool hasVideo = ui->radVideoAudio->isChecked() || ui->radVideoOnly->isChecked();
 		bool hasAudio = ui->radVideoAudio->isChecked() || ui->radAudioOnly->isChecked();
-		QString output = outputPath(QFileInfo(selectedPath).baseName());
+		QString outputPath = getOutputPath(inputPath);
+
 		auto container = containers.at(ui->containerComboBox->currentIndex());
 
-		if (QFile::exists(output + "." + container.name)
+		if (QFile::exists(outputPath + "." + container.name)
 		    && ui->warnOnOverwriteCheckBox->isChecked()
 		    && QMessageBox::question(this,
 						     "Overwrite?",
-						     "Output at path '" + output
+						     "Output at path '" + outputPath
 							     + "' already exists. Overwrite it?")
 				 == QMessageBox::No) {
 			Notify(Severity::Info, "Operation canceled", "Compression aborted.");
@@ -128,8 +128,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 		SetProgressShown(true);
 		compressor->compress(Compressor::Options{
-			.inputPath = selectedPath,
-			.outputPath = output,
+			.inputPath = inputPath,
+			.outputPath = outputPath,
 			.videoCodec = hasVideo ? videoCodecs.at(ui->videoCodecComboBox->currentIndex())
 						     : optional<Codec>(),
 			.audioCodec = hasAudio ? audioCodecs.at(ui->audioCodecComboBox->currentIndex())
@@ -376,21 +376,26 @@ void MainWindow::ParseContainers(QList<Container> *containers, QComboBox *comboB
 	settings->endGroup();
 }
 
-QString MainWindow::outputPath(QString inputFileName)
+QString MainWindow::getOutputPath(QString inputFilePath)
 {
-	QDir folder = ui->outputFolderLineEdit->text();
+	QString folder = ui->outputFolderLineEdit->text();
 	bool hasSuffix = ui->outputFileNameSuffixCheckBox->isChecked();
 	QString fileNameOrSuffix = ui->outputFileNameLineEdit->text();
+	QFileInfo inputFile = QFileInfo(inputFilePath);
 
-	QDir resolvedFolder = folder.exists() ? folder : QDir::current();
+	QDir resolvedFolder = folder.isEmpty() ? inputFile.dir() : QDir(folder);
 	QString resolvedFileName;
 
-	if (fileNameOrSuffix.isEmpty())
-		resolvedFileName = inputFileName;
-	else if (hasSuffix)
-		resolvedFileName = inputFileName + "_" + fileNameOrSuffix;
-	else
+	if (fileNameOrSuffix.isEmpty()) {
+		resolvedFileName = inputFile.baseName();
+	} else if (hasSuffix) {
+		if (!fileNameOrSuffix[0].isLetterOrNumber())
+			fileNameOrSuffix.remove(0, 1);
+
+		resolvedFileName = inputFile.baseName() + "_" + fileNameOrSuffix;
+	} else {
 		resolvedFileName = fileNameOrSuffix;
+	}
 
 	return resolvedFolder.filePath(resolvedFileName);
 }
