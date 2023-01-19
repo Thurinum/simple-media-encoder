@@ -133,6 +133,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 						   ? QPoint(ui->aspectRatioSpinBoxH->value(),
 								ui->aspectRatioSpinBoxV->value())
 						   : optional<QPoint>(),
+			.customArguments = ui->customCommandTextEdit->toPlainText(),
 			.minVideoBitrateKbps = setting("Main/dMinBitrateVideoKbps").toDouble(),
 			.minAudioBitrateKbps = setting("Main/dMinBitrateAudioKbps").toDouble(),
 			.maxAudioBitrateKbps = setting("Main/dMaxBitrateAudioKbps").toDouble()});
@@ -540,6 +541,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	setSetting("LastDesired/iAspectRatioH", ui->aspectRatioSpinBoxH->value());
 	setSetting("LastDesired/iAspectRatioV", ui->aspectRatioSpinBoxV->value());
 
+	setSetting("LastDesired/sCustomParameters", ui->customCommandTextEdit->toPlainText());
+
 	auto *streamSelection = ui->audioVideoButtonGroup->checkedButton();
 	if (streamSelection == ui->radVideoAudio)
 		setSetting("LastDesired/iSelectedStreams", 0);
@@ -587,6 +590,8 @@ void MainWindow::LoadState()
 
 	ui->aspectRatioSpinBoxH->setValue(setting("LastDesired/iAspectRatioH").toInt());
 	ui->aspectRatioSpinBoxV->setValue(setting("LastDesired/iAspectRatioV").toInt());
+
+	ui->customCommandTextEdit->setPlainText(setting("LastDesired/sCustomParameters").toString());
 
 	switch (setting("LastDesired/iSelectedStreams").toInt()) {
 	case 0:
