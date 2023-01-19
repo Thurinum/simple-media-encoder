@@ -100,7 +100,7 @@ void Compressor::compress(const Options& options)
 			return;
 	}
 
-	if (options.videoCodec.has_value()) {
+	if (options.videoCodec.has_value() && options.sizeKbps.has_value()) {
 		computeVideoBitrate(options, computed, metadata);
 	}
 
@@ -342,7 +342,7 @@ void Compressor::EndCompression(const Options& options,
 
 	disconnect(*processUpdateConnection);
 	disconnect(*processFinishedConnection);
-	emit compressionSucceeded(*options.sizeKbps, media.size() / BYTES_TO_KB, &media);
+	emit compressionSucceeded(options.sizeKbps.value_or(0), media.size() / BYTES_TO_KB, &media);
 	m_output.clear();
 	media.close();
 }
