@@ -157,6 +157,13 @@ bool Compressor::areValidOptions(const Options& options)
 				  .arg(QString::number(*options.outputHeight));
 	}
 
+	if (options.aspectRatio.has_value() && options.aspectRatio->x() <= 0) {
+		error = tr("Invalid horizontal aspect %1").arg(QString::number(options.aspectRatio->x()));
+	}
+	if (options.aspectRatio.has_value() && options.aspectRatio->y() <= 0) {
+		error = tr("Invalid horizontal aspect %1").arg(QString::number(options.aspectRatio->x()));
+	}
+
 	if (!error.isEmpty()) {
 		emit compressionFailed(error, tr("rip bozo"));
 		return false;
@@ -221,18 +228,28 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 								+ "k"
 						    : "";
 	QString aspectRatioParam;
-
 	QString scaleParam;
 
 	if (options.outputWidth.has_value() && options.outputHeight.has_value()) {
-		scaleParam = QString("-vf scale=%1:%2")
+		scaleParam = QString("scale=%1:%2")
 					 .arg(QString::number(*options.outputWidth),
 						QString::number(*options.outputHeight));
-		aspectRatioParam = ",setsar=1/1";
-	} else if (options.outputWidth.has_value())
-		scaleParam = QString("-vf scale=%1:-2").arg(*options.outputWidth);
-	else if (options.outputHeight.has_value())
-		scaleParam = QString("-vf scale=-1:%1").arg(*options.outputHeight);
+		aspectRatioParam = "setsar=1/1";
+	} else if (options.outputWidth.has_value()) {
+		scaleParam = QString("-vf scale=%1:-2").arg(QString::number(*options.outputWidth));
+	} else if (options.outputHeight.has_value()) {
+		scaleParam = QString("-vf scale=-1:%1").arg(QString::number(*options.outputHeight));
+	}
+
+	if (options.aspectRatio.has_value()) {
+		aspectRatioParam = QString("setsar=%1/%2")
+						 .arg(QString::number(options.aspectRatio->y()),
+							QString::number(options.aspectRatio->x()));
+	}
+
+	QStringList videoFilters = QStringList{scaleParam, aspectRatioParam};
+	videoFilters.removeAll({});
+	QString videoFiltersParam = "-vf " + videoFilters.join(',');
 
 	QString fileExtension = options.videoCodec.has_value() ? options.container->name
 										 : options.audioCodec->name;
@@ -245,7 +262,7 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 					     audioCodecParam,
 					     videoBitrateParam,
 					     audioBitrateParam,
-					     scaleParam,
+					     videoFiltersParam,
 					     outputPath);
 
 	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [this]() {

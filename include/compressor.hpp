@@ -5,6 +5,7 @@
 #include <QEventLoop>
 #include <QList>
 #include <QObject>
+#include <QPoint>
 #include <QProcess>
 
 using std::optional;
@@ -44,7 +45,7 @@ public:
 		optional<double> audioQualityPercent;
 		optional<int> outputWidth;
 		optional<int> outputHeight;
-		optional<QPair<int, int>> aspectRatio;
+		optional<QPoint> aspectRatio;
 		double minVideoBitrateKbps = 64;
 		double minAudioBitrateKbps = 16;
 		double maxAudioBitrateKbps = 256;
