@@ -164,6 +164,11 @@ bool Compressor::areValidOptions(const Options& options)
 		error = tr("Invalid horizontal aspect %1").arg(QString::number(options.aspectRatio->x()));
 	}
 
+	if (options.customArguments.has_value()
+	    && QRegularExpression("[^ -/a-z0-9]").match(*options.customArguments).hasMatch()) {
+		error = tr("Custom parameters contain invalid characters.");
+	}
+
 	if (!error.isEmpty()) {
 		emit compressionFailed(error, tr("rip bozo"));
 		return false;
@@ -255,7 +260,7 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 										 : options.audioCodec->name;
 	QString outputPath = options.outputPath + "." + fileExtension;
 
-	QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 "%8" -y)")
+	QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 %8 "%9" -y)")
 					.arg(IS_WINDOWS ? ".exe" : "",
 					     options.inputPath,
 					     videoCodecParam,
@@ -263,6 +268,7 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 					     videoBitrateParam,
 					     audioBitrateParam,
 					     videoFiltersParam,
+					     *options.customArguments,
 					     outputPath);
 
 	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [this]() {
