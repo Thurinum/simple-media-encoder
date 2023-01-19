@@ -110,16 +110,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 		bool hasVideo = ui->radVideoAudio->isChecked() || ui->radVideoOnly->isChecked();
 		bool hasAudio = ui->radVideoAudio->isChecked() || ui->radAudioOnly->isChecked();
+		QString output = outputPath(QFileInfo(selectedPath).baseName());
+		auto container = containers.at(ui->containerComboBox->currentIndex());
+
+		if (QFile::exists(output + "." + container.name)
+		    && ui->warnOnOverwriteCheckBox->isChecked()
+		    && QMessageBox::question(this,
+						     "Overwrite?",
+						     "Output at path '" + output
+							     + "' already exists. Overwrite it?")
+				 == QMessageBox::No) {
+			Notify(Severity::Info, "Operation canceled", "Compression aborted.");
+			return;
+		}
 
 		SetProgressShown(true);
 		compressor->compress(Compressor::Options{
 			.inputPath = selectedPath,
-			.outputPath = outputPath(QFileInfo(selectedPath).baseName()),
+			.outputPath = output,
 			.videoCodec = hasVideo ? videoCodecs.at(ui->videoCodecComboBox->currentIndex())
 						     : optional<Codec>(),
 			.audioCodec = hasAudio ? audioCodecs.at(ui->audioCodecComboBox->currentIndex())
 						     : optional<Codec>(),
-			.container = containers.at(ui->containerComboBox->currentIndex()),
+			.container = container,
 			.sizeKbps = isAutoValue(ui->fileSizeSpinBox)
 						? std::optional<double>()
 						: ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
@@ -545,6 +558,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	setSetting("LastDesired/sCustomParameters", ui->customCommandTextEdit->toPlainText());
 
 	setSetting("LastDesired/bHasFileSuffix", ui->outputFileNameSuffixCheckBox->isChecked());
+	setSetting("LastDesired/bWarnOnOverwrite", ui->warnOnOverwriteCheckBox->isChecked());
 	setSetting("LastDesired/iFps", ui->fpsSpinBox->value());
 
 	auto *streamSelection = ui->audioVideoButtonGroup->checkedButton();
@@ -598,6 +612,7 @@ void MainWindow::LoadState()
 	ui->customCommandTextEdit->setPlainText(setting("LastDesired/sCustomParameters").toString());
 
 	ui->outputFileNameSuffixCheckBox->setChecked(setting("LastDesired/bHasFileSuffix").toBool());
+	ui->warnOnOverwriteCheckBox->setChecked(setting("LastDesired/bWarnOnOverwrite").toBool());
 
 	ui->fpsSpinBox->setValue(setting("LastDesired/iFps").toInt());
 
