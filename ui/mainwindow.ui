@@ -985,7 +985,7 @@
             <item>
              <widget class="QSpinBox" name="fpsSpinBox">
               <property name="specialValueText">
-               <string/>
+               <string>Auto</string>
               </property>
               <property name="suffix">
                <string> fps</string>
@@ -994,13 +994,13 @@
                <string/>
               </property>
               <property name="minimum">
-               <number>1</number>
+               <number>0</number>
               </property>
               <property name="maximum">
                <number>999</number>
               </property>
               <property name="value">
-               <number>1</number>
+               <number>0</number>
               </property>
              </widget>
             </item>

@@ -133,6 +133,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 						   ? QPoint(ui->aspectRatioSpinBoxH->value(),
 								ui->aspectRatioSpinBoxV->value())
 						   : optional<QPoint>(),
+			.fps = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
 			.customArguments = ui->customCommandTextEdit->toPlainText(),
 			.minVideoBitrateKbps = setting("Main/dMinBitrateVideoKbps").toDouble(),
 			.minAudioBitrateKbps = setting("Main/dMinBitrateAudioKbps").toDouble(),
@@ -544,6 +545,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	setSetting("LastDesired/sCustomParameters", ui->customCommandTextEdit->toPlainText());
 
 	setSetting("LastDesired/bHasFileSuffix", ui->outputFileNameSuffixCheckBox->isChecked());
+	setSetting("LastDesired/iFps", ui->fpsSpinBox->value());
 
 	auto *streamSelection = ui->audioVideoButtonGroup->checkedButton();
 	if (streamSelection == ui->radVideoAudio)
@@ -596,6 +598,8 @@ void MainWindow::LoadState()
 	ui->customCommandTextEdit->setPlainText(setting("LastDesired/sCustomParameters").toString());
 
 	ui->outputFileNameSuffixCheckBox->setChecked(setting("LastDesired/bHasFileSuffix").toBool());
+
+	ui->fpsSpinBox->setValue(setting("LastDesired/iFps").toInt());
 
 	switch (setting("LastDesired/iSelectedStreams").toInt()) {
 	case 0:
