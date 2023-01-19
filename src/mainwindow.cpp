@@ -543,6 +543,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 	setSetting("LastDesired/sCustomParameters", ui->customCommandTextEdit->toPlainText());
 
+	setSetting("LastDesired/bHasFileSuffix", ui->outputFileNameSuffixCheckBox->isChecked());
+
 	auto *streamSelection = ui->audioVideoButtonGroup->checkedButton();
 	if (streamSelection == ui->radVideoAudio)
 		setSetting("LastDesired/iSelectedStreams", 0);
@@ -592,6 +594,8 @@ void MainWindow::LoadState()
 	ui->aspectRatioSpinBoxV->setValue(setting("LastDesired/iAspectRatioV").toInt());
 
 	ui->customCommandTextEdit->setPlainText(setting("LastDesired/sCustomParameters").toString());
+
+	ui->outputFileNameSuffixCheckBox->setChecked(setting("LastDesired/bHasFileSuffix").toBool());
 
 	switch (setting("LastDesired/iSelectedStreams").toInt()) {
 	case 0:
