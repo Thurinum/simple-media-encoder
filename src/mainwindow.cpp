@@ -128,8 +128,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 										    : ui->widthSpinBox->value(),
 			.outputHeight = ui->heightSpinBox->value() == 0 ? std::optional<int>()
 											: ui->heightSpinBox->value(),
-			.aspectRatio = QPair<int, int>(ui->aspectRatioSpinBoxH->value(),
-								 ui->aspectRatioSpinBoxV->value()),
+			.aspectRatio = ui->aspectRatioSpinBoxH->value() != 0
+							   && ui->aspectRatioSpinBoxV->value() != 0
+						   ? QPoint(ui->aspectRatioSpinBoxH->value(),
+								ui->aspectRatioSpinBoxV->value())
+						   : optional<QPoint>(),
 			.minVideoBitrateKbps = setting("Main/dMinBitrateVideoKbps").toDouble(),
 			.minAudioBitrateKbps = setting("Main/dMinBitrateAudioKbps").toDouble(),
 			.maxAudioBitrateKbps = setting("Main/dMaxBitrateAudioKbps").toDouble()});
@@ -382,7 +385,8 @@ bool MainWindow::isAutoValue(QAbstractSpinBox *spinBox)
 
 void MainWindow::CheckAspectRatioConflict()
 {
-	bool hasCustomScale = ui->aspectRatioSpinBoxH->value() != 0 || ui->aspectRatioSpinBoxV != 0;
+	bool hasCustomScale = ui->aspectRatioSpinBoxH->value() != 0
+				    || ui->aspectRatioSpinBoxV->value() != 0;
 	bool hasCustomAspect = ui->widthSpinBox->value() != 0 || ui->heightSpinBox->value() != 0;
 
 	if (hasCustomScale && hasCustomAspect) {
@@ -533,6 +537,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	setSetting("LastDesired/iWidth", ui->widthSpinBox->value());
 	setSetting("LastDesired/iHeight", ui->heightSpinBox->value());
 
+	setSetting("LastDesired/iAspectRatioH", ui->aspectRatioSpinBoxH->value());
+	setSetting("LastDesired/iAspectRatioV", ui->aspectRatioSpinBoxV->value());
+
 	auto *streamSelection = ui->audioVideoButtonGroup->checkedButton();
 	if (streamSelection == ui->radVideoAudio)
 		setSetting("LastDesired/iSelectedStreams", 0);
@@ -577,6 +584,9 @@ void MainWindow::LoadState()
 
 	ui->widthSpinBox->setValue(setting("LastDesired/iWidth").toInt());
 	ui->heightSpinBox->setValue(setting("LastDesired/iHeight").toInt());
+
+	ui->aspectRatioSpinBoxH->setValue(setting("LastDesired/iAspectRatioH").toInt());
+	ui->aspectRatioSpinBoxV->setValue(setting("LastDesired/iAspectRatioV").toInt());
 
 	switch (setting("LastDesired/iSelectedStreams").toInt()) {
 	case 0:
