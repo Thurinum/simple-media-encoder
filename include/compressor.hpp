@@ -38,6 +38,7 @@ public:
 	{
 		const QString& inputPath;
 		const QString outputPath;
+		bool allowOverwrite = false;
 		optional<const Codec> videoCodec;
 		optional<const Codec> audioCodec;
 		optional<const Container> container;
