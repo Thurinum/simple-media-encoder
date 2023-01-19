@@ -36,7 +36,6 @@ public:
 	};
 
 	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
-	const QString CONFIG_FILE = "config.ini";
 
 	QVariant setting(const QString& key);
 	void setSetting(const QString& key, const QVariant& value);
@@ -64,8 +63,9 @@ private:
 	void CheckAspectRatioConflict();
 
 	Ui::MainWindow* ui;
+	void InitSettings(const QString& fileName);
 	Compressor* compressor = new Compressor(this);
-	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
+	QSettings* settings;
 	bool m_isNvidia = false;
 };
 #endif // MAINWINDOW_HPP

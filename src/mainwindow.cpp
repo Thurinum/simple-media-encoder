@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	ui->setupUi(this);
 	this->resize(this->minimumSizeHint());
 
+	InitSettings("config");
+
 	connect(ui->widthSpinBox,
 		  &QSpinBox::valueChanged,
 		  this,
@@ -285,9 +287,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::ParseCodecs(QList<Codec> *codecs, const QString &type, QComboBox *comboBox)
 {
-	settings.beginGroup(type);
+	settings->beginGroup(type);
 
-	if (settings.childKeys().empty()) {
+	if (settings->childKeys().empty()) {
 		Notify(Severity::Critical,
 			 tr("Missing codecs definition").arg(type),
 			 tr("Could not find codecs list of type '%1' in the configuration file. "
@@ -297,14 +299,14 @@ void MainWindow::ParseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 
 	QString availableCodecs = compressor->availableFormats();
 
-	for (const QString &codecLibrary : settings.childKeys()) {
+	for (const QString &codecLibrary : settings->childKeys()) {
 		if (!availableCodecs.contains(codecLibrary)) {
 			Notify(Severity::Warning,
 				 tr("Unsupported codec"),
 				 tr("Codec library '%1' does not appear to be supported by our version of "
 				    "FFMPEG. It has been skipped. Please validate the "
 				    "configuration in %2.")
-					 .arg(codecLibrary, CONFIG_FILE));
+					 .arg(codecLibrary, settings->fileName()));
 			continue;
 		}
 
@@ -316,7 +318,7 @@ void MainWindow::ParseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 				 tr("Could not parse codec"),
 				 tr("Codec library '%1' could not be parsed. Please validate the "
 				    "configuration in %2. Exiting.")
-					 .arg(codecLibrary, CONFIG_FILE));
+					 .arg(codecLibrary, settings->fileName()));
 		}
 
 		QStringList values
@@ -334,35 +336,35 @@ void MainWindow::ParseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 				 tr("Invalid codec bitrate"),
 				 tr("Minimum bitrate of codec '%1' could not be parsed. Please "
 				    "validate the configuration in %2. Exiting.")
-					 .arg(values.last(), CONFIG_FILE));
+					 .arg(values.last(), settings->fileName()));
 		}
 
 		Codec codec{codecName, codecLibrary, codecMinBitrateKbps};
 		codecs->append(codec);
 		comboBox->addItem(codecName);
 	}
-	settings.endGroup();
+	settings->endGroup();
 }
 
 void MainWindow::ParseContainers(QList<Container> *containers, QComboBox *comboBox)
 {
-	settings.beginGroup("Containers");
+	settings->beginGroup("Containers");
 
-	if (settings.childKeys().empty()) {
+	if (settings->childKeys().empty()) {
 		Notify(Severity::Critical,
 			 tr("Missing containers definition"),
 			 tr("Could not find list of container in the configuration file. Please "
 			    "validate the configuration in %1. Exiting.")
-				 .arg(CONFIG_FILE));
+				 .arg(settings->fileName()));
 	}
 
-	for (const QString &containerName : settings.childKeys()) {
+	for (const QString &containerName : settings->childKeys()) {
 		if (QRegularExpression("[^-_a-z0-9]").match(containerName).hasMatch()) {
 			Notify(Severity::Critical,
 				 tr("Invalid container name"),
 				 tr("Name of container '%1' could not be parsed. Please "
 				    "validate the configuration in %2. Exiting.")
-					 .arg(containerName, CONFIG_FILE));
+					 .arg(containerName, settings->fileName()));
 		}
 
 		QStringList supportedCodecs
@@ -371,7 +373,7 @@ void MainWindow::ParseContainers(QList<Container> *containers, QComboBox *comboB
 		containers->append(container);
 		comboBox->addItem(containerName.toUpper());
 	}
-	settings.endGroup();
+	settings->endGroup();
 }
 
 QString MainWindow::outputPath(QString inputFileName)
@@ -414,23 +416,41 @@ void MainWindow::CheckAspectRatioConflict()
 	}
 }
 
+void MainWindow::InitSettings(const QString &fileName)
+{
+	QString defaultFileName = fileName + "_default.ini";
+	QString currentFileName = fileName + ".ini";
+
+	if (!QFile::exists(defaultFileName)) {
+		Notify(Severity::Critical,
+			 tr("Cannot find default settings"),
+			 tr("Default configuration file %1 was not found. Please reinstall the program.")
+				 .arg(defaultFileName));
+	}
+
+	if (!QFile::exists(currentFileName))
+		QFile::copy(defaultFileName, currentFileName);
+
+	settings = new QSettings(currentFileName, QSettings::IniFormat);
+}
+
 QVariant MainWindow::setting(const QString &key)
 {
-	if (!settings.contains(key)) {
+	if (!settings->contains(key)) {
 		Notify(Severity::Critical,
 			 tr("Missing configuration"),
 			 tr("Configuration file is missing key '%1'. Please validate the "
 			    "configuration in %2. Exiting.")
-				 .arg(key, CONFIG_FILE),
+				 .arg(key, settings->fileName()),
 			 tr("Missing key: %1\nWorking directory: %2").arg(key, QDir::currentPath()));
 	}
 
-	return settings.value(key);
+	return settings->value(key);
 }
 
 void MainWindow::setSetting(const QString &key, const QVariant &value)
 {
-	if (!settings.contains(key)) {
+	if (!settings->contains(key)) {
 		Notify(Severity::Warning,
 			 tr("New setting created"),
 			 tr("Request to set configuration key '%1' which does not already "
@@ -438,7 +458,7 @@ void MainWindow::setSetting(const QString &key, const QVariant &value)
 				 .arg(key));
 	}
 
-	settings.setValue(key, value);
+	settings->setValue(key, value);
 }
 
 void MainWindow::SetProgressShown(bool shown, int progressPercent)
