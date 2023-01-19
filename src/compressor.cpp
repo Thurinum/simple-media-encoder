@@ -263,9 +263,12 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 	if (options.fps.has_value())
 		fpsFilter = "fps=" + QString::number(*options.fps);
 
+	QString videoFiltersParam;
 	QStringList videoFilters = QStringList{scaleFilter, aspectRatioFilter, fpsFilter};
 	videoFilters.removeAll({});
-	QString videoFiltersParam = "-filter:v " + videoFilters.join(',');
+
+	if (videoFilters.length() > 0)
+		videoFiltersParam = "-filter:v " + videoFilters.join(',');
 
 	QString fileExtension = options.videoCodec.has_value() ? options.container->name
 										 : options.audioCodec->name;
