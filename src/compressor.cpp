@@ -220,13 +220,16 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 						    ? "-b:a " + QString::number(*computed.audioBitrateKbps)
 								+ "k"
 						    : "";
+	QString aspectRatioParam;
+
 	QString scaleParam;
 
-	if (options.outputWidth.has_value() && options.outputHeight.has_value())
-		scaleParam = QString(R"(-vf scale=%1:%2,setsar=1/1)")
+	if (options.outputWidth.has_value() && options.outputHeight.has_value()) {
+		scaleParam = QString("-vf scale=%1:%2")
 					 .arg(QString::number(*options.outputWidth),
 						QString::number(*options.outputHeight));
-	else if (options.outputWidth.has_value())
+		aspectRatioParam = ",setsar=1/1";
+	} else if (options.outputWidth.has_value())
 		scaleParam = QString("-vf scale=%1:-2").arg(*options.outputWidth);
 	else if (options.outputHeight.has_value())
 		scaleParam = QString("-vf scale=-1:%1").arg(*options.outputHeight);

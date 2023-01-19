@@ -25,6 +25,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	ui->setupUi(this);
 	this->resize(this->minimumSizeHint());
 
+	connect(ui->widthSpinBox,
+		  &QSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckAspectRatioConflict);
+	connect(ui->heightSpinBox,
+		  &QSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckAspectRatioConflict);
+	connect(ui->aspectRatioSpinBoxH,
+		  &QSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckAspectRatioConflict);
+	connect(ui->aspectRatioSpinBoxV,
+		  &QSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckAspectRatioConflict);
+
 	// menu
 	QMenu *menu = new QMenu(this);
 	menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
@@ -111,6 +128,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 										    : ui->widthSpinBox->value(),
 			.outputHeight = ui->heightSpinBox->value() == 0 ? std::optional<int>()
 											: ui->heightSpinBox->value(),
+			.aspectRatio = QPair<int, int>(ui->aspectRatioSpinBoxH->value(),
+								 ui->aspectRatioSpinBoxV->value()),
 			.minVideoBitrateKbps = setting("Main/dMinBitrateVideoKbps").toDouble(),
 			.minAudioBitrateKbps = setting("Main/dMinBitrateAudioKbps").toDouble(),
 			.maxAudioBitrateKbps = setting("Main/dMaxBitrateAudioKbps").toDouble()});
@@ -361,6 +380,21 @@ bool MainWindow::isAutoValue(QAbstractSpinBox *spinBox)
 	return spinBox->text() == spinBox->specialValueText();
 }
 
+void MainWindow::CheckAspectRatioConflict()
+{
+	bool hasCustomScale = ui->aspectRatioSpinBoxH->value() != 0 || ui->aspectRatioSpinBoxV != 0;
+	bool hasCustomAspect = ui->widthSpinBox->value() != 0 || ui->heightSpinBox->value() != 0;
+
+	if (hasCustomScale && hasCustomAspect) {
+		ui->warningTooltipButton->setToolTip(
+			tr("A custom aspect ratio has been set.\nIt will take priority over the "
+			   "one\ndefined by custom scaling."));
+		ui->warningTooltipButton->setVisible(true);
+	} else {
+		ui->warningTooltipButton->setVisible(false);
+	}
+}
+
 QVariant MainWindow::setting(const QString &key)
 {
 	if (!settings.contains(key)) {
@@ -489,7 +523,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	setSetting("LastDesired/sOutputDir", ui->outputFolderLineEdit->text());
 	setSetting("LastDesired/dFileSize", ui->fileSizeSpinBox->value());
 	setSetting("LastDesired/sFileSizeUnit", ui->fileSizeUnitComboBox->currentText());
-	setSetting("LastDesired/sFileSuffix", ui->outputFileSuffixLineEdit->text());
+	setSetting("LastDesired/sFileNameOrSuffix", ui->outputFileNameLineEdit->text());
 	setSetting("LastDesired/iQualityRatio", ui->audioQualitySlider->value());
 
 	setSetting("LastDesired/sVideoCodec", ui->videoCodecComboBox->currentText());
@@ -517,6 +551,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::LoadState()
 {
+	ui->warningTooltipButton->setVisible(false);
+
 	if (!setting("LastDesired/bAdvancedMode").toBool())
 		ui->advancedModeCheckBox->click();
 
@@ -528,7 +564,7 @@ void MainWindow::LoadState()
 	if (selectedDir == "" || QDir(selectedDir).exists())
 		ui->outputFolderLineEdit->setText(selectedDir);
 
-	ui->outputFileSuffixLineEdit->setText(setting("LastDesired/sFileSuffix").toString());
+	ui->outputFileNameLineEdit->setText(setting("LastDesired/sFileNameOrSuffix").toString());
 
 	ui->fileSizeSpinBox->setValue(setting("LastDesired/dFileSize").toDouble());
 	ui->fileSizeUnitComboBox->setCurrentText(setting("LastDesired/sFileSizeUnit").toString());

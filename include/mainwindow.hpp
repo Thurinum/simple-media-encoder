@@ -61,6 +61,8 @@ private:
 
 	inline bool isAutoValue(QAbstractSpinBox* spinBox);
 
+	void CheckAspectRatioConflict();
+
 	Ui::MainWindow* ui;
 	Compressor* compressor = new Compressor(this);
 	QSettings settings = QSettings("config.ini", QSettings::IniFormat);
