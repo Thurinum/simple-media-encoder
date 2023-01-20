@@ -2,6 +2,7 @@
 #define MAINWINDOW_HPP
 
 #include "compressor.hpp"
+#include "settings.hpp"
 
 #include <QComboBox>
 #include <QGraphicsBlurEffect>
@@ -47,11 +48,6 @@ public:
 		Critical // Will terminate program
 	};
 
-	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
-
-	QVariant setting(const QString& key);
-	void setSetting(const QString& key, const QVariant& value);
-
 	void Notify(Severity severity,
 			const QString& title,
 			const QString& message,
@@ -65,22 +61,19 @@ private:
 	void SaveState();
 	void SetProgressShown(bool shown, int progressPercent = 0);
 	void SetAdvancedMode(bool enabled);
-
 	void ParseCodecs(QList<Codec>* codecs, const QString& type, QComboBox* comboBox);
 	void ParseContainers(QList<Container>* containers, QComboBox* comboBox);
-
-	QString getOutputPath(QString inputFilePath);
-
-	inline bool isAutoValue(QAbstractSpinBox* spinBox);
-
 	void CheckAspectRatioConflict();
 	void CheckSpeedConflict();
+	QString getOutputPath(QString inputFilePath);
+	inline bool isAutoValue(QAbstractSpinBox* spinBox);
 
+	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
 	Ui::MainWindow* ui;
+	Settings settings;
 	Warnings* warnings;
 	void InitSettings(const QString& fileName);
 	Compressor* compressor = new Compressor(this);
-	QSettings* settings;
 	bool m_isNvidia = false;
 };
 
