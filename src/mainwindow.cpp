@@ -646,6 +646,7 @@ void MainWindow::SaveState()
 	setSetting("LastDesired/bHasFileSuffix", ui->outputFileNameSuffixCheckBox->isChecked());
 	setSetting("LastDesired/bWarnOnOverwrite", ui->warnOnOverwriteCheckBox->isChecked());
 
+	setSetting("LastDesired/dSpeed", ui->speedSpinBox->value());
 	setSetting("LastDesired/iFps", ui->fpsSpinBox->value());
 
 	setSetting("LastDesired/bDeleteInputOnSuccess", ui->deleteOnSuccessCheckBox->isChecked());
@@ -707,6 +708,7 @@ void MainWindow::LoadState()
 	ui->outputFileNameSuffixCheckBox->setChecked(setting("LastDesired/bHasFileSuffix").toBool());
 	ui->warnOnOverwriteCheckBox->setChecked(setting("LastDesired/bWarnOnOverwrite").toBool());
 
+	ui->speedSpinBox->setValue(setting("LastDesired/dSpeed").toDouble());
 	ui->fpsSpinBox->setValue(setting("LastDesired/iFps").toInt());
 
 	ui->deleteOnSuccessCheckBox->setChecked(setting("LastDesired/bDeleteInputOnSuccess").toBool());
