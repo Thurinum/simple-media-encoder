@@ -171,6 +171,11 @@ bool Compressor::areValidOptions(const Options& options)
 				  .arg(QString::number(*fps));
 	}
 
+	auto speed = options.speed;
+	if (speed.has_value() && speed.value() < 0) {
+		error = QString("Value for speed '%1' is out of range.").arg(QString::number(*fps));
+	}
+
 	if (options.customArguments.has_value()
 	    && QRegularExpression("[^ -/a-z0-9]").match(*options.customArguments).hasMatch()) {
 		error = tr("Custom parameters contain invalid characters.");
@@ -239,9 +244,13 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 						    ? "-b:a " + QString::number(*computed.audioBitrateKbps)
 								+ "k"
 						    : "";
+
+	// video filters
 	QString aspectRatioFilter;
 	QString scaleFilter;
+	QString speedFilter;
 	QString fpsFilter;
+	double fps = *options.fps;
 
 	if (options.outputWidth.has_value() && options.outputHeight.has_value()) {
 		scaleFilter = QString("scale=%1:%2")
@@ -260,21 +269,41 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 							 QString::number(options.aspectRatio->x()));
 	}
 
-	if (options.fps.has_value())
-		fpsFilter = "fps=" + QString::number(*options.fps);
+	if (options.speed.has_value()) {
+		speedFilter = QString("setpts=%1*PTS").arg(QString::number(1.0 / *options.speed));
+		fps *= *options.speed;
+	}
+
+	if (options.fps.has_value()) {
+		fpsFilter = "fps=" + QString::number(fps);
+	}
 
 	QString videoFiltersParam;
-	QStringList videoFilters = QStringList{scaleFilter, aspectRatioFilter, fpsFilter};
+	QStringList videoFilters = QStringList{scaleFilter, aspectRatioFilter, speedFilter, fpsFilter};
 	videoFilters.removeAll({});
 
 	if (videoFilters.length() > 0)
 		videoFiltersParam = "-filter:v " + videoFilters.join(',');
 
+	// audio filters
+	QString audioSpeedFilter;
+
+	if (options.speed.has_value()) {
+		audioSpeedFilter = "atempo=" + QString::number(*options.speed);
+	}
+
+	QString audioFiltersParam;
+	QStringList audioFilters = QStringList{audioSpeedFilter};
+	audioFilters.removeAll({});
+
+	if (audioFilters.length() > 0)
+		audioFiltersParam = "-filter:a " + audioFilters.join(',');
+
 	QString fileExtension = options.videoCodec.has_value() ? options.container->name
 										 : options.audioCodec->name;
 	QString outputPath = options.outputPath + "." + fileExtension;
 
-	QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 %8 "%9" -y)")
+	QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 %8 %9 "%10" -y)")
 					.arg(IS_WINDOWS ? ".exe" : "",
 					     options.inputPath,
 					     videoCodecParam,
@@ -282,6 +311,7 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 					     videoBitrateParam,
 					     audioBitrateParam,
 					     videoFiltersParam,
+					     audioFiltersParam,
 					     *options.customArguments,
 					     outputPath);
 

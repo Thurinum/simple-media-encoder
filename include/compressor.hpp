@@ -47,6 +47,7 @@ public:
 		optional<int> outputHeight;
 		optional<QPoint> aspectRatio;
 		optional<int> fps;
+		optional<double> speed;
 		optional<QString> customArguments;
 		double minVideoBitrateKbps = 64;
 		double minAudioBitrateKbps = 16;
