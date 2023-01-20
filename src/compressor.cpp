@@ -300,7 +300,7 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 		audioFiltersParam = "-filter:a " + audioFilters.join(',');
 
 	QString fileExtension = options.videoCodec.has_value() ? options.container->name
-										 : options.audioCodec->name;
+										 : options.audioCodec->name.toLower();
 	QString outputPath = options.outputPath + "." + fileExtension;
 
 	QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 %8 %9 "%10" -y)")
