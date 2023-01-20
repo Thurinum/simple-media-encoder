@@ -36,9 +36,8 @@ public:
 
 	struct Options
 	{
-		const QString& inputPath;
+		const QString inputPath;
 		const QString outputPath;
-		bool allowOverwrite = false;
 		optional<const Codec> videoCodec;
 		optional<const Codec> audioCodec;
 		optional<const Container> container;
@@ -55,22 +54,24 @@ public:
 		double overshootCorrectionPercent = 0.02;
 	};
 
-	void compress(const Options& options);
-	QString availableFormats();
-
-signals:
-	void compressionStarted(double videoBitrateKbps, double audioBitrateKbps);
-	void compressionSucceeded(double requestedSizeKbps, double actualSizeKbps, QFile* outputFile);
-	void compressionProgressUpdate(double progressPercent);
-	void compressionFailed(QString error, QString errorDetails = "");
-
-private:
 	struct ComputedOptions
 	{
 		optional<double> videoBitrateKbps;
 		optional<double> audioBitrateKbps;
 	};
 
+	void compress(const Options& options);
+	QString availableFormats();
+
+signals:
+	void compressionStarted(double videoBitrateKbps, double audioBitrateKbps);
+	void compressionSucceeded(const Options& options,
+					  const ComputedOptions& computed,
+					  QFile& output);
+	void compressionProgressUpdate(double progressPercent);
+	void compressionFailed(QString error, QString errorDetails = "");
+
+private:
 	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
 
 	QEventLoop eventLoop;
@@ -89,7 +90,11 @@ private:
 	double mediaDurationSeconds(const QStringList& metadata);
 	void StartCompression(const Options& options, const ComputedOptions& computedOptions);
 	void UpdateProgress();
-	void EndCompression(const Options& options, QString outputPath, QString command, int exitCode);
+	void EndCompression(const Options& options,
+				  const ComputedOptions& computed,
+				  QString outputPath,
+				  QString command,
+				  int exitCode);
 	bool computeAudioBitrate(const Options& options, ComputedOptions& computed);
 	double computePixelRatio(const Options& options, const QStringList& metadata);
 	void computeVideoBitrate(const Options& options,

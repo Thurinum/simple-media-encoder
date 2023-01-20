@@ -165,28 +165,67 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 						 QString::number(qRound(audioBitrateKbps))));
 		  });
 
-	// handle successful compression
+	// handle successful compression xd
 	connect(compressor,
 		  &Compressor::compressionSucceeded,
-		  [this](double requestedSizeKbps, double actualSizeKbps, QFile *outputFile) {
+		  [this](const Compressor::Options &options,
+			   const Compressor::ComputedOptions &computed,
+			   QFile &output) {
 			  SetProgressShown(true, 100);
-			  Notify(Severity::Info,
-				   tr("Compressed successfully"),
-				   QString(tr("Requested size was %1 kb.\nActual "
-						  "compression achieved is %2 kb."))
-					   .arg(QString::number(requestedSizeKbps),
-						  QString::number(actualSizeKbps)));
+
+			  QString summary;
+			  QString videoBitrate = computed.videoBitrateKbps.has_value()
+								 ? QString::number(*computed.videoBitrateKbps)
+									   + "kbps"
+								 : "auto-set bitrate";
+
+			  if (options.videoCodec.has_value()) {
+				  summary += tr("Using video codec %1 at %2 with container %3.\n")
+							 .arg(options.videoCodec->name,
+								videoBitrate,
+								options.container->name);
+			  }
+			  if (options.audioCodec.has_value()) {
+				  summary += tr("Using audio codec %1 at %2kbps.\n")
+							 .arg(options.audioCodec->name,
+								QString::number(*computed.audioBitrateKbps));
+			  }
+			  if (options.sizeKbps.has_value()) {
+				  summary += tr("Requested size was %1 kb.\nActual "
+						    "compression achieved is %2 kb.")
+							 .arg(QString::number(*options.sizeKbps),
+								QString::number(output.size() / 125.0));
+			  }
+
+			  Notify(Severity::Info, tr("Compressed successfully"), summary);
 
 			  SetProgressShown(false);
 
-			  QFileInfo fileInfo(*outputFile);
+			  QFileInfo fileInfo(output);
 			  QString command = IS_WINDOWS ? "explorer.exe" : "xdg-open";
+
+			  if (ui->deleteOnSuccessCheckBox->isChecked()) {
+				  QFile input(options.inputPath);
+				  input.open(QIODevice::WriteOnly);
+
+				  if (!(input.remove())) {
+					  Notify(Severity::Error,
+						   tr("Failed to remove input file"),
+						   output.errorString() + "\n\n" + options.inputPath);
+				  } else {
+					  ui->inputFileLineEdit->clear();
+				  }
+
+				  input.close();
+			  }
+
 			  if (ui->openExplorerOnSuccessCheckBox->isChecked()) {
 				  QProcess::execute(
 					  QString(R"(%1 "%2")").arg(command, fileInfo.dir().path()));
 			  }
 
 			  if (ui->playOnSuccessCheckBox->isChecked()) {
+				  qDebug() << fileInfo.absoluteFilePath();
 				  QProcess::execute(
 					  QString(R"(%1 "%2")").arg(command, fileInfo.absoluteFilePath()));
 			  }
@@ -558,9 +597,8 @@ void MainWindow::Notify(Severity severity,
 		QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
-{	
-	// save current parameters for next program run
+void MainWindow::SaveState()
+{
 	setSetting("LastDesired/bAdvancedMode", ui->advancedModeCheckBox->isChecked());
 
 	setSetting("LastDesired/sInputFile", ui->inputFileLineEdit->text());
@@ -584,7 +622,10 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 	setSetting("LastDesired/bHasFileSuffix", ui->outputFileNameSuffixCheckBox->isChecked());
 	setSetting("LastDesired/bWarnOnOverwrite", ui->warnOnOverwriteCheckBox->isChecked());
+
 	setSetting("LastDesired/iFps", ui->fpsSpinBox->value());
+
+	setSetting("LastDesired/bDeleteInputOnSuccess", ui->deleteOnSuccessCheckBox->isChecked());
 
 	auto *streamSelection = ui->audioVideoButtonGroup->checkedButton();
 	if (streamSelection == ui->radVideoAudio)
@@ -598,7 +639,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
 		     ui->openExplorerOnSuccessCheckBox->isChecked());
 	setSetting("LastDesired/bPlayResultOnSuccess", ui->playOnSuccessCheckBox->isChecked());
 	setSetting("LastDesired/bCloseOnSuccess", ui->closeOnSuccessCheckBox->isChecked());
+}
 
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+	SaveState();
 	event->accept();
 }
 
@@ -640,6 +685,8 @@ void MainWindow::LoadState()
 	ui->warnOnOverwriteCheckBox->setChecked(setting("LastDesired/bWarnOnOverwrite").toBool());
 
 	ui->fpsSpinBox->setValue(setting("LastDesired/iFps").toInt());
+
+	ui->deleteOnSuccessCheckBox->setChecked(setting("LastDesired/bDeleteInputOnSuccess").toBool());
 
 	switch (setting("LastDesired/iSelectedStreams").toInt()) {
 	case 0:

@@ -50,6 +50,7 @@ protected:
 
 private:
 	void LoadState();
+	void SaveState();
 	void SetProgressShown(bool shown, int progressPercent = 0);
 	void SetAdvancedMode(bool enabled);
 
