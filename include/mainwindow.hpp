@@ -20,6 +20,18 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
+class Warnings : QHash<QString, QString>
+{
+public:
+	explicit Warnings(QWidget* widget);
+	void Add(QString name, QString description);
+	void Remove(QString name);
+
+private:
+	QWidget* m_widget;
+	void Update();
+};
+
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
@@ -62,11 +74,14 @@ private:
 	inline bool isAutoValue(QAbstractSpinBox* spinBox);
 
 	void CheckAspectRatioConflict();
+	void CheckSpeedConflict();
 
 	Ui::MainWindow* ui;
+	Warnings* warnings;
 	void InitSettings(const QString& fileName);
 	Compressor* compressor = new Compressor(this);
 	QSettings* settings;
 	bool m_isNvidia = false;
 };
+
 #endif // MAINWINDOW_HPP

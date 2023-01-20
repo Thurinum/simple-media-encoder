@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	ui->setupUi(this);
 	this->resize(this->minimumSizeHint());
 
+	this->warnings = new Warnings(ui->warningTooltipButton);
+
 	InitSettings("config");
 
 	connect(ui->widthSpinBox,
@@ -43,6 +45,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		  &QSpinBox::valueChanged,
 		  this,
 		  &MainWindow::CheckAspectRatioConflict);
+
+	connect(ui->speedSpinBox,
+		  &QDoubleSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckSpeedConflict);
+	connect(ui->fpsSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckSpeedConflict);
 
 	// menu
 	QMenu *menu = new QMenu(this);
@@ -452,12 +460,26 @@ void MainWindow::CheckAspectRatioConflict()
 	bool hasCustomAspect = ui->widthSpinBox->value() != 0 || ui->heightSpinBox->value() != 0;
 
 	if (hasCustomScale && hasCustomAspect) {
-		ui->warningTooltipButton->setToolTip(
-			tr("A custom aspect ratio has been set.\nIt will take priority over the "
-			   "one\ndefined by custom scaling."));
-		ui->warningTooltipButton->setVisible(true);
+		warnings->Add("aspectRatioConflict",
+				  tr("A custom aspect ratio has been set. It will take priority over the "
+				     "one defined by custom scaling."));
 	} else {
-		ui->warningTooltipButton->setVisible(false);
+		warnings->Remove("aspectRatioConflict");
+	}
+}
+
+void MainWindow::CheckSpeedConflict()
+{
+	bool hasSpeed = ui->speedSpinBox->value() != 0;
+	bool hasFps = ui->fpsSpinBox->value() != 0;
+
+	if (hasSpeed && hasFps) {
+		warnings->Add("speedConflict",
+				  tr("A custom speed was set alongside a custom fps; this may cause "
+				     "strange behavior. Note that fps is automatically compensated when "
+				     "changing the speed."));
+	} else {
+		warnings->Remove("speedConflict");
 	}
 }
 
@@ -705,4 +727,28 @@ void MainWindow::LoadState()
 		setting("LastDesired/bOpenInExplorerOnSuccess").toBool());
 	ui->playOnSuccessCheckBox->setChecked(setting("LastDesired/bPlayResultOnSuccess").toBool());
 	ui->closeOnSuccessCheckBox->setChecked(setting("LastDesired/bCloseOnSuccess").toBool());
+}
+
+Warnings::Warnings(QWidget *widget) : m_widget{widget} {}
+
+void Warnings::Add(QString name, QString description)
+{
+	this->insert(name, description);
+	this->Update();
+}
+
+void Warnings::Remove(QString name)
+{
+	this->remove(name);
+	this->Update();
+}
+
+void Warnings::Update()
+{
+	if (this->isEmpty()) {
+		m_widget->setVisible(false);
+	} else {
+		m_widget->setToolTip(this->values().join("\n\n"));
+		m_widget->setVisible(true);
+	}
 }
