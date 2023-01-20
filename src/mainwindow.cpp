@@ -149,6 +149,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 								ui->aspectRatioSpinBoxV->value())
 						   : optional<QPoint>(),
 			.fps = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
+			.speed = ui->speedSpinBox->value() == 0 ? optional<double>()
+									    : ui->speedSpinBox->value(),
 			.customArguments = ui->customCommandTextEdit->toPlainText(),
 			.minVideoBitrateKbps = setting("Main/dMinBitrateVideoKbps").toDouble(),
 			.minAudioBitrateKbps = setting("Main/dMinBitrateAudioKbps").toDouble(),
@@ -225,7 +227,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			  }
 
 			  if (ui->playOnSuccessCheckBox->isChecked()) {
-				  qDebug() << fileInfo.absoluteFilePath();
 				  QProcess::execute(
 					  QString(R"(%1 "%2")").arg(command, fileInfo.absoluteFilePath()));
 			  }
