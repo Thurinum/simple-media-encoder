@@ -290,7 +290,7 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 	});
 
 	*processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](int exitCode) {
-		EndCompression(options, outputPath, command, exitCode);
+		EndCompression(options, computed, outputPath, command, exitCode);
 	});
 
 	ffmpeg->startCommand(command);
@@ -315,6 +315,7 @@ void Compressor::UpdateProgress()
 }
 
 void Compressor::EndCompression(const Options& options,
+					  const ComputedOptions& computed,
 					  QString outputPath,
 					  QString command,
 					  int exitCode)
@@ -338,13 +339,11 @@ void Compressor::EndCompression(const Options& options,
 		return;
 	}
 
-	const double BYTES_TO_KB = 125.0; // or smt like that anyway lol
-
+	media.close();
 	disconnect(*processUpdateConnection);
 	disconnect(*processFinishedConnection);
-	emit compressionSucceeded(options.sizeKbps.value_or(0), media.size() / BYTES_TO_KB, &media);
+	emit compressionSucceeded(options, computed, media);
 	m_output.clear();
-	media.close();
 }
 
 bool Compressor::Codec::operator==(const Codec& rhs) const
