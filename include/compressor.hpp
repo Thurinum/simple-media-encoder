@@ -34,6 +34,14 @@ public:
 		QStringList supportedCodecs;
 	};
 
+	struct Preset
+	{
+		QString name;
+		Codec videoCodec;
+		Codec audioCodec;
+		Container container;
+	};
+
 	struct Options
 	{
 		const QString inputPath;
@@ -102,5 +110,9 @@ private:
 					 ComputedOptions& computed,
 					 const QStringList& metadata);
 };
+
+Q_DECLARE_METATYPE(Compressor::Codec);
+Q_DECLARE_METATYPE(Compressor::Container);
+Q_DECLARE_METATYPE(Compressor::Preset);
 
 #endif // COMPRESSOR_HPP

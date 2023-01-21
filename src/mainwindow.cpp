@@ -60,6 +60,17 @@ MainWindow::MainWindow(QWidget *parent)
 
 	settings.Init("config");
 
+	connect(ui->qualityPresetComboBox, &QComboBox::currentIndexChanged, [this]() {
+		if (ui->codecSelectionGroupBox->isChecked())
+			return;
+
+		Preset p = qvariant_cast<Preset>(ui->qualityPresetComboBox->currentData());
+
+		ui->videoCodecComboBox->setCurrentText(p.videoCodec.name);
+		ui->audioCodecComboBox->setCurrentText(p.audioCodec.name);
+		ui->containerComboBox->setCurrentText(p.container.name);
+	});
+
 	connect(ui->widthSpinBox,
 		  &QSpinBox::valueChanged,
 		  this,
@@ -113,14 +124,10 @@ MainWindow::MainWindow(QWidget *parent)
 	if (process.readAllStandardOutput().toLower().contains("nvidia"))
 		m_isNvidia = true;
 
-	// parse codecs
-	QList<Codec> videoCodecs;
-	QList<Codec> audioCodecs;
-	QList<Container> containers;
-
 	ParseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
 	ParseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecComboBox);
 	ParseContainers(&containers, ui->containerComboBox);
+	ParsePresets(presets, videoCodecs, audioCodecs, containers, ui->qualityPresetComboBox);
 
 	connect(ui->advancedModeCheckBox, &QCheckBox::clicked, this, &MainWindow::SetAdvancedMode);
 
@@ -152,9 +159,18 @@ MainWindow::MainWindow(QWidget *parent)
 		bool hasAudio = ui->radVideoAudio->isChecked() || ui->radAudioOnly->isChecked();
 		QString outputPath = getOutputPath(inputPath);
 
-		auto container = containers.at(ui->containerComboBox->currentIndex());
+		// get codecs
+		optional<Codec> videoCodec;
+		optional<Codec> audioCodec;
+		optional<Container> container;
 
-		if (QFile::exists(outputPath + "." + container.name)
+		videoCodec = hasVideo ? videoCodecs.value(ui->videoCodecComboBox->currentText())
+					    : optional<Codec>();
+		audioCodec = hasAudio ? audioCodecs.value(ui->audioCodecComboBox->currentText())
+					    : optional<Codec>();
+		container = containers.value(ui->containerComboBox->currentText());
+
+		if (QFile::exists(outputPath + "." + container->name)
 		    && ui->warnOnOverwriteCheckBox->isChecked()
 		    && QMessageBox::question(this,
 						     "Overwrite?",
@@ -169,10 +185,8 @@ MainWindow::MainWindow(QWidget *parent)
 		compressor->compress(Compressor::Options{
 			.inputPath = inputPath,
 			.outputPath = outputPath,
-			.videoCodec = hasVideo ? videoCodecs.at(ui->videoCodecComboBox->currentIndex())
-						     : optional<Codec>(),
-			.audioCodec = hasAudio ? audioCodecs.at(ui->audioCodecComboBox->currentIndex())
-						     : optional<Codec>(),
+			.videoCodec = videoCodec,
+			.audioCodec = audioCodec,
 			.container = container,
 			.sizeKbps = isAutoValue(ui->fileSizeSpinBox)
 						? std::optional<double>()
@@ -315,42 +329,10 @@ MainWindow::MainWindow(QWidget *parent)
 		ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
 	});
 
-	connect(ui->audioVideoButtonGroup, &QButtonGroup::buttonClicked, [&](QAbstractButton *button) {
-		if (button == ui->radVideoAudio) {
-			ui->widthSpinBox->setEnabled(true);
-			ui->heightSpinBox->setEnabled(true);
-			ui->speedSpinBox->setEnabled(true);
-			ui->videoCodecComboBox->setEnabled(true);
-			ui->audioCodecComboBox->setEnabled(true);
-			ui->containerComboBox->setEnabled(true);
-			ui->audioQualitySlider->setEnabled(true);
-			ui->aspectRatioSpinBoxH->setEnabled(true);
-			ui->aspectRatioSpinBoxV->setEnabled(true);
-			ui->fpsSpinBox->setEnabled(true);
-		} else if (button == ui->radVideoOnly) {
-			ui->widthSpinBox->setEnabled(true);
-			ui->heightSpinBox->setEnabled(true);
-			ui->speedSpinBox->setEnabled(true);
-			ui->videoCodecComboBox->setEnabled(true);
-			ui->audioCodecComboBox->setEnabled(false);
-			ui->containerComboBox->setEnabled(true);
-			ui->audioQualitySlider->setEnabled(false);
-			ui->aspectRatioSpinBoxH->setEnabled(true);
-			ui->aspectRatioSpinBoxV->setEnabled(true);
-			ui->fpsSpinBox->setEnabled(true);
-		} else if (button == ui->radAudioOnly) {
-			ui->widthSpinBox->setEnabled(false);
-			ui->heightSpinBox->setEnabled(false);
-			ui->speedSpinBox->setEnabled(false);
-			ui->videoCodecComboBox->setEnabled(false);
-			ui->audioCodecComboBox->setEnabled(true);
-			ui->containerComboBox->setEnabled(false);
-			ui->audioQualitySlider->setEnabled(true);
-			ui->aspectRatioSpinBoxH->setEnabled(false);
-			ui->aspectRatioSpinBoxV->setEnabled(false);
-			ui->fpsSpinBox->setEnabled(false);
-		}
-	});
+	connect(ui->audioVideoButtonGroup,
+		  &QButtonGroup::buttonClicked,
+		  this,
+		  &MainWindow::SetControlsState);
 
 	connect(ui->codecSelectionGroupBox, &QGroupBox::clicked, [this](bool checked) {
 		ui->qualityPresetComboBox->setEnabled(!checked);
@@ -364,7 +346,7 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-void MainWindow::ParseCodecs(QList<Codec> *codecs, const QString &type, QComboBox *comboBox)
+void MainWindow::ParseCodecs(QHash<QString, Codec> *codecs, const QString &type, QComboBox *comboBox)
 {
 	QStringList keys = settings.keysInGroup(type);
 
@@ -420,12 +402,16 @@ void MainWindow::ParseCodecs(QList<Codec> *codecs, const QString &type, QComboBo
 		}
 
 		Codec codec{codecName, codecLibrary, codecMinBitrateKbps};
-		codecs->append(codec);
-		comboBox->addItem(codecName);
+		codecs->insert(codec.library, codec);
+
+		QVariant data;
+		data.setValue(codec);
+
+		comboBox->addItem(codecName, data);
 	}
 }
 
-void MainWindow::ParseContainers(QList<Container> *containers, QComboBox *comboBox)
+void MainWindow::ParseContainers(QHash<QString, Container> *containers, QComboBox *comboBox)
 {
 	QStringList keys = settings.keysInGroup("Containers");
 
@@ -450,8 +436,78 @@ void MainWindow::ParseContainers(QList<Container> *containers, QComboBox *comboB
 								.toString()
 								.split(QRegularExpression("(\\s*),(\\s*)"));
 		Container container{containerName, supportedCodecs};
-		containers->append(container);
-		comboBox->addItem(containerName.toUpper());
+		containers->insert(containerName, container);
+
+		QVariant data;
+		data.setValue(container);
+
+		comboBox->addItem(containerName, data);
+	}
+}
+
+void MainWindow::ParsePresets(QHash<QString, Preset> &presets,
+					QHash<QString, Codec> &videoCodecs,
+					QHash<QString, Codec> &audioCodecs,
+					QHash<QString, Container> &containers,
+					QComboBox *comboBox)
+{
+	QStringList keys = settings.keysInGroup("Presets");
+	QString supportedCodecs = compressor->availableFormats();
+
+	for (const QString &key : keys) {
+		Preset preset;
+		preset.name = key;
+
+		QString data = settings.get("Presets/" + key).toString();
+		QStringList librariesData = data.split("+");
+
+		if (librariesData.size() != 3) {
+			Notify(Severity::Error,
+				 tr("Could not parse presets"),
+				 tr("Failed to parse presets as the data is malformed. Please check the "
+				    "configuration in %1.")
+					 .arg(settings.fileName()));
+		}
+
+		optional<Codec> videoCodec;
+		optional<Codec> audioCodec;
+		QStringList videoLibrary = librariesData[0].split("|");
+
+		for (const QString &library : videoLibrary) {
+			if (supportedCodecs.contains(library)) {
+				videoCodec = videoCodecs.value(library);
+				break;
+			}
+		}
+
+		QStringList audioLibrary = librariesData[1].split("|");
+
+		for (const QString &library : audioLibrary) {
+			if (supportedCodecs.contains(library)) {
+				audioCodec = audioCodecs.value(library);
+				break;
+			}
+		}
+
+		if (!videoCodec.has_value() || !audioCodec.has_value()) {
+			Notify(Severity::Warning,
+				 tr("Preset not supported"),
+				 tr("Skipped encoding quality preset '%1' preset because it contains no "
+				    "available encoders.")
+					 .arg(preset.name),
+				 tr("Available codecs: %1\nPreset data: %2").arg(supportedCodecs, data));
+			continue;
+		}
+
+		preset.videoCodec = *videoCodec;
+		preset.audioCodec = *audioCodec;
+		preset.container = containers.value(librariesData[2]);
+
+		presets.insert(preset.name, preset);
+
+		QVariant itemData;
+		itemData.setValue(preset);
+		comboBox->addItem(preset.name, itemData);
 	}
 }
 
@@ -581,6 +637,44 @@ void MainWindow::SetAdvancedMode(bool enabled)
 
 	sectionWidthAnim->start();
 	sectionHeightAnim->start();
+}
+
+void MainWindow::SetControlsState(QAbstractButton *button)
+{
+	if (button == ui->radVideoAudio) {
+		ui->widthSpinBox->setEnabled(true);
+		ui->heightSpinBox->setEnabled(true);
+		ui->speedSpinBox->setEnabled(true);
+		ui->videoCodecComboBox->setEnabled(true);
+		ui->audioCodecComboBox->setEnabled(true);
+		ui->containerComboBox->setEnabled(true);
+		ui->audioQualitySlider->setEnabled(true);
+		ui->aspectRatioSpinBoxH->setEnabled(true);
+		ui->aspectRatioSpinBoxV->setEnabled(true);
+		ui->fpsSpinBox->setEnabled(true);
+	} else if (button == ui->radVideoOnly) {
+		ui->widthSpinBox->setEnabled(true);
+		ui->heightSpinBox->setEnabled(true);
+		ui->speedSpinBox->setEnabled(true);
+		ui->videoCodecComboBox->setEnabled(true);
+		ui->audioCodecComboBox->setEnabled(false);
+		ui->containerComboBox->setEnabled(true);
+		ui->audioQualitySlider->setEnabled(false);
+		ui->aspectRatioSpinBoxH->setEnabled(true);
+		ui->aspectRatioSpinBoxV->setEnabled(true);
+		ui->fpsSpinBox->setEnabled(true);
+	} else if (button == ui->radAudioOnly) {
+		ui->widthSpinBox->setEnabled(false);
+		ui->heightSpinBox->setEnabled(false);
+		ui->speedSpinBox->setEnabled(false);
+		ui->videoCodecComboBox->setEnabled(false);
+		ui->audioCodecComboBox->setEnabled(true);
+		ui->containerComboBox->setEnabled(false);
+		ui->audioQualitySlider->setEnabled(true);
+		ui->aspectRatioSpinBoxH->setEnabled(false);
+		ui->aspectRatioSpinBoxV->setEnabled(false);
+		ui->fpsSpinBox->setEnabled(false);
+	}
 }
 
 void MainWindow::Notify(Severity severity,
@@ -719,6 +813,8 @@ void MainWindow::LoadState()
 	ui->playOnSuccessCheckBox->setChecked(
 		settings.get("LastDesired/bPlayResultOnSuccess").toBool());
 	ui->closeOnSuccessCheckBox->setChecked(settings.get("LastDesired/bCloseOnSuccess").toBool());
+
+	SetControlsState(ui->audioVideoButtonGroup->checkedButton());
 }
 
 Warnings::Warnings(QWidget *widget) : m_widget{widget} {}
