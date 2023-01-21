@@ -164,9 +164,9 @@ MainWindow::MainWindow(QWidget *parent)
 		optional<Codec> audioCodec;
 		optional<Container> container;
 
-		videoCodec = hasVideo ? videoCodecs.value(ui->videoCodecComboBox->currentText())
+		videoCodec = hasVideo ? ui->videoCodecComboBox->currentData().value<Codec>()
 					    : optional<Codec>();
-		audioCodec = hasAudio ? audioCodecs.value(ui->audioCodecComboBox->currentText())
+		audioCodec = hasAudio ? ui->audioCodecComboBox->currentData().value<Codec>()
 					    : optional<Codec>();
 		container = containers.value(ui->containerComboBox->currentText());
 
@@ -731,6 +731,8 @@ void MainWindow::SaveState()
 
 	settings.Set("LastDesired/bDeleteInputOnSuccess", ui->deleteOnSuccessCheckBox->isChecked());
 
+	settings.Set("LastDesired/bUseCustomCodecs", ui->codecSelectionGroupBox->isChecked());
+
 	auto *streamSelection = ui->audioVideoButtonGroup->checkedButton();
 	if (streamSelection == ui->radVideoAudio)
 		settings.Set("LastDesired/iSelectedStreams", 0);
@@ -813,6 +815,8 @@ void MainWindow::LoadState()
 	ui->playOnSuccessCheckBox->setChecked(
 		settings.get("LastDesired/bPlayResultOnSuccess").toBool());
 	ui->closeOnSuccessCheckBox->setChecked(settings.get("LastDesired/bCloseOnSuccess").toBool());
+
+	ui->codecSelectionGroupBox->setChecked(settings.get("LastDesired/bUseCustomCodecs").toBool());
 
 	SetControlsState(ui->audioVideoButtonGroup->checkedButton());
 }
