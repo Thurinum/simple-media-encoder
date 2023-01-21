@@ -418,23 +418,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="qualityPresetComboBox">
-              <item>
-               <property name="text">
-                <string>Best compatibility</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Fastest compression</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>Highest quality</string>
-               </property>
-              </item>
-             </widget>
+             <widget class="QComboBox" name="qualityPresetComboBox"/>
             </item>
            </layout>
           </item>

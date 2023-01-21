@@ -16,6 +16,7 @@
 
 using Codec = Compressor::Codec;
 using Container = Compressor::Container;
+using Preset = Compressor::Preset;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -61,12 +62,23 @@ private:
 	void SaveState();
 	void SetProgressShown(bool shown, int progressPercent = 0);
 	void SetAdvancedMode(bool enabled);
-	void ParseCodecs(QList<Codec>* codecs, const QString& type, QComboBox* comboBox);
-	void ParseContainers(QList<Container>* containers, QComboBox* comboBox);
+	void SetControlsState(QAbstractButton* button);
+	void ParseCodecs(QHash<QString, Codec>* codecs, const QString& type, QComboBox* comboBox);
+	void ParseContainers(QHash<QString, Container>* containers, QComboBox* comboBox);
+	void ParsePresets(QHash<QString, Preset>& presets,
+				QHash<QString, Codec>& videoCodecs,
+				QHash<QString, Codec>& audioCodecs,
+				QHash<QString, Container>& containers,
+				QComboBox* comboBox);
 	void CheckAspectRatioConflict();
 	void CheckSpeedConflict();
 	QString getOutputPath(QString inputFilePath);
 	inline bool isAutoValue(QAbstractSpinBox* spinBox);
+
+	QHash<QString, Codec> videoCodecs;
+	QHash<QString, Codec> audioCodecs;
+	QHash<QString, Container> containers;
+	QHash<QString, Preset> presets;
 
 	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
 	Ui::MainWindow* ui;
