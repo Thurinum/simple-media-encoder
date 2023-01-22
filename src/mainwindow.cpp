@@ -20,12 +20,11 @@
 
 using std::optional;
 
-MainWindow::MainWindow(QWidget *parent)
-	: QMainWindow(parent), ui(new Ui::MainWindow),
-	  warnings(new Warnings(ui->warningTooltipButton))
+MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
 	ui->setupUi(this);
 	this->resize(this->minimumSizeHint());
+	this->warnings = new Warnings(ui->warningTooltipButton);
 
 	connect(&settings, &Settings::configNotFound, [this](const QString &fileName) {
 		Notify(Severity::Critical,
