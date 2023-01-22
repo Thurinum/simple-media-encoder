@@ -854,6 +854,16 @@
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QCheckBox" name="autoFillCheckBox">
+              <property name="text">
+               <string>Auto-fill metadata on file selection</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
           <item row="2" column="3">

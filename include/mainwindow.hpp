@@ -87,6 +87,7 @@ private:
 	void InitSettings(const QString& fileName);
 	Compressor* compressor = new Compressor(this);
 	bool m_isNvidia = false;
+	optional<Compressor::Metadata> m_metadata;
 };
 
 #endif // MAINWINDOW_HPP
