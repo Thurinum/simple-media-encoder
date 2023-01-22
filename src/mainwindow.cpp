@@ -19,6 +19,8 @@
 #include "ui_mainwindow.h"
 
 using std::optional;
+using Error = Compressor::Error;
+using Metadata = Compressor::Metadata;
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -204,7 +206,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			.speed = ui->speedSpinBox->value() == 0 ? optional<double>()
 									    : ui->speedSpinBox->value(),
 			.customArguments = ui->customCommandTextEdit->toPlainText(),
-			.inputMetadata = optional<Compressor::Metadata>(),
+			.inputMetadata = m_metadata.has_value() ? m_metadata
+									    : optional<Compressor::Metadata>(),
 			.minVideoBitrateKbps = settings.get("Main/dMinBitrateVideoKbps").toDouble(),
 			.minAudioBitrateKbps = settings.get("Main/dMinBitrateAudioKbps").toDouble(),
 			.maxAudioBitrateKbps = settings.get("Main/dMaxBitrateAudioKbps").toDouble(),
@@ -310,7 +313,36 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 									 QDir::currentPath(),
 									 "*");
 
-		ui->inputFileLineEdit->setText(fileUrl.toLocalFile());
+		QString path = fileUrl.toLocalFile();
+		ui->inputFileLineEdit->setText(path);
+
+		if (ui->autoFillCheckBox->isChecked()) {
+			std::variant<Metadata, Compressor::Error> result = compressor->getMetadata(path);
+
+			if (std::holds_alternative<Compressor::Error>(result)) {
+				Compressor::Error error = std::get<Compressor::Error>(result);
+
+				Notify(Severity::Error,
+					 tr("Failed to parse media metadata"),
+					 error.summary,
+					 error.details);
+				return;
+			}
+
+			m_metadata = std::get<Metadata>(result);
+
+			ui->widthSpinBox->setValue(m_metadata->width);
+			ui->heightSpinBox->setValue(m_metadata->height);
+			ui->speedSpinBox->setValue(1);
+			ui->fileSizeSpinBox->setValue(m_metadata->sizeKbps);
+			ui->fileSizeUnitComboBox->setCurrentIndex(0);
+			ui->aspectRatioSpinBoxH->setValue(m_metadata->aspectRatioX);
+			ui->aspectRatioSpinBoxV->setValue(m_metadata->aspectRatioY);
+			ui->fpsSpinBox->setValue(m_metadata->frameRate);
+
+			int qualityPercent = m_metadata->audioBitrateKbps * 100 / 256; // TODO parametrize
+			ui->audioQualitySlider->setValue(qualityPercent);
+		}
 	});
 
 	// show name of file picked with file dialog
@@ -734,6 +766,8 @@ void MainWindow::SaveState()
 
 	settings.Set("LastDesired/bUseCustomCodecs", ui->codecSelectionGroupBox->isChecked());
 
+	settings.Set("LastDesired/bAutoFillMetadata", ui->autoFillCheckBox->isChecked());
+
 	auto *streamSelection = ui->audioVideoButtonGroup->checkedButton();
 	if (streamSelection == ui->radVideoAudio)
 		settings.Set("LastDesired/iSelectedStreams", 0);
@@ -795,6 +829,8 @@ void MainWindow::LoadState()
 
 	ui->speedSpinBox->setValue(settings.get("LastDesired/dSpeed").toDouble());
 	ui->fpsSpinBox->setValue(settings.get("LastDesired/iFps").toInt());
+
+	ui->autoFillCheckBox->setChecked(settings.get("LastDesired/bAutoFillMetadata").toBool());
 
 	ui->deleteOnSuccessCheckBox->setChecked(
 		settings.get("LastDesired/bDeleteInputOnSuccess").toBool());
