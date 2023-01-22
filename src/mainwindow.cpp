@@ -182,7 +182,7 @@ MainWindow::MainWindow(QWidget *parent)
 		}
 
 		SetProgressShown(true);
-		compressor->compress(Compressor::Options{
+		compressor->Compress(Compressor::Options{
 			.inputPath = inputPath,
 			.outputPath = outputPath,
 			.videoCodec = videoCodec,
@@ -205,9 +205,11 @@ MainWindow::MainWindow(QWidget *parent)
 			.speed = ui->speedSpinBox->value() == 0 ? optional<double>()
 									    : ui->speedSpinBox->value(),
 			.customArguments = ui->customCommandTextEdit->toPlainText(),
+			.inputMetadata = optional<Compressor::Metadata>(),
 			.minVideoBitrateKbps = settings.get("Main/dMinBitrateVideoKbps").toDouble(),
 			.minAudioBitrateKbps = settings.get("Main/dMinBitrateAudioKbps").toDouble(),
-			.maxAudioBitrateKbps = settings.get("Main/dMaxBitrateAudioKbps").toDouble()});
+			.maxAudioBitrateKbps = settings.get("Main/dMaxBitrateAudioKbps").toDouble(),
+		});
 	});
 
 	// handle displaying target bitrates during compression

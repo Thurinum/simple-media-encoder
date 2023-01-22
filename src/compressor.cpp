@@ -2,6 +2,10 @@
 
 #include <QEventLoop>
 #include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QRegularExpression>
 #include <QStringBuilder>
 #include <QTime>
@@ -35,26 +39,20 @@ bool Compressor::computeAudioBitrate(const Options& options, ComputedOptions& co
 	return true;
 }
 
-double Compressor::computePixelRatio(const Options& options, const QStringList& metadata)
+double Compressor::computePixelRatio(const Options& options, const Metadata& metadata)
 {
 	double pixelRatio = 1;
-
-	QStringList aspectRatio = metadata[2].split(":");
-	int aspectRatioW = aspectRatio.first().toInt();
-	int aspectRatioH = aspectRatio.last().toInt();
-	int inputWidth = metadata[0].toInt();
-	int inputHeight = metadata[1].toInt();
 	int outputWidth;
 	int outputHeight;
 
-	long inputPixelCount = inputWidth * inputHeight;
+	long inputPixelCount = metadata.width * metadata.height;
 
 	if (options.outputWidth.has_value()) {
 		outputHeight = *options.outputHeight;
-		outputWidth = outputHeight * aspectRatioW / aspectRatioH;
+		outputWidth = outputHeight * metadata.aspectRatioX / metadata.aspectRatioY;
 	} else {
 		outputWidth = *options.outputWidth;
-		outputHeight = outputWidth * aspectRatioW / aspectRatioH;
+		outputHeight = outputWidth * metadata.aspectRatioX / metadata.aspectRatioY;
 	}
 
 	double outputPixelCount = outputWidth * outputHeight;
@@ -66,32 +64,41 @@ double Compressor::computePixelRatio(const Options& options, const QStringList& 
 	return pixelRatio;
 }
 
-void Compressor::computeVideoBitrate(const Options& options,
+void Compressor::ComputeVideoBitrate(const Options& options,
 						 ComputedOptions& computed,
-						 const QStringList& metadata)
+						 const Metadata& metadata)
 {
 	double audioBitrateKbps = computed.audioBitrateKbps.value_or(0);
 
 	double pixelRatio = computePixelRatio(options, metadata);
-	double bitrateKbps = *options.sizeKbps / m_durationSeconds
+	double bitrateKbps = *options.sizeKbps / metadata.durationSeconds
 				   * (1.0 - options.overshootCorrectionPercent);
 
 	computed.videoBitrateKbps = qMax(options.minVideoBitrateKbps,
 						   pixelRatio * (bitrateKbps - audioBitrateKbps));
 }
 
-void Compressor::compress(const Options& options)
+void Compressor::Compress(const Options& options)
 {
 	if (!areValidOptions(options))
 		return;
 
-	QStringList metadata = mediaMetadata(options.inputPath);
-	if (metadata.isEmpty())
-		return;
+	Metadata metadata;
 
-	m_durationSeconds = mediaDurationSeconds(metadata);
-	if (m_durationSeconds == -1)
-		return;
+	if (!options.inputMetadata.has_value()) {
+		std::variant<Metadata, Error> result = getMetadata(options.inputPath);
+
+		if (std::holds_alternative<Error>(result)) {
+			Error error = std::get<Error>(result);
+
+			emit compressionFailed(error.summary, error.details);
+			return;
+		}
+
+		metadata = std::get<Metadata>(result);
+	} else {
+		metadata = *options.inputMetadata;
+	}
 
 	ComputedOptions computed;
 
@@ -101,10 +108,10 @@ void Compressor::compress(const Options& options)
 	}
 
 	if (options.videoCodec.has_value() && options.sizeKbps.has_value()) {
-		computeVideoBitrate(options, computed, metadata);
+		ComputeVideoBitrate(options, computed, metadata);
 	}
 
-	StartCompression(options, computed);
+	StartCompression(options, computed, metadata);
 }
 
 QString Compressor::availableFormats()
@@ -189,43 +196,88 @@ bool Compressor::areValidOptions(const Options& options)
 	return true;
 }
 
-QStringList Compressor::mediaMetadata(const QString& path)
+std::variant<Compressor::Metadata, Compressor::Error> Compressor::getMetadata(const QString& path)
 {
-	ffprobe->startCommand(QString("ffprobe%1 -v error -select_streams v:0 -show_entries "
-						"stream=width,height,display_aspect_ratio,duration -of "
-						"default=noprint_wrappers=1:nokey=1 \"%2\"")
-					    .arg(IS_WINDOWS ? ".exe" : "", path));
+	ffprobe->startCommand(
+		QString(R"(ffprobe%1 -v error -print_format json -show_format -show_streams "%2")")
+			.arg(IS_WINDOWS ? ".exe" : "", path));
 	ffprobe->waitForFinished();
 
-	// TODO: Refactor to use key value pairs
-	QStringList metadata = QString(ffprobe->readAll()).split(QRegularExpression("[\n\r]+"));
+	QByteArray data = ffprobe->readAll();
+	QJsonDocument document = QJsonDocument::fromJson(data);
 
-	if (metadata.count() != 5) {
-		emit compressionFailed(tr("Could not retrieve media metadata. Is the file corrupted?"),
-					     tr("Input file: %1\nFound metadata: %2")
-						     .arg(path, metadata.join(", ")));
-		return QStringList();
+	if (document.isNull()) {
+		return Error{tr("Could not retrieve media metadata. Is the file corrupted?"),
+				 tr("Input file: %1\nFound metadata: %2").arg(path, data)};
+	}
+
+	QJsonObject root = document.object();
+	QJsonArray streams = root.value("streams").toArray();
+
+	// we only support 1 stream of each type at the moment
+	QJsonObject format = root.value("format").toObject();
+	QJsonObject video;
+	QJsonObject audio;
+
+	for (QJsonValueRef streamRef : streams) {
+		QJsonObject stream = streamRef.toObject();
+		QJsonValue type = stream.value("codec_type");
+
+		if (type == "video" && video.isEmpty()) {
+			video = stream;
+		}
+
+		if (type == "audio" && audio.isEmpty()) {
+			audio = stream;
+		}
+	}
+
+	if (video.isEmpty() && audio.isEmpty()) {
+		return Error{tr("Media metadata is incomplete."),
+				 tr("Input file: %1\nFound metadata: %2").arg(path, data)};
+	}
+
+	Metadata metadata;
+	Error error{tr("Media metadata is incomplete."), ""};
+
+	auto value = [&error](QJsonObject& source, const QString& key) -> QVariant {
+		if (!source.contains(key)) {
+			error.details += tr("Could not find key '%1'.\n").arg(key);
+			return {};
+		}
+
+		return source.value(key).toVariant();
+	};
+
+	double duration = value(format, "duration").toDouble();
+	double nbrFrames = value(video, "nb_frames").toDouble();
+	QStringList aspectRatio = value(video, "display_aspect_ratio").toString().split(':');
+
+	metadata = Metadata{
+		.width = value(video, "width").toDouble(),
+		.height = value(video, "height").toDouble(),
+		.sizeKbps = value(format, "size").toDouble() * 0.001,
+		.audioBitrateKbps = value(audio, "bit_rate").toDouble() * 0.001,
+		.durationSeconds = duration,
+		.aspectRatioX = aspectRatio.first().toDouble(),
+		.aspectRatioY = aspectRatio.last().toDouble(),
+		.frameRate = nbrFrames / duration,
+		.videoCodec = value(video, "codec_name").toString(),
+		.audioCodec = value(audio, "codec_name").toString(),
+		.container = "" // TODO: Find a reliable way to query format type
+	};
+
+	if (!error.details.isEmpty()) {
+		error.details += tr("Raw metadata: %1").arg(data);
+		return error;
 	}
 
 	return metadata;
 }
 
-double Compressor::mediaDurationSeconds(const QStringList& metadata)
-{
-	bool couldParse = false;
-	QString input = metadata[3];
-	double durationSeconds = input.toDouble(&couldParse);
-
-	if (!couldParse) {
-		emit compressionFailed(tr("Failed to parse media duration. Is the file corrupted?"),
-					     tr("Invalid media duration '%1'.").arg(input));
-		return -1;
-	}
-
-	return durationSeconds;
-}
-
-void Compressor::StartCompression(const Options& options, const ComputedOptions& computed)
+void Compressor::StartCompression(const Options& options,
+					    const ComputedOptions& computed,
+					    const Metadata& metadata)
 {
 	emit compressionStarted(computed.videoBitrateKbps.value_or(0),
 					computed.audioBitrateKbps.value_or(0));
@@ -315,8 +367,8 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 					     *options.customArguments,
 					     outputPath);
 
-	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [this]() {
-		UpdateProgress();
+	*processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [metadata, this]() {
+		UpdateProgress(metadata.durationSeconds);
 	});
 
 	*processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](int exitCode) {
@@ -326,7 +378,7 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 	ffmpeg->startCommand(command);
 }
 
-void Compressor::UpdateProgress()
+void Compressor::UpdateProgress(double mediaDuration)
 {
 	QString line = QString(ffmpeg->readAll());
 	QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
@@ -339,7 +391,7 @@ void Compressor::UpdateProgress()
 
 	QTime timestamp = QTime::fromString(match.captured(1));
 	int currentDuration = timestamp.second() + timestamp.minute() * 60 + timestamp.hour() * 3600;
-	int progressPercent = currentDuration * 100 / m_durationSeconds;
+	int progressPercent = currentDuration * 100 / mediaDuration;
 
 	emit compressionProgressUpdate(progressPercent);
 }
