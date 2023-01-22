@@ -561,6 +561,7 @@ void MainWindow::ParseMetadata(const QString &path)
 			 tr("Failed to parse media metadata"),
 			 error.summary,
 			 error.details);
+		ui->inputFileLineEdit->clear();
 		return;
 	}
 
