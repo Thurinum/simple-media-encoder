@@ -316,21 +316,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 		QString path = fileUrl.toLocalFile();
 		ui->inputFileLineEdit->setText(path);
 
+		ParseMetadata(path);
+
 		if (ui->autoFillCheckBox->isChecked()) {
-			std::variant<Metadata, Compressor::Error> result = compressor->getMetadata(path);
-
-			if (std::holds_alternative<Compressor::Error>(result)) {
-				Compressor::Error error = std::get<Compressor::Error>(result);
-
-				Notify(Severity::Error,
-					 tr("Failed to parse media metadata"),
-					 error.summary,
-					 error.details);
-				return;
-			}
-
-			m_metadata = std::get<Metadata>(result);
-
 			ui->widthSpinBox->setValue(m_metadata->width);
 			ui->heightSpinBox->setValue(m_metadata->height);
 			ui->speedSpinBox->setValue(1);
@@ -343,6 +331,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			int qualityPercent = m_metadata->audioBitrateKbps * 100 / 256; // TODO parametrize
 			ui->audioQualitySlider->setValue(qualityPercent);
 		}
+	});
+
+	connect(ui->statisticsButton, &QPushButton::clicked, [this]() {
+		if (!m_metadata.has_value()) {
+			Notify(Severity::Info,
+				 tr("No file selected"),
+				 tr("Please select a file to continue."));
+			return;
+		}
+
+		Notify(Severity::Info,
+			 tr("Metadata"),
+			 tr("Video codec: %1\nAudio codec: %2\nContainer: %3\nAudio bitrate: %4 kbps\n\n "
+			    "(complete data to be implemented in a future update)")
+				 .arg(m_metadata->videoCodec,
+					m_metadata->audioCodec,
+					"N/A",
+					QString::number(m_metadata->audioBitrateKbps)));
 	});
 
 	// show name of file picked with file dialog
@@ -542,6 +548,23 @@ void MainWindow::ParsePresets(QHash<QString, Preset> &presets,
 		itemData.setValue(preset);
 		comboBox->addItem(preset.name, itemData);
 	}
+}
+
+void MainWindow::ParseMetadata(const QString &path)
+{
+	std::variant<Metadata, Compressor::Error> result = compressor->getMetadata(path);
+
+	if (std::holds_alternative<Compressor::Error>(result)) {
+		Compressor::Error error = std::get<Compressor::Error>(result);
+
+		Notify(Severity::Error,
+			 tr("Failed to parse media metadata"),
+			 error.summary,
+			 error.details);
+		return;
+	}
+
+	m_metadata = std::get<Metadata>(result);
 }
 
 QString MainWindow::getOutputPath(QString inputFilePath)
@@ -802,6 +825,9 @@ void MainWindow::LoadState()
 		ui->inputFileLineEdit->setText(selectedUrl);
 	if (selectedDir == "" || QDir(selectedDir).exists())
 		ui->outputFolderLineEdit->setText(selectedDir);
+
+	if (QFile::exists(selectedUrl))
+		ParseMetadata(selectedUrl);
 
 	ui->outputFileNameLineEdit->setText(settings.get("LastDesired/sFileNameOrSuffix").toString());
 

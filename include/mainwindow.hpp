@@ -70,6 +70,7 @@ private:
 				QHash<QString, Codec>& audioCodecs,
 				QHash<QString, Container>& containers,
 				QComboBox* comboBox);
+	void ParseMetadata(const QString& path);
 	void CheckAspectRatioConflict();
 	void CheckSpeedConflict();
 	QString getOutputPath(QString inputFilePath);

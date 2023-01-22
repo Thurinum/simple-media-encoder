@@ -1201,6 +1201,18 @@
             </layout>
            </widget>
           </item>
+          <item row="4" column="3" alignment="Qt::AlignTop">
+           <widget class="QPushButton" name="statisticsButton">
+            <property name="font">
+             <font>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>ⓘ  Statistics...</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
