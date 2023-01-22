@@ -42,6 +42,21 @@ public:
 		Container container;
 	};
 
+	struct Metadata
+	{
+		double width;
+		double height;
+		double sizeKbps;
+		double audioBitrateKbps;
+		double durationSeconds;
+		double aspectRatioX;
+		double aspectRatioY;
+		double frameRate;
+		QString videoCodec;
+		QString audioCodec;
+		QString container;
+	};
+
 	struct Options
 	{
 		const QString inputPath;
@@ -57,10 +72,17 @@ public:
 		optional<int> fps;
 		optional<double> speed;
 		optional<QString> customArguments;
+		optional<const Metadata> inputMetadata;
 		double minVideoBitrateKbps = 64;
 		double minAudioBitrateKbps = 16;
 		double maxAudioBitrateKbps = 256;
 		double overshootCorrectionPercent = 0.02;
+	};
+
+	struct Error
+	{
+		QString summary;
+		QString details;
 	};
 
 	struct ComputedOptions
@@ -69,7 +91,9 @@ public:
 		optional<double> audioBitrateKbps;
 	};
 
-	void compress(const Options& options);
+	void Compress(const Options& options);
+	std::variant<Metadata, Error> getMetadata(const QString& path);
+
 	QString availableFormats();
 
 signals:
@@ -91,24 +115,23 @@ private:
 	QMetaObject::Connection* const processFinishedConnection = new QMetaObject::Connection();
 
 	QString m_output = "";
-	double m_durationSeconds = -1;
 	QString parseOutput();
 
 	bool areValidOptions(const Options& options);
-	QStringList mediaMetadata(const QString& path);
-	double mediaDurationSeconds(const QStringList& metadata);
-	void StartCompression(const Options& options, const ComputedOptions& computedOptions);
-	void UpdateProgress();
+	void StartCompression(const Options& options,
+				    const ComputedOptions& computedOptions,
+				    const Metadata& metadata);
+	void UpdateProgress(double mediaDuration);
 	void EndCompression(const Options& options,
 				  const ComputedOptions& computed,
 				  QString outputPath,
 				  QString command,
 				  int exitCode);
 	bool computeAudioBitrate(const Options& options, ComputedOptions& computed);
-	double computePixelRatio(const Options& options, const QStringList& metadata);
-	void computeVideoBitrate(const Options& options,
+	double computePixelRatio(const Options& options, const Metadata& metadata);
+	void ComputeVideoBitrate(const Options& options,
 					 ComputedOptions& computed,
-					 const QStringList& metadata);
+					 const Metadata& metadata);
 };
 
 Q_DECLARE_METATYPE(Compressor::Codec);
