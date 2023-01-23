@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>773</width>
+    <width>923</width>
     <height>619</height>
    </rect>
   </property>
@@ -90,6 +90,9 @@
        </item>
        <item>
         <widget class="QCheckBox" name="advancedModeCheckBox">
+         <property name="whatsThis">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, advanced options will be available.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
          <property name="layoutDirection">
           <enum>Qt::RightToLeft</enum>
          </property>
@@ -170,6 +173,9 @@
                 <bold>false</bold>
                </font>
               </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:700;&quot;&gt;input file&lt;/span&gt;. It must be a valid media file supported by ffmpeg.&lt;/p&gt;&lt;p&gt;If your file does not work, please report a bug on &lt;a href=&quot;https://github.com/Thurinum/free-video-compressor/issues&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;our issue tracker&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Select file to compress</string>
               </property>
@@ -177,6 +183,9 @@
             </item>
             <item row="1" column="0">
              <widget class="QLineEdit" name="inputFileLineEdit">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:700;&quot;&gt;input file&lt;/span&gt;. It must be a valid media file supported by ffmpeg.&lt;/p&gt;&lt;p&gt;If your file does not work, please report a bug on &lt;a href=&quot;https://github.com/Thurinum/free-video-compressor/issues&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;our issue tracker&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -236,6 +245,9 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the &lt;span style=&quot; font-weight:700;&quot;&gt;output file name&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;If &lt;span style=&quot; font-style:italic;&quot;&gt;As suffix &lt;/span&gt;is checked, the value will be appended to the existing file name instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -277,7 +289,7 @@
                  <string/>
                 </property>
                 <property name="whatsThis">
-                 <string/>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, the value above will behave as a &lt;span style=&quot; font-weight:700;&quot;&gt;suffix&lt;/span&gt; to the input file name.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>As suffix</string>
@@ -334,6 +346,9 @@
             </item>
             <item row="1" column="1">
              <widget class="QSpinBox" name="heightSpinBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A custom &lt;span style=&quot; font-weight:700;&quot;&gt;scale&lt;/span&gt;, in pixels, for the output video.&lt;/p&gt;&lt;p&gt;If a custom aspect ratio is specified, it will apply over it.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="specialValueText">
                <string>Auto</string>
               </property>
@@ -367,6 +382,9 @@
             </item>
             <item row="1" column="0">
              <widget class="QSpinBox" name="widthSpinBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A custom &lt;span style=&quot; font-weight:700;&quot;&gt;scale&lt;/span&gt;, in pixels, for the output video.&lt;/p&gt;&lt;p&gt;If a custom aspect ratio is specified, it will apply over it.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="specialValueText">
                <string>Auto</string>
               </property>
@@ -390,6 +408,9 @@
               <pointsize>18</pointsize>
              </font>
             </property>
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This button shows whenever some of the options you have selected are &lt;span style=&quot; font-weight:700;&quot;&gt;conflicting.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
              <string>⚠️</string>
             </property>
@@ -412,13 +433,20 @@
                 <bold>false</bold>
                </font>
               </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a &lt;span style=&quot; font-weight:700;&quot;&gt;quality preset &lt;/span&gt;for the re-encoded media. This defines the codecs used.&lt;/p&gt;&lt;p&gt;You can also specify codecs &lt;span style=&quot; font-weight:700;&quot;&gt;manually&lt;/span&gt; by enabling &lt;span style=&quot; font-style:italic;&quot;&gt;Choose codecs manually&lt;/span&gt; in &lt;span style=&quot; font-style:italic;&quot;&gt;Expert mode&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Select a quality preset</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QComboBox" name="qualityPresetComboBox"/>
+             <widget class="QComboBox" name="qualityPresetComboBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a &lt;span style=&quot; font-weight:700;&quot;&gt;quality preset &lt;/span&gt;for the re-encoded media. This defines the codecs used.&lt;/p&gt;&lt;p&gt;You can also specify codecs &lt;span style=&quot; font-weight:700;&quot;&gt;manually&lt;/span&gt; by enabling &lt;span style=&quot; font-style:italic;&quot;&gt;Choose codecs manually&lt;/span&gt; in &lt;span style=&quot; font-style:italic;&quot;&gt;Expert mode&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -476,6 +504,9 @@
                 <height>18</height>
                </size>
               </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select this option to output both video and audio.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Video and audio</string>
               </property>
@@ -495,6 +526,9 @@
                 <height>18</height>
                </size>
               </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select this option if you want only video, without audio.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Video only</string>
               </property>
@@ -510,6 +544,9 @@
                 <width>16777215</width>
                 <height>18</height>
                </size>
+              </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select this option if you want audio only, without video.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Audio only</string>
@@ -528,6 +565,9 @@
             </property>
             <item row="1" column="0">
              <widget class="QDoubleSpinBox" name="speedSpinBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:700;&quot;&gt;speed &lt;/span&gt;of both video and audio.&lt;/p&gt;&lt;p&gt;Note that changing the framerate in &lt;span style=&quot; font-style:italic;&quot;&gt;Expert mode &lt;/span&gt;will affect video speed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="specialValueText">
                <string>Auto</string>
               </property>
@@ -569,6 +609,9 @@
                 <bold>false</bold>
                </font>
               </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The path&lt;span style=&quot; font-weight:700;&quot;/&gt;where the resulting encoded media will be output.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Select output folder</string>
               </property>
@@ -576,6 +619,9 @@
             </item>
             <item row="1" column="0">
              <widget class="QLineEdit" name="outputFolderLineEdit">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The path&lt;span style=&quot; font-weight:700;&quot;/&gt;where the resulting encoded media will be output.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string/>
               </property>
@@ -592,6 +638,9 @@
             </item>
             <item row="1" column="1">
              <widget class="QPushButton" name="outputFolderButton">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The path&lt;span style=&quot; font-weight:700;&quot;/&gt;where the resulting encoded media will be output.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Open...</string>
               </property>
@@ -612,6 +661,9 @@
                 <pointsize>10</pointsize>
                 <bold>false</bold>
                </font>
+              </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;These options control behavior post-compression.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>After compression</string>
@@ -636,6 +688,9 @@
             </item>
             <item>
              <widget class="QCheckBox" name="openExplorerOnSuccessCheckBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, the &lt;span style=&quot; font-weight:700;&quot;&gt;folder&lt;/span&gt; containing the resulting media will be opened upon successful compression.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Open in explorer</string>
               </property>
@@ -643,6 +698,9 @@
             </item>
             <item>
              <widget class="QCheckBox" name="playOnSuccessCheckBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, the resulting media will be opened with the default media player upon successful compression.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Play compressed media</string>
               </property>
@@ -650,6 +708,9 @@
             </item>
             <item>
              <widget class="QCheckBox" name="closeOnSuccessCheckBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, this utility will &lt;span style=&quot; font-weight:700;&quot;&gt;close&lt;/span&gt; itself upon successful compression.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Close this utility</string>
               </property>
@@ -743,6 +804,9 @@
             </item>
             <item>
              <widget class="QSpinBox" name="fpsSpinBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A custom &lt;span style=&quot; font-weight:700;&quot;&gt;video frame rate&lt;/span&gt;. Prefer using the &lt;span style=&quot; font-style:italic;&quot;&gt;speed&lt;/span&gt; control instead.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="specialValueText">
                <string>Auto</string>
               </property>
@@ -779,6 +843,9 @@
                 <bold>false</bold>
                </font>
               </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;For advanced users, this lets you specify a chain of &lt;span style=&quot; font-weight:700;&quot;&gt;custom arguments&lt;/span&gt; for the ffmpeg process. You may only use valid characters.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Custom command</string>
               </property>
@@ -791,6 +858,9 @@
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;For advanced users, this lets you specify a chain of &lt;span style=&quot; font-weight:700;&quot;&gt;custom arguments&lt;/span&gt; for the ffmpeg process. You may only use valid characters.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="placeholderText">
                <string>Additional FFMPEG arguments</string>
@@ -839,6 +909,9 @@
             </item>
             <item>
              <widget class="QCheckBox" name="warnOnOverwriteCheckBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, you will be warned when the compressed output would &lt;span style=&quot; font-weight:700;&quot;&gt;overwrite&lt;/span&gt; a file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Warn when overwriting input file</string>
               </property>
@@ -849,6 +922,9 @@
             </item>
             <item>
              <widget class="QCheckBox" name="deleteOnSuccessCheckBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, the input media file will be &lt;span style=&quot; font-weight:700;&quot;&gt;deleted&lt;/span&gt; upon successful compression. Use with care, it won't be recoverable.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Delete input file on success</string>
               </property>
@@ -856,6 +932,9 @@
             </item>
             <item>
              <widget class="QCheckBox" name="autoFillCheckBox">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, fields will be &lt;span style=&quot; font-weight:700;&quot;&gt;auto-filled &lt;/span&gt;when an input file is selected.&lt;/p&gt;&lt;p&gt;Use with care, it auto-fills everything.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="text">
                <string>Auto-fill metadata on file selection</string>
               </property>
@@ -890,6 +969,9 @@
             </item>
             <item row="1" column="0">
              <widget class="QSpinBox" name="aspectRatioSpinBoxH">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the &lt;span style=&quot; font-weight:700;&quot;&gt;aspect ratio&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;Note that this will override the aspect ratio defined by the &lt;span style=&quot; font-style:italic;&quot;&gt;Width &lt;/span&gt;and &lt;span style=&quot; font-style:italic;&quot;&gt;Height &lt;/span&gt;controls.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="specialValueText">
                <string>#</string>
               </property>
@@ -920,6 +1002,9 @@
             </item>
             <item row="1" column="2">
              <widget class="QSpinBox" name="aspectRatioSpinBoxV">
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sets the &lt;span style=&quot; font-weight:700;&quot;&gt;aspect ratio&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;Note that this will override the aspect ratio defined by the &lt;span style=&quot; font-style:italic;&quot;&gt;Width &lt;/span&gt;and &lt;span style=&quot; font-style:italic;&quot;&gt;Height &lt;/span&gt;controls.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="specialValueText">
                <string>#</string>
               </property>
@@ -963,6 +1048,9 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the &lt;span style=&quot; font-weight:700;&quot;&gt;unit&lt;/span&gt; used for the desired file size.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="currentIndex">
                <number>1</number>
               </property>
@@ -990,6 +1078,9 @@
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
+              </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the &lt;span style=&quot; font-weight:700;&quot;&gt;desired file size&lt;/span&gt;. Based on this value, the tool will calculate a &lt;span style=&quot; font-weight:700;&quot;&gt;constant video bitrate &lt;/span&gt;(CBR)&lt;span style=&quot; font-weight:700;&quot;/&gt;and take audio into account to achieve the specified file size. However, due to the nature of encoding, it cannot guarantee the specified file size will be always accurate.&lt;/p&gt;&lt;p&gt;If set to &lt;span style=&quot; font-style:italic;&quot;&gt;Auto&lt;/span&gt;, will let ffmpeg decide.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="specialValueText">
                <string>Auto</string>
@@ -1091,6 +1182,9 @@
                    <bold>false</bold>
                   </font>
                  </property>
+                 <property name="whatsThis">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:700;&quot;&gt;audio codec &lt;/span&gt;used. Choosing the right codec has an impact on output quality, compatibility, and compression speed. For example, at equal bitrate, an audio encoded in OPUS will have noticeably better quality than one encoded with MP3, but it will take slightly longer to encode and may not be supported by legacy apps. Take note that some codecs may not be available depending on your hardware.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                 </widget>
                </item>
                <item row="1" column="0">
@@ -1117,6 +1211,9 @@
                    <bold>false</bold>
                   </font>
                  </property>
+                 <property name="whatsThis">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:700;&quot;&gt;video codec&lt;/span&gt; used. Choosing the right codec has an impact on output quality, compatibility, and compression speed. For example, at equal bitrate, a video encoded in H.265 will have noticeably less artifacts than one encoded with H.264, but it will take longer to encode and may not be supported by every app (Discord as of 2023 does not support H.265). Take note that some codecs may not be available depending on your hardware.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                 </widget>
                </item>
                <item row="2" column="2">
@@ -1127,6 +1224,9 @@
                    <pointsize>10</pointsize>
                    <bold>false</bold>
                   </font>
+                 </property>
+                 <property name="whatsThis">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:700;&quot;&gt;container &lt;/span&gt;defines the format combining the video and audio codecs.&lt;/p&gt;&lt;p&gt;Take note that not all contains support all codecs or combinations of codecs!&lt;/p&gt;&lt;p&gt;If you're unsure, choose mp4.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>
@@ -1156,6 +1256,9 @@
                </item>
                <item row="1" column="0">
                 <widget class="QSlider" name="audioQualitySlider">
+                 <property name="whatsThis">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:700;&quot;&gt;constant audio bitrate&lt;/span&gt; (kbps). In general, 196kbps is considered decent quality, 128kbps passable quality and anything lower brings very noticeably loss.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
                  <property name="maximum">
                   <number>100</number>
                  </property>
@@ -1207,6 +1310,9 @@
              <font>
               <bold>false</bold>
              </font>
+            </property>
+            <property name="whatsThis">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Display &lt;span style=&quot; font-weight:700;&quot;&gt;statistics &lt;/span&gt;about the media.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>ⓘ  Statistics...</string>
