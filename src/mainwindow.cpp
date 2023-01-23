@@ -8,6 +8,8 @@
 #include <QMimeData>
 #include <QMimeDatabase>
 #include <QMovie>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
 #include <QPixmap>
 #include <QProcess>
 #include <QPropertyAnimation>
@@ -28,6 +30,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	this->resize(this->minimumSizeHint());
 	this->warnings = new Warnings(ui->warningTooltipButton);
 
+	connect(&settings, &Settings::notInitialized, [this]() {
+		Notify(Severity::Critical, tr("Config not initialized"),
+			 tr("Configuration has not been initialized. Please contact the developers."));
+	});
+
+	settings.Init("config");
+
 	connect(&settings, &Settings::configNotFound, [this](const QString &fileName) {
 		Notify(Severity::Critical,
 			 tr("Config not found"),
@@ -46,20 +55,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			    "fallback value in the default configuration file.")
 				 .arg(key, settings.fileName()));
 	});
-	connect(&settings, &Settings::keyNotFound, [this](const QString &key) {
+	connect(&settings, &Settings::keyNotFound, [this](const QString& key) {
 		Notify(Severity::Critical,
 			 tr("Config key not found"),
 			 tr("Configuration key '%1' is missing. Please add it manually in %2 or "
 			    "reinstall the program.")
 				 .arg(key, settings.fileName()));
 	});
-	connect(&settings, &Settings::notInitialized, [this]() {
-		Notify(Severity::Critical,
-			 tr("Config not initialized"),
-			 tr("Configuration has not been initialized. Please contact the developers."));
-	});
 
-	settings.Init("config");
+#if defined(Q_OS_WINDOWS)
+	// If using windows, fetch the ffmpeg binaries from a random mirror
+	DownloadDependencies();
+#endif
 
 	connect(ui->qualityPresetComboBox, &QComboBox::currentIndexChanged, [this]() {
 		if (ui->codecSelectionGroupBox->isChecked())
@@ -625,6 +632,59 @@ void MainWindow::CheckSpeedConflict()
 	} else {
 		warnings->Remove("speedConflict");
 	}
+}
+
+void MainWindow::DownloadDependencies()
+{
+	if (QFile::exists("ffmpeg.exe") && QFile::exists("ffprobe.exe"))
+		return;
+
+	QProgressBar progress;
+	progress.setValue(50);
+	progress.setWindowFlags(Qt::WindowStaysOnTopHint);
+	progress.show();
+
+	QNetworkAccessManager network;
+	QString		    url = settings.get("Main/sFFmpegDownloadUrl").toString();
+
+	if (!url.endsWith(".zip")) {
+		Notify(Severity::Critical, tr("Could not download dependency"),
+			 tr("We only support extracting .zip files."), tr("Rip bozo"));
+		return;
+	}
+
+	connect(&network, &QNetworkAccessManager::finished, [this](QNetworkReply* reply) {
+		QFile file("archive.zip");
+
+		qDebug() << "sdfsdfsdf";
+
+		if (!file.open(QIODevice::WriteOnly | QIODevice::NewOnly))
+			return;
+
+		if (!reply->errorString().isEmpty()) {
+			Notify(Severity::Critical, tr("Could not download dependencies"), reply->errorString());
+			return;
+		}
+
+		QTextStream out(&file);
+		out << reply->readAll();
+
+		QProcess zipper;
+		zipper.startCommand("C:/Program Files/zip.exe -X0q " + reply->url().fileName());
+		zipper.waitForFinished();
+
+		qDebug() << zipper.errorString();
+
+		if (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe")) {
+			Notify(Severity::Critical, tr("Could not download dependencies"),
+				 tr("The extracted zip file did not contain all required dependencies."),
+				 tr("ffmpeg.exe or ffprobe.exe not found."));
+			return;
+		}
+	});
+
+	QNetworkRequest request(url);
+	network.get(request);
 }
 
 void MainWindow::SetProgressShown(bool shown, int progressPercent)

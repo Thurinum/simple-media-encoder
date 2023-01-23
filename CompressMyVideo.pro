@@ -1,4 +1,4 @@
-QT = core gui widgets
+QT = core gui widgets network
 
 CONFIG += c++20
 QMAKE_CXXFLAGS += -Werror -Wextra

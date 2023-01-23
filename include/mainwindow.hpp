@@ -73,6 +73,7 @@ private:
 	void ParseMetadata(const QString& path);
 	void CheckAspectRatioConflict();
 	void CheckSpeedConflict();
+	void		DownloadDependencies();
 	QString getOutputPath(QString inputFilePath);
 	inline bool isAutoValue(QAbstractSpinBox* spinBox);
 
