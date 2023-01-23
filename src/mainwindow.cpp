@@ -37,6 +37,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	settings.Init("config");
 
+	if (IS_WINDOWS && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe"))) {
+		Notify(Severity::Critical, tr("Could not find ffmpeg binaries"),
+			 tr("If compiling from source, this is not a bug. Please download ffmpeg.exe and ffprobe.exe and "
+			    "place them into the binaries directory. Otherwise, there is an error with the release; please "
+			    "report this as a bug."));
+	}
+
 	connect(&settings, &Settings::configNotFound, [this](const QString &fileName) {
 		Notify(Severity::Critical,
 			 tr("Config not found"),
@@ -62,11 +69,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			    "reinstall the program.")
 				 .arg(key, settings.fileName()));
 	});
-
-#if defined(Q_OS_WINDOWS)
-	// If using windows, fetch the ffmpeg binaries from a random mirror
-	DownloadDependencies();
-#endif
 
 	connect(ui->qualityPresetComboBox, &QComboBox::currentIndexChanged, [this]() {
 		if (ui->codecSelectionGroupBox->isChecked())
@@ -634,58 +636,6 @@ void MainWindow::CheckSpeedConflict()
 	}
 }
 
-void MainWindow::DownloadDependencies()
-{
-	if (QFile::exists("ffmpeg.exe") && QFile::exists("ffprobe.exe"))
-		return;
-
-	QProgressBar progress;
-	progress.setValue(50);
-	progress.setWindowFlags(Qt::WindowStaysOnTopHint);
-	progress.show();
-
-	QNetworkAccessManager network;
-	QString		    url = settings.get("Main/sFFmpegDownloadUrl").toString();
-
-	if (!url.endsWith(".zip")) {
-		Notify(Severity::Critical, tr("Could not download dependency"),
-			 tr("We only support extracting .zip files."), tr("Rip bozo"));
-		return;
-	}
-
-	connect(&network, &QNetworkAccessManager::finished, [this](QNetworkReply* reply) {
-		QFile file("archive.zip");
-
-		qDebug() << "sdfsdfsdf";
-
-		if (!file.open(QIODevice::WriteOnly | QIODevice::NewOnly))
-			return;
-
-		if (!reply->errorString().isEmpty()) {
-			Notify(Severity::Critical, tr("Could not download dependencies"), reply->errorString());
-			return;
-		}
-
-		QTextStream out(&file);
-		out << reply->readAll();
-
-		QProcess zipper;
-		zipper.startCommand("C:/Program Files/zip.exe -X0q " + reply->url().fileName());
-		zipper.waitForFinished();
-
-		qDebug() << zipper.errorString();
-
-		if (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe")) {
-			Notify(Severity::Critical, tr("Could not download dependencies"),
-				 tr("The extracted zip file did not contain all required dependencies."),
-				 tr("ffmpeg.exe or ffprobe.exe not found."));
-			return;
-		}
-	});
-
-	QNetworkRequest request(url);
-	network.get(request);
-}
 
 void MainWindow::SetProgressShown(bool shown, int progressPercent)
 {
@@ -813,8 +763,10 @@ void MainWindow::Notify(Severity severity,
 	dialog.exec();
 
 	// wait until event loop has begun before attempting to exit
-	if (severity == Severity::Critical)
+	if (severity == Severity::Critical) {
 		QMetaObject::invokeMethod(QApplication::instance(), "exit", Qt::QueuedConnection);
+		QApplication::exit();
+	}
 }
 
 void MainWindow::SaveState()
