@@ -15,7 +15,7 @@ With this tool, one may:
 - Re-encode **any file type** supported by FFMPEG;
 - Choose whether to export **video, audio, or both**;
 - Quickly select a **quality preset**, or manually choose **your codecs**;
-- Choose *audio bitrate*;
+- Choose **audio bitrate**;
 - **Re-scale video** with automatic aspect ratio adjustment;
 - Manually adjust **aspect ratio**;
 - Specify a **target file size** for easy compression of large files;
@@ -24,19 +24,19 @@ With this tool, one may:
 
 Furthermore, one may:
 
-- Choose to auto-fill all fields when a file is selected;
-- Delete the input file on success;
-- Decide whether to warn when a file is about to be overwritten;
-- Specify the output name as a file name or as a suffix to the input name;
-- View detailed statistics about your media file *(to be implemented)*.
+- Choose to **auto-fill** all fields when a file is selected;
+- **Delete** the input file on success;
+- Decide whether to **warn** when a file is about to be overwritten;
+- Specify the **output name** as a file name or as a suffix to the input name;
+- View **detailed statistics** about your media file *(to be implemented)*.
 
 As well as customize behavior on successful re-encoding:
 
-- Open the resulting media in the file explorer;
-- View the resulting media in the default media player;
-- Auto-close the utility for a one-shot export.
+- Open the resulting media in the **file explorer**;
+- View the resulting media in the **default media player**;
+- **Auto-close the utility** for a one-shot export.
 
-Conveniently, all these parameters are saved when the tool is closed.
+Conveniently, all these parameters are **saved** when the tool is closed.
 
 ## How to install
 ### Binaries
@@ -52,9 +52,11 @@ If Qt is not already installed on your system:
 - Proceed with the installation of Qt (you will need a free Qt developer account):
   - Ideally, select version >= 6.3.
   - Under "Developer and Designer tools", choose the Qt Creator IDE (unless you intend to use CLI) and the latest MinGW compiler.
+
 Once Qt is installed:
 - Open Qt Creator and clone this repository in `File -> New Project... -> Import project`.
 - Press `Ctrl+R` to run the project.
+
 Before you get going:
 - On Windows, you must manually download and install the ffmpeg.exe and ffprobe.exe binaries.
   - You may find links to mirrors <a href=https://ffmpeg.org/download.html#build-windows>here</a>.
@@ -65,8 +67,10 @@ If the Qt development libraries are not already installed on your system:
 - Install Qt libraries version >= 6.3 and qmake
   - From your package manager (recommended, although some sources may provided outdated Qt packages).
   - With the Open Source installer (see instructions for Windows above).
+ 
 If ffmpeg is not already installed on your system (and in your PATH):
 - Install ffmpeg with your package manager.
+
 Once everything is installed:
 - Clone this repository.
   - Run `qmake` on the .pro file to generate makefiles
