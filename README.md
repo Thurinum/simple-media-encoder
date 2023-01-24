@@ -1,16 +1,16 @@
-# Efficient Video Encoder
+# Simple Media Encoder
 Re-encode and compress your media files quickly and efficiently with this convenient tool. Uses FFMPEG and the Qt toolkit under GPL v3.
 
 <div>
-  <img height=400 src=https://user-images.githubusercontent.com/43908636/214160823-a1646833-ca03-4a9b-86e6-f64c2e8dac92.png />
-  <img height=400 src=https://user-images.githubusercontent.com/43908636/214160857-1eafac6e-8e98-4775-9305-baf9ed480c13.png />
+  <img height=400 src=https://user-images.githubusercontent.com/43908636/214196254-afe24f49-9ca7-4d25-9e1f-99d293df9cc3.png />
+  <img height=400 src=https://user-images.githubusercontent.com/43908636/214196260-5b70ad1e-07b7-4af9-bd22-da5f41af0951.png />  
 </div>  
-
-The default interface allows anyone to quickly re-encode their media files.  
-So-called *expert mode* gives advanced users a bit more control over the exported result.
+  
+The default interface allows anyone to quickly re-encode media files.  
+The so-called "expert" interface gives advanced users a bit more control over the exported result.
   
 ## Features
-With this tool, you may:
+With this tool, one may:
 
 - Re-encode **any file type** supported by FFMPEG;
 - Choose whether to export **video, audio, or both**;
@@ -22,7 +22,7 @@ With this tool, you may:
 - Change the **video and audio speed** or manually set a video framerate;
 - Specify **custom FFMPEG arguments** for advanced use.
 
-Furthermore, you may:
+Furthermore, one may:
 
 - Choose to auto-fill all fields when a file is selected;
 - Delete the input file on success;
@@ -40,16 +40,39 @@ Conveniently, all these parameters are saved when the tool is closed.
 
 ## How to install
 ### Binaries
-Binary releases should be available before March 2023.
+Binary releases should be available before February 2023.
 
 ### Source
-This tool uses the Qt Framework for application development.
+This tool uses the Qt for Application Development framework, under the GNU GPL v3 open source license.  
+It must be installed for compiling SME.
 
-## On Windows
+### On Windows
 If Qt is not already installed on your system:
-- Download the Qt Open Source installer <a href=https://www.qt.io/download-qt-installer>here</a>
-- Proceed 
-
+- Download the Qt Open Source installer <a href=https://www.qt.io/download-qt-installer>here</a> for easy setup of the framework;
+- Proceed with the installation of Qt (you will need a free Qt developer account):
+  - Ideally, select version >= 6.3.
+  - Under "Developer and Designer tools", choose the Qt Creator IDE (unless you intend to use CLI) and the latest MinGW compiler.
+Once Qt is installed:
+- Open Qt Creator and clone this repository in `File -> New Project... -> Import project`.
+- Press `Ctrl+R` to run the project.
+Before you get going:
+- On Windows, you must manually download and install the ffmpeg.exe and ffprobe.exe binaries.
+  - You may find links to mirrors <a href=https://ffmpeg.org/download.html#build-windows>here</a>.
+  - Extract the archive and place the two binaries (and associated libraries if present) inside the `bin` directory (or add them to your PATH).
+  
+### On Linux
+If the Qt development libraries are not already installed on your system:
+- Install Qt libraries version >= 6.3 and qmake
+  - From your package manager (recommended, although some sources may provided outdated Qt packages).
+  - With the Open Source installer (see instructions for Windows above).
+If ffmpeg is not already installed on your system (and in your PATH):
+- Install ffmpeg with your package manager.
+Once everything is installed:
+- Clone this repository.
+  - Run `qmake` on the .pro file to generate makefiles
+  - Run `make -j32` to compile.
+  - The executable is output in the bin/ directory.
+  
 ## Technologies used
 - ffmpeg and ffprobe
 - The Qt framework (Qt Widgets)
@@ -57,9 +80,9 @@ If Qt is not already installed on your system:
 ## Special thanks to
 Theodore l'Heureux (for his consulting and beta-testing)
 
-## About stability
-This is a beta, and the tool will face difficulties opening *certain files*.  
-Should this happen to you, feel free to create an issue on this repository so I can investigate the problem quicker.  
-I'm aware of these issues and will be working on fixing them within a few weeks.  
+## Found an issue?
+This is a beta, and the tool may face difficulties opening certain files.  
+Should you encounter such a problematic file, feel free to send it over alongside a Github issue; it will help finding the problem.
+Any bug reports are also greatly appreciated!
 
 Thanks for reading through this and cheers!
