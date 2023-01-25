@@ -38,32 +38,36 @@ public:
 		Critical // Will terminate program
 	};
 
-	void Notify(Severity severity,
-			const QString& title,
-			const QString& message,
-			const QString& details = "");
+	void Notify(Severity severity, const QString& title, const QString& message, const QString& details = "");
 
 protected:
-	void closeEvent(QCloseEvent* event) override;
-
-private slots:
-	void StartCompression();
-	//	void DisplayProgress();
-	//	void HandleSuccess();
-	//	void HandleFailure();
-
-private:
-	// setup
+	// initialization
 	void SetupSettings();
+	void SetupMenu();
+	void DetectNvidia();
 	void SetupUiInteractions();
-
-	void ShowMetadata();
 
 	void LoadState();
 	void SaveState();
-	void SetProgressShown(bool shown, int progressPercent = 0);
+	void closeEvent(QCloseEvent* event) override;
+
+	// core logic
+	void StartCompression();
+	void HandleStart(double videoBitrateKbps, double audioBitrateKbps);
+	void HandleSuccess(const Compressor::Options& options, const Compressor::ComputedOptions& computed, QFile& output);
+	void HandleFailure(const QString& shortError, const QString& longError);
+
+private slots:
 	void SetAdvancedMode(bool enabled);
+	void OpenInputFile();
+	void ShowMetadata();
+	void SelectPresetCodecs();
+	void SetProgressShown(bool shown, int progressPercent = 0);
 	void SetControlsState(QAbstractButton* button);
+	void CheckAspectRatioConflict();
+	void CheckSpeedConflict();
+
+private:
 	void ParseCodecs(QHash<QString, Codec>* codecs, const QString& type, QComboBox* comboBox);
 	void ParseContainers(QHash<QString, Container>* containers, QComboBox* comboBox);
 	void ParsePresets(QHash<QString, Preset>& presets,
@@ -71,25 +75,23 @@ private:
 				QHash<QString, Codec>& audioCodecs,
 				QHash<QString, Container>& containers,
 				QComboBox* comboBox);
-	void ParseMetadata(const QString& path);
-	void CheckAspectRatioConflict();
-	void CheckSpeedConflict();
+	void ParseMetadata(const QString& path);	
 	QString getOutputPath(QString inputFilePath);
 	inline bool isAutoValue(QAbstractSpinBox* spinBox);
+
+	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
+	bool isNvidia = false;
+
+	Ui::MainWindow* ui;
+	Settings settings;
+	Warnings* warnings;
+	Compressor* compressor = new Compressor(this);
 
 	QHash<QString, Codec> videoCodecs;
 	QHash<QString, Codec> audioCodecs;
 	QHash<QString, Container> containers;
 	QHash<QString, Preset> presets;
-
-	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
-	Ui::MainWindow* ui;
-	Settings settings;
-	Warnings* warnings;
-	void InitSettings(const QString& fileName);
-	Compressor* compressor = new Compressor(this);
-	bool m_isNvidia = false;
-	optional<Compressor::Metadata> m_metadata;
+	optional<Compressor::Metadata> metadata;
 };
 
 #endif // MAINWINDOW_HPP
