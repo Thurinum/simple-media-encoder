@@ -32,12 +32,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 	SetupSettings();
 
-	if (IS_WINDOWS && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe"))) {
-		Notify(Severity::Critical, tr("Could not find ffmpeg binaries"),
-			 tr("If compiling from source, this is not a bug. Please download ffmpeg.exe and ffprobe.exe and "
-			    "place them into the binaries directory. Otherwise, there is an error with the release; please "
-			    "report this as a bug."));
-	}
+	CheckForBinaries();
 
 	SetupMenu();
 
@@ -115,6 +110,17 @@ void MainWindow::SetupSettings()
 			    "reinstall the program.")
 				 .arg(key, settings.fileName()));
 	});
+}
+
+void MainWindow::CheckForBinaries()
+{
+	if (IS_WINDOWS && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe"))) {
+		Notify(Severity::Critical,
+			 tr("Could not find ffmpeg binaries"),
+			 tr("If compiling from source, this is not a bug. Please download ffmpeg.exe and ffprobe.exe and "
+			    "place them into the binaries directory. Otherwise, there is an error with the release; please "
+			    "report this as a bug."));
+	}
 }
 
 void MainWindow::SetupMenu()
@@ -667,7 +673,7 @@ void MainWindow::ParseCodecs(QHash<QString, Codec> *codecs, const QString &type,
 				 .arg(type));
 	}
 
-	QString availableCodecs = compressor->availableFormats();
+	QString availableCodecs = compressor->getAvailableFormats();
 
 	for (const QString &codecLibrary : keys) {
 		if (!availableCodecs.contains(codecLibrary)) {
@@ -757,7 +763,7 @@ void MainWindow::ParsePresets(QHash<QString, Preset> &presets,
 					QComboBox *comboBox)
 {
 	QStringList keys = settings.keysInGroup("Presets");
-	QString supportedCodecs = compressor->availableFormats();
+	QString supportedCodecs = compressor->getAvailableFormats();
 
 	for (const QString &key : keys) {
 		Preset preset;
