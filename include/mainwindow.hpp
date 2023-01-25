@@ -51,6 +51,8 @@ private:
 	void SetupSettings();
 	void SetupUiInteractions();
 
+	void ShowMetadata();
+
 	void LoadState();
 	void SaveState();
 	void SetProgressShown(bool shown, int progressPercent = 0);

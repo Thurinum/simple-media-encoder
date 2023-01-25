@@ -39,40 +39,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			    "report this as a bug."));
 	}
 
-	connect(ui->qualityPresetComboBox, &QComboBox::currentIndexChanged, [this]() {
-		if (ui->codecSelectionGroupBox->isChecked())
-			return;
-
-		Preset p = qvariant_cast<Preset>(ui->qualityPresetComboBox->currentData());
-
-		ui->videoCodecComboBox->setCurrentText(p.videoCodec.name);
-		ui->audioCodecComboBox->setCurrentText(p.audioCodec.name);
-		ui->containerComboBox->setCurrentText(p.container.name);
-	});
-
-	connect(ui->widthSpinBox,
-		  &QSpinBox::valueChanged,
-		  this,
-		  &MainWindow::CheckAspectRatioConflict);
-	connect(ui->heightSpinBox,
-		  &QSpinBox::valueChanged,
-		  this,
-		  &MainWindow::CheckAspectRatioConflict);
-	connect(ui->aspectRatioSpinBoxH,
-		  &QSpinBox::valueChanged,
-		  this,
-		  &MainWindow::CheckAspectRatioConflict);
-	connect(ui->aspectRatioSpinBoxV,
-		  &QSpinBox::valueChanged,
-		  this,
-		  &MainWindow::CheckAspectRatioConflict);
-
-	connect(ui->speedSpinBox,
-		  &QDoubleSpinBox::valueChanged,
-		  this,
-		  &MainWindow::CheckSpeedConflict);
-	connect(ui->fpsSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckSpeedConflict);
-
 	// menu
 	QMenu *menu = new QMenu(this);
 	menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
@@ -108,7 +74,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	ParseContainers(&containers, ui->containerComboBox);
 	ParsePresets(presets, videoCodecs, audioCodecs, containers, ui->qualityPresetComboBox);
 
-	connect(ui->advancedModeCheckBox, &QCheckBox::clicked, this, &MainWindow::SetAdvancedMode);
+	SetupUiInteractions();
 
 	// start compression button
 	connect(ui->startCompressionButton, &QPushButton::clicked, [=, this]() {
@@ -309,50 +275,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			int qualityPercent = m_metadata->audioBitrateKbps * 100 / 256; // TODO parametrize
 			ui->audioQualitySlider->setValue(qualityPercent);
 		}
-	});
-
-	connect(ui->statisticsButton, &QPushButton::clicked, [this]() {
-		if (!m_metadata.has_value()) {
-			Notify(Severity::Info,
-				 tr("No file selected"),
-				 tr("Please select a file to continue."));
-			return;
-		}
-
-		Notify(Severity::Info,
-			 tr("Metadata"),
-			 tr("Video codec: %1\nAudio codec: %2\nContainer: %3\nAudio bitrate: %4 kbps\n\n "
-			    "(complete data to be implemented in a future update)")
-				 .arg(m_metadata->videoCodec,
-					m_metadata->audioCodec,
-					"N/A",
-					QString::number(m_metadata->audioBitrateKbps)));
-	});
-
-	// show name of file picked with file dialog
-	connect(ui->outputFolderButton, &QPushButton::clicked, [this]() {
-		QDir dir = QFileDialog::getExistingDirectory(this,
-									   tr("Select output directory"),
-									   QDir::currentPath());
-
-		ui->outputFolderLineEdit->setText(dir.absolutePath());
-	});
-
-	// show value in kbps of audio quality slider
-	connect(ui->audioQualitySlider, &QSlider::valueChanged, [this]() {
-		double currentValue = qMax(settings.get("Main/dMinBitrateAudioKbps").toDouble(),
-						   ui->audioQualitySlider->value() / 100.0
-							   * settings.get("Main/dMaxBitrateAudioKbps").toDouble());
-		ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
-	});
-
-	connect(ui->audioVideoButtonGroup,
-		  &QButtonGroup::buttonClicked,
-		  this,
-		  &MainWindow::SetControlsState);
-
-	connect(ui->codecSelectionGroupBox, &QGroupBox::clicked, [this](bool checked) {
-		ui->qualityPresetComboBox->setEnabled(!checked);
 	});
 
 	LoadState();
@@ -830,7 +752,95 @@ void MainWindow::SetupSettings()
 	});
 }
 
-void MainWindow::SetupUiInteractions() {}
+void MainWindow::SetupUiInteractions()
+{
+	// toggle advanced mode
+	connect(ui->advancedModeCheckBox, &QCheckBox::clicked, this, &MainWindow::SetAdvancedMode);
+
+	// select codecs matching with the current preset when selected
+	connect(ui->qualityPresetComboBox, &QComboBox::currentIndexChanged, [this]() {
+		if (ui->codecSelectionGroupBox->isChecked())
+			return;
+
+		Preset p = qvariant_cast<Preset>(ui->qualityPresetComboBox->currentData());
+
+		ui->videoCodecComboBox->setCurrentText(p.videoCodec.name);
+		ui->audioCodecComboBox->setCurrentText(p.audioCodec.name);
+		ui->containerComboBox->setCurrentText(p.container.name);
+	});
+
+	// check for conflicts between certain controls
+	connect(ui->widthSpinBox,
+		  &QSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckAspectRatioConflict);
+	connect(ui->heightSpinBox,
+		  &QSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckAspectRatioConflict);
+	connect(ui->aspectRatioSpinBoxH,
+		  &QSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckAspectRatioConflict);
+	connect(ui->aspectRatioSpinBoxV,
+		  &QSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckAspectRatioConflict);
+
+	connect(ui->speedSpinBox,
+		  &QDoubleSpinBox::valueChanged,
+		  this,
+		  &MainWindow::CheckSpeedConflict);
+	connect(ui->fpsSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckSpeedConflict);
+
+	// show name of file picked with file dialog
+	connect(ui->outputFolderButton, &QPushButton::clicked, [this]() {
+		QDir dir = QFileDialog::getExistingDirectory(this,
+									   tr("Select output directory"),
+									   QDir::currentPath());
+
+		ui->outputFolderLineEdit->setText(dir.absolutePath());
+	});
+
+	// show value in kbps of audio quality slider
+	connect(ui->audioQualitySlider, &QSlider::valueChanged, [this]() {
+		double currentValue = qMax(settings.get("Main/dMinBitrateAudioKbps").toDouble(),
+						   ui->audioQualitySlider->value() / 100.0
+							   * settings.get("Main/dMaxBitrateAudioKbps").toDouble());
+		ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
+	});
+
+	// disable appropriate controls when only video or audio selected
+	connect(ui->audioVideoButtonGroup,
+		  &QButtonGroup::buttonClicked,
+		  this,
+		  &MainWindow::SetControlsState);
+
+	// disable preset selection when manual codec selection enabled
+	connect(ui->codecSelectionGroupBox, &QGroupBox::clicked, [this](bool checked) {
+		ui->qualityPresetComboBox->setEnabled(!checked);
+	});
+
+	// show statistics on click
+	connect(ui->statisticsButton, &QPushButton::clicked, this, &MainWindow::ShowMetadata);
+}
+
+void MainWindow::ShowMetadata()
+{
+	if (!m_metadata.has_value()) {
+		Notify(Severity::Info, tr("No file selected"), tr("Please select a file to continue."));
+		return;
+	}
+
+	Notify(Severity::Info,
+		 tr("Metadata"),
+		 tr("Video codec: %1\nAudio codec: %2\nContainer: %3\nAudio bitrate: %4 kbps\n\n "
+		    "(complete data to be implemented in a future update)")
+			 .arg(m_metadata->videoCodec,
+				m_metadata->audioCodec,
+				"N/A",
+				QString::number(m_metadata->audioBitrateKbps)));
+}
 
 void MainWindow::LoadState()
 {
