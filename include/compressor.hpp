@@ -93,8 +93,7 @@ public:
 
 	void Compress(const Options& options);
 	std::variant<Metadata, Error> getMetadata(const QString& path);
-
-	QString availableFormats();
+	QString getAvailableFormats();
 
 signals:
 	void compressionStarted(double videoBitrateKbps, double audioBitrateKbps);
@@ -107,31 +106,25 @@ signals:
 private:
 	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
 
+	void StartCompression(const Options& options, const ComputedOptions& computedOptions, const Metadata& metadata);
+	void UpdateProgress(double mediaDuration);
+	void EndCompression(
+		const Options& options, const ComputedOptions& computed, QString outputPath, QString command, int exitCode);
+
+	bool areValidOptions(const Options& options);
+	void ComputeVideoBitrate(const Options& options, ComputedOptions& computed, const Metadata& metadata);
+	bool computeAudioBitrate(const Options& options, ComputedOptions& computed);
+	double computePixelRatio(const Options& options, const Metadata& metadata);
+
+	QString output = "";
+	QString parseOutput();
+
 	QEventLoop eventLoop;
 	QProcess* ffprobe = new QProcess();
 	QProcess* ffmpeg = new QProcess(&eventLoop);
 
 	QMetaObject::Connection* const processUpdateConnection = new QMetaObject::Connection();
 	QMetaObject::Connection* const processFinishedConnection = new QMetaObject::Connection();
-
-	QString m_output = "";
-	QString parseOutput();
-
-	bool areValidOptions(const Options& options);
-	void StartCompression(const Options& options,
-				    const ComputedOptions& computedOptions,
-				    const Metadata& metadata);
-	void UpdateProgress(double mediaDuration);
-	void EndCompression(const Options& options,
-				  const ComputedOptions& computed,
-				  QString outputPath,
-				  QString command,
-				  int exitCode);
-	bool computeAudioBitrate(const Options& options, ComputedOptions& computed);
-	double computePixelRatio(const Options& options, const Metadata& metadata);
-	void ComputeVideoBitrate(const Options& options,
-					 ComputedOptions& computed,
-					 const Metadata& metadata);
 };
 
 Q_DECLARE_METATYPE(Compressor::Codec);

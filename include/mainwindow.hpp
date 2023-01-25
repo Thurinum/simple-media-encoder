@@ -43,6 +43,7 @@ public:
 protected:
 	// initialization
 	void SetupSettings();
+	void CheckForBinaries();
 	void SetupMenu();
 	void DetectNvidia();
 	void SetupUiInteractions();
@@ -68,6 +69,8 @@ private slots:
 	void CheckSpeedConflict();
 
 private:
+	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
+
 	void ParseCodecs(QHash<QString, Codec>* codecs, const QString& type, QComboBox* comboBox);
 	void ParseContainers(QHash<QString, Container>* containers, QComboBox* comboBox);
 	void ParsePresets(QHash<QString, Preset>& presets,
@@ -75,11 +78,10 @@ private:
 				QHash<QString, Codec>& audioCodecs,
 				QHash<QString, Container>& containers,
 				QComboBox* comboBox);
-	void ParseMetadata(const QString& path);	
+	void ParseMetadata(const QString& path);
 	QString getOutputPath(QString inputFilePath);
 	inline bool isAutoValue(QAbstractSpinBox* spinBox);
 
-	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
 	bool isNvidia = false;
 
 	Ui::MainWindow* ui;
