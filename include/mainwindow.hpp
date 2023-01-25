@@ -46,6 +46,12 @@ public:
 protected:
 	void closeEvent(QCloseEvent* event) override;
 
+private slots:
+	void StartCompression();
+	//	void DisplayProgress();
+	//	void HandleSuccess();
+	//	void HandleFailure();
+
 private:
 	// setup
 	void SetupSettings();
