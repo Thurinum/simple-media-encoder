@@ -77,86 +77,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	SetupUiInteractions();
 
 	// start compression button
-	connect(ui->startCompressionButton, &QPushButton::clicked, [=, this]() {
-		QString inputPath = ui->inputFileLineEdit->text();
-
-		if (!QFile::exists(inputPath)) {
-			Notify(Severity::Info,
-				 tr("File not found"),
-				 tr("File '%1' does not exist. Please select a valid file.").arg(inputPath));
-			return;
-		}
-
-		double sizeKbpsConversionFactor = -1;
-		switch (ui->fileSizeUnitComboBox->currentIndex()) {
-		case 0: // KB to kb
-			sizeKbpsConversionFactor = 8;
-			break;
-		case 1: // MB to kb
-			sizeKbpsConversionFactor = 8000;
-			break;
-		case 2: // GB to kb
-			sizeKbpsConversionFactor = 8e+6;
-			break;
-		}
-
-		bool hasVideo = ui->radVideoAudio->isChecked() || ui->radVideoOnly->isChecked();
-		bool hasAudio = ui->radVideoAudio->isChecked() || ui->radAudioOnly->isChecked();
-		QString outputPath = getOutputPath(inputPath);
-
-		// get codecs
-		optional<Codec> videoCodec;
-		optional<Codec> audioCodec;
-		optional<Container> container;
-
-		videoCodec = hasVideo ? ui->videoCodecComboBox->currentData().value<Codec>()
-					    : optional<Codec>();
-		audioCodec = hasAudio ? ui->audioCodecComboBox->currentData().value<Codec>()
-					    : optional<Codec>();
-		container = containers.value(ui->containerComboBox->currentText());
-
-		if (QFile::exists(outputPath + "." + container->name)
-		    && ui->warnOnOverwriteCheckBox->isChecked()
-		    && QMessageBox::question(this,
-						     "Overwrite?",
-						     "Output at path '" + outputPath
-							     + "' already exists. Overwrite it?")
-				 == QMessageBox::No) {
-			Notify(Severity::Info, "Operation canceled", "Compression aborted.");
-			return;
-		}
-
-		SetProgressShown(true);
-		compressor->Compress(Compressor::Options{
-			.inputPath = inputPath,
-			.outputPath = outputPath,
-			.videoCodec = videoCodec,
-			.audioCodec = audioCodec,
-			.container = container,
-			.sizeKbps = isAutoValue(ui->fileSizeSpinBox)
-						? std::optional<double>()
-						: ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
-			.audioQualityPercent = ui->audioQualitySlider->value() / 100.0,
-			.outputWidth = ui->widthSpinBox->value() == 0 ? std::optional<int>()
-										    : ui->widthSpinBox->value(),
-			.outputHeight = ui->heightSpinBox->value() == 0 ? std::optional<int>()
-											: ui->heightSpinBox->value(),
-			.aspectRatio = ui->aspectRatioSpinBoxH->value() != 0
-							   && ui->aspectRatioSpinBoxV->value() != 0
-						   ? QPoint(ui->aspectRatioSpinBoxH->value(),
-								ui->aspectRatioSpinBoxV->value())
-						   : optional<QPoint>(),
-			.fps = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
-			.speed = ui->speedSpinBox->value() == 0 ? optional<double>()
-									    : ui->speedSpinBox->value(),
-			.customArguments = ui->customCommandTextEdit->toPlainText(),
-			.inputMetadata = m_metadata.has_value() ? m_metadata
-									    : optional<Compressor::Metadata>(),
-			.minVideoBitrateKbps = settings.get("Main/dMinBitrateVideoKbps").toDouble(),
-			.minAudioBitrateKbps = settings.get("Main/dMinBitrateAudioKbps").toDouble(),
-			.maxAudioBitrateKbps = settings.get("Main/dMaxBitrateAudioKbps").toDouble(),
-		});
-	});
+	connect(ui->startCompressionButton,
+		  &QPushButton::clicked,
+		  this,
+		  &MainWindow::StartCompression);
 
 	// handle displaying target bitrates during compression
 	connect(compressor,
@@ -713,6 +637,86 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
 	SaveState();
 	event->accept();
+}
+
+void MainWindow::StartCompression()
+{
+	QString inputPath = ui->inputFileLineEdit->text();
+
+	if (!QFile::exists(inputPath)) {
+		Notify(Severity::Info,
+			 tr("File not found"),
+			 tr("File '%1' does not exist. Please select a valid file.").arg(inputPath));
+		return;
+	}
+
+	double sizeKbpsConversionFactor = -1;
+	switch (ui->fileSizeUnitComboBox->currentIndex()) {
+	case 0: // KB to kb
+		sizeKbpsConversionFactor = 8;
+		break;
+	case 1: // MB to kb
+		sizeKbpsConversionFactor = 8000;
+		break;
+	case 2: // GB to kb
+		sizeKbpsConversionFactor = 8e+6;
+		break;
+	}
+
+	bool hasVideo = ui->radVideoAudio->isChecked() || ui->radVideoOnly->isChecked();
+	bool hasAudio = ui->radVideoAudio->isChecked() || ui->radAudioOnly->isChecked();
+	QString outputPath = getOutputPath(inputPath);
+
+	// get codecs
+	optional<Codec> videoCodec;
+	optional<Codec> audioCodec;
+	optional<Container> container;
+
+	videoCodec = hasVideo ? ui->videoCodecComboBox->currentData().value<Codec>()
+				    : optional<Codec>();
+	audioCodec = hasAudio ? ui->audioCodecComboBox->currentData().value<Codec>()
+				    : optional<Codec>();
+	container = containers.value(ui->containerComboBox->currentText());
+
+	if (QFile::exists(outputPath + "." + container->name)
+	    && ui->warnOnOverwriteCheckBox->isChecked()
+	    && QMessageBox::question(this,
+					     "Overwrite?",
+					     "Output at path '" + outputPath
+						     + "' already exists. Overwrite it?")
+			 == QMessageBox::No) {
+		Notify(Severity::Info, "Operation canceled", "Compression aborted.");
+		return;
+	}
+
+	SetProgressShown(true);
+	compressor->Compress(Compressor::Options{
+		.inputPath = inputPath,
+		.outputPath = outputPath,
+		.videoCodec = videoCodec,
+		.audioCodec = audioCodec,
+		.container = container,
+		.sizeKbps = isAutoValue(ui->fileSizeSpinBox)
+					? std::optional<double>()
+					: ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
+		.audioQualityPercent = ui->audioQualitySlider->value() / 100.0,
+		.outputWidth = ui->widthSpinBox->value() == 0 ? std::optional<int>()
+									    : ui->widthSpinBox->value(),
+		.outputHeight = ui->heightSpinBox->value() == 0 ? std::optional<int>()
+										: ui->heightSpinBox->value(),
+		.aspectRatio = ui->aspectRatioSpinBoxH->value() != 0
+						   && ui->aspectRatioSpinBoxV->value() != 0
+					   ? QPoint(ui->aspectRatioSpinBoxH->value(),
+							ui->aspectRatioSpinBoxV->value())
+					   : optional<QPoint>(),
+		.fps = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
+		.speed = ui->speedSpinBox->value() == 0 ? optional<double>() : ui->speedSpinBox->value(),
+		.customArguments = ui->customCommandTextEdit->toPlainText(),
+		.inputMetadata = m_metadata.has_value() ? m_metadata : optional<Compressor::Metadata>(),
+		.minVideoBitrateKbps = settings.get("Main/dMinBitrateVideoKbps").toDouble(),
+		.minAudioBitrateKbps = settings.get("Main/dMinBitrateAudioKbps").toDouble(),
+		.maxAudioBitrateKbps = settings.get("Main/dMaxBitrateAudioKbps").toDouble(),
+	});
 }
 
 void MainWindow::SetupSettings()
