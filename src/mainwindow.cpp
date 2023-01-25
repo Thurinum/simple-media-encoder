@@ -30,12 +30,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 	this->resize(this->minimumSizeHint());
 	this->warnings = new Warnings(ui->warningTooltipButton);
 
-	connect(&settings, &Settings::notInitialized, [this]() {
-		Notify(Severity::Critical, tr("Config not initialized"),
-			 tr("Configuration has not been initialized. Please contact the developers."));
-	});
-
-	settings.Init("config");
+	SetupSettings();
 
 	if (IS_WINDOWS && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe"))) {
 		Notify(Severity::Critical, tr("Could not find ffmpeg binaries"),
@@ -43,32 +38,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 			    "place them into the binaries directory. Otherwise, there is an error with the release; please "
 			    "report this as a bug."));
 	}
-
-	connect(&settings, &Settings::configNotFound, [this](const QString &fileName) {
-		Notify(Severity::Critical,
-			 tr("Config not found"),
-			 tr("Default configuration file '%1' is missing. Please reinstall the program.")
-				 .arg(fileName));
-	});
-	connect(&settings, &Settings::keyCreated, [this](const QString &key) {
-		Notify(Severity::Warning,
-			 tr("Config key created"),
-			 tr("A new configuration key '%1' has been created.").arg(key));
-	});
-	connect(&settings, &Settings::keyFallbackUsed, [this](const QString &key) {
-		Notify(Severity::Warning,
-			 tr("Config fallback used"),
-			 tr("Configuration key '%1' was missing in '%2' and was created from the "
-			    "fallback value in the default configuration file.")
-				 .arg(key, settings.fileName()));
-	});
-	connect(&settings, &Settings::keyNotFound, [this](const QString& key) {
-		Notify(Severity::Critical,
-			 tr("Config key not found"),
-			 tr("Configuration key '%1' is missing. Please add it manually in %2 or "
-			    "reinstall the program.")
-				 .arg(key, settings.fileName()));
-	});
 
 	connect(ui->qualityPresetComboBox, &QComboBox::currentIndexChanged, [this]() {
 		if (ui->codecSelectionGroupBox->isChecked())
@@ -824,6 +793,45 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	event->accept();
 }
 
+void MainWindow::SetupSettings()
+{
+	connect(&settings, &Settings::notInitialized, [this]() {
+		Notify(Severity::Critical,
+			 tr("Config not initialized"),
+			 tr("Configuration has not been initialized. Please contact the developers."));
+	});
+
+	settings.Init("config");
+
+	connect(&settings, &Settings::configNotFound, [this](const QString &fileName) {
+		Notify(Severity::Critical,
+			 tr("Config not found"),
+			 tr("Default configuration file '%1' is missing. Please reinstall the program.")
+				 .arg(fileName));
+	});
+	connect(&settings, &Settings::keyCreated, [this](const QString &key) {
+		Notify(Severity::Warning,
+			 tr("Config key created"),
+			 tr("A new configuration key '%1' has been created.").arg(key));
+	});
+	connect(&settings, &Settings::keyFallbackUsed, [this](const QString &key) {
+		Notify(Severity::Warning,
+			 tr("Config fallback used"),
+			 tr("Configuration key '%1' was missing in '%2' and was created from the "
+			    "fallback value in the default configuration file.")
+				 .arg(key, settings.fileName()));
+	});
+	connect(&settings, &Settings::keyNotFound, [this](const QString &key) {
+		Notify(Severity::Critical,
+			 tr("Config key not found"),
+			 tr("Configuration key '%1' is missing. Please add it manually in %2 or "
+			    "reinstall the program.")
+				 .arg(key, settings.fileName()));
+	});
+}
+
+void MainWindow::SetupUiInteractions() {}
+
 void MainWindow::LoadState()
 {
 	ui->warningTooltipButton->setVisible(false);
@@ -895,28 +903,4 @@ void MainWindow::LoadState()
 	ui->codecSelectionGroupBox->setChecked(settings.get("LastDesired/bUseCustomCodecs").toBool());
 
 	SetControlsState(ui->audioVideoButtonGroup->checkedButton());
-}
-
-Warnings::Warnings(QWidget *widget) : m_widget{widget} {}
-
-void Warnings::Add(QString name, QString description)
-{
-	this->insert(name, description);
-	this->Update();
-}
-
-void Warnings::Remove(QString name)
-{
-	this->remove(name);
-	this->Update();
-}
-
-void Warnings::Update()
-{
-	if (this->isEmpty()) {
-		m_widget->setVisible(false);
-	} else {
-		m_widget->setToolTip(this->values().join("\n\n"));
-		m_widget->setVisible(true);
-	}
 }

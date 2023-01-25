@@ -3,6 +3,7 @@
 
 #include "compressor.hpp"
 #include "settings.hpp"
+#include "warnings.hpp"
 
 #include <QComboBox>
 #include <QGraphicsBlurEffect>
@@ -21,18 +22,6 @@ using Preset = Compressor::Preset;
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
-
-class Warnings : QHash<QString, QString>
-{
-public:
-	explicit Warnings(QWidget* widget);
-	void Add(QString name, QString description);
-	void Remove(QString name);
-
-private:
-	QWidget* m_widget;
-	void Update();
-};
 
 class MainWindow : public QMainWindow
 {
@@ -58,6 +47,10 @@ protected:
 	void closeEvent(QCloseEvent* event) override;
 
 private:
+	// setup
+	void SetupSettings();
+	void SetupUiInteractions();
+
 	void LoadState();
 	void SaveState();
 	void SetProgressShown(bool shown, int progressPercent = 0);
