@@ -21,8 +21,6 @@
 #include "ui_mainwindow.h"
 
 using std::optional;
-using Error = Compressor::Error;
-using Metadata = Compressor::Metadata;
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -379,23 +377,23 @@ void MainWindow::StartCompression()
 
 	SetProgressShown(true);
 	compressor->Compress(Compressor::Options{
-		.inputPath = inputPath,
-		.outputPath = outputPath,
-		.videoCodec = videoCodec,
-		.audioCodec = audioCodec,
-		.container = container,
-		.sizeKbps = isAutoValue(ui->fileSizeSpinBox) ? std::optional<double>()
-									   : ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
+		.inputPath		   = inputPath,
+		.outputPath		   = outputPath,
+		.videoCodec		   = videoCodec,
+		.audioCodec		   = audioCodec,
+		.container		   = container,
+		.sizeKbps		   = isAutoValue(ui->fileSizeSpinBox) ? std::optional<double>()
+											  : ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
 		.audioQualityPercent = ui->audioQualitySlider->value() / 100.0,
-		.outputWidth = ui->widthSpinBox->value() == 0 ? std::optional<int>() : ui->widthSpinBox->value(),
-		.outputHeight = ui->heightSpinBox->value() == 0 ? std::optional<int>() : ui->heightSpinBox->value(),
-		.aspectRatio = ui->aspectRatioSpinBoxH->value() != 0 && ui->aspectRatioSpinBoxV->value() != 0
-					   ? QPoint(ui->aspectRatioSpinBoxH->value(), ui->aspectRatioSpinBoxV->value())
-					   : optional<QPoint>(),
-		.fps = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
-		.speed = ui->speedSpinBox->value() == 0 ? optional<double>() : ui->speedSpinBox->value(),
-		.customArguments = ui->customCommandTextEdit->toPlainText(),
-		.inputMetadata = metadata.has_value() ? metadata : optional<Compressor::Metadata>(),
+		.outputWidth	   = ui->widthSpinBox->value() == 0 ? std::optional<int>() : ui->widthSpinBox->value(),
+		.outputHeight	   = ui->heightSpinBox->value() == 0 ? std::optional<int>() : ui->heightSpinBox->value(),
+		.aspectRatio	   = ui->aspectRatioSpinBoxH->value() != 0 && ui->aspectRatioSpinBoxV->value() != 0
+						     ? QPoint(ui->aspectRatioSpinBoxH->value(), ui->aspectRatioSpinBoxV->value())
+						     : optional<QPoint>(),
+		.fps			   = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
+		.speed		   = ui->speedSpinBox->value() == 0 ? optional<double>() : ui->speedSpinBox->value(),
+		.customArguments	   = ui->customCommandTextEdit->toPlainText(),
+		.inputMetadata	   = metadata.has_value() ? metadata : optional<Metadata>(),
 		.minVideoBitrateKbps = settings.get("Main/dMinBitrateVideoKbps").toDouble(),
 		.minAudioBitrateKbps = settings.get("Main/dMinBitrateAudioKbps").toDouble(),
 		.maxAudioBitrateKbps = settings.get("Main/dMaxBitrateAudioKbps").toDouble(),
@@ -824,10 +822,10 @@ void MainWindow::ParsePresets(QHash<QString, Preset> &presets,
 
 void MainWindow::ParseMetadata(const QString &path)
 {
-	std::variant<Metadata, Compressor::Error> result = compressor->getMetadata(path);
+	std::variant<Metadata, Metadata::Error> result = compressor->getMetadata(path);
 
-	if (std::holds_alternative<Compressor::Error>(result)) {
-		Compressor::Error error = std::get<Compressor::Error>(result);
+	if (std::holds_alternative<Metadata::Error>(result)) {
+		Metadata::Error error = std::get<Metadata::Error>(result);
 
 		Notify(Severity::Error, tr("Failed to parse media metadata"), error.summary, error.details);
 		ui->inputFileLineEdit->clear();

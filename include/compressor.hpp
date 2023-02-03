@@ -1,6 +1,8 @@
 #ifndef COMPRESSOR_HPP
 #define COMPRESSOR_HPP
 
+#include "metadata.hpp"
+
 #include <QDir>
 #include <QEventLoop>
 #include <QList>
@@ -42,21 +44,6 @@ public:
 		Container container;
 	};
 
-	struct Metadata
-	{
-		double width;
-		double height;
-		double sizeKbps;
-		double audioBitrateKbps;
-		double durationSeconds;
-		double aspectRatioX;
-		double aspectRatioY;
-		double frameRate;
-		QString videoCodec;
-		QString audioCodec;
-		QString container;
-	};
-
 	struct Options
 	{
 		const QString inputPath;
@@ -79,12 +66,6 @@ public:
 		double overshootCorrectionPercent = 0.02;
 	};
 
-	struct Error
-	{
-		QString summary;
-		QString details;
-	};
-
 	struct ComputedOptions
 	{
 		optional<double> videoBitrateKbps;
@@ -92,7 +73,7 @@ public:
 	};
 
 	void Compress(const Options& options);
-	std::variant<Metadata, Error> getMetadata(const QString& path);
+	std::variant<Metadata, Metadata::Error> getMetadata(const QString& path);
 	QString getAvailableFormats();
 
 signals:
