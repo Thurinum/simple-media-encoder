@@ -340,9 +340,10 @@ std::variant<Metadata, Metadata::Error> Compressor::getMetadata(const QString& p
 			.arg(IS_WINDOWS ? ".exe" : "", path));
 	ffprobe->waitForFinished();
 
-	QByteArray data = ffprobe->readAll();
+	QByteArray		data = ffprobe->readAll();
+	Metadata::Builder builder;
 
-	return Metadata::Builder::fromJson(data);
+	return builder.fromJson(data);
 }
 
 bool Compressor::Codec::operator==(const Codec& rhs) const

@@ -18,9 +18,7 @@ std::variant<Metadata, Metadata::Error> Metadata::Builder::fromJson(QByteArray d
 	QJsonArray	streams = root.value("streams").toArray();
 
 	// we only support 1 stream of each type at the moment
-	QJsonObject format = root.value("format").toObject();
-	QJsonObject video;
-	QJsonObject audio;
+	format = root.value("format").toObject();
 
 	for (QJsonValueRef streamRef : streams) {
 		QJsonObject stream = streamRef.toObject();
@@ -35,37 +33,26 @@ std::variant<Metadata, Metadata::Error> Metadata::Builder::fromJson(QByteArray d
 		}
 	}
 
-	if (video.isEmpty() && audio.isEmpty()) {
+	if (format.isEmpty() || (video.isEmpty() && audio.isEmpty())) {
 		return Error{QObject::tr("Media metadata is incomplete."), QObject::tr("Found metadata: %1").arg(data)};
 	}
 
 	Metadata metadata;
-	Error	   error{QObject::tr("Media metadata is incomplete."), ""};
+	error = {QObject::tr("Media metadata is incomplete."), ""};
 
-	auto value = [&error](QJsonObject& source, const QString& key) -> QVariant {
-		if (!source.contains(key)) {
-			error.details += QObject::tr("Could not find key '%1'.\n").arg(key);
-			return {};
-		}
-
-		return source.value(key).toVariant();
-	};
-
-	double	duration	= value(format, "duration").toDouble();
-	double	nbrFrames	= value(video, "nb_frames").toDouble();
-	QStringList aspectRatio = value(video, "display_aspect_ratio").toString().split(':');
+	std::pair<double, double> aspectRatio = getAspectRatio();
 
 	metadata = Metadata{
-		.width		= value(video, "width").toDouble(),
-		.height		= value(video, "height").toDouble(),
-		.sizeKbps		= value(format, "size").toDouble() * 0.001,
-		.audioBitrateKbps = value(audio, "bit_rate").toDouble() * 0.001,
-		.durationSeconds	= duration,
-		.aspectRatioX	= aspectRatio.first().toDouble(),
-		.aspectRatioY	= aspectRatio.last().toDouble(),
-		.frameRate		= nbrFrames / duration,
-		.videoCodec		= value(video, "codec_name").toString(),
-		.audioCodec		= value(audio, "codec_name").toString(),
+		.width		= value(video, "width", true).toDouble(),
+		.height		= value(video, "height", true).toDouble(),
+		.sizeKbps		= value(format, "size", true).toDouble() * 0.001,
+		.audioBitrateKbps = value(audio, "bit_rate", true).toDouble() * 0.001,
+		.durationSeconds	= value(audio, "duration", true).toDouble(),
+		.aspectRatioX	= aspectRatio.first,
+		.aspectRatioY	= aspectRatio.second,
+		.frameRate		= getFrameRate(),
+		.videoCodec		= value(video, "codec_name", true).toString(),
+		.audioCodec		= value(audio, "codec_name", true).toString(),
 		.container		= "" // TODO: Find a reliable way to query format type
 	};
 
@@ -75,4 +62,55 @@ std::variant<Metadata, Metadata::Error> Metadata::Builder::fromJson(QByteArray d
 	}
 
 	return metadata;
+}
+
+double Metadata::Builder::getFrameRate()
+{
+	QVariant frameRateData = value(video, "r_frame_rate");
+
+	if (frameRateData.isNull()) {
+		QVariant nbrFramesData = value(video, "nb_frames");
+		QVariant durationData  = value(format, "duration");
+
+		if (nbrFramesData.isNull() || durationData.isNull()) {
+			NotFound("frame rate");
+			return -1;
+		}
+
+		double nbrFrames = nbrFramesData.toDouble();
+		double duration  = durationData.toDouble();
+
+		return nbrFrames / duration;
+	}
+
+	QStringList frameRateRatio = frameRateData.toString().split("/");
+
+	if (frameRateRatio.size() != 2) {
+		NotFound("frame rate");
+		return -1;
+	}
+
+	return frameRateRatio.first().toDouble() / frameRateRatio.last().toDouble();
+}
+
+std::pair<double, double> Metadata::Builder::getAspectRatio()
+{
+	QVariant aspectRatioData = value(video, "display_aspect_ratio");
+
+	if (aspectRatioData.isNull()) {
+		double width  = value(video, "width").toDouble();
+		double height = value(video, "height").toDouble();
+		double ratio  = width / height;
+
+		return {ratio, 1};
+	}
+
+	QStringList aspectRatio = aspectRatioData.toString().split(":");
+
+	if (aspectRatio.size() != 2) {
+		NotFound("aspect ratio");
+		return {};
+	}
+
+	return {aspectRatio.first().toDouble(), aspectRatio.last().toDouble()};
 }
