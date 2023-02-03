@@ -1,5 +1,7 @@
 #include "compressor.hpp"
 
+#include "metadata.hpp"
+
 #include <QEventLoop>
 #include <QFile>
 #include <QJsonArray>
@@ -29,10 +31,10 @@ void Compressor::Compress(const Options& options)
 	Metadata metadata;
 
 	if (!options.inputMetadata.has_value()) {
-		std::variant<Metadata, Error> result = getMetadata(options.inputPath);
+		std::variant<Metadata, Metadata::Error> result = getMetadata(options.inputPath);
 
-		if (std::holds_alternative<Error>(result)) {
-			Error error = std::get<Error>(result);
+		if (std::holds_alternative<Metadata::Error>(result)) {
+			Metadata::Error error = std::get<Metadata::Error>(result);
 
 			emit compressionFailed(error.summary, error.details);
 			return;
@@ -331,7 +333,7 @@ bool Compressor::areValidOptions(const Options& options)
 	return true;
 }
 
-std::variant<Compressor::Metadata, Compressor::Error> Compressor::getMetadata(const QString& path)
+std::variant<Metadata, Metadata::Error> Compressor::getMetadata(const QString& path)
 {
 	ffprobe->startCommand(
 		QString(R"(ffprobe%1 -v error -print_format json -show_format -show_streams "%2")")
@@ -339,75 +341,8 @@ std::variant<Compressor::Metadata, Compressor::Error> Compressor::getMetadata(co
 	ffprobe->waitForFinished();
 
 	QByteArray data = ffprobe->readAll();
-	QJsonDocument document = QJsonDocument::fromJson(data);
 
-	if (document.isNull()) {
-		return Error{tr("Could not retrieve media metadata. Is the file corrupted?"),
-				 tr("Input file: %1\nFound metadata: %2").arg(path, data)};
-	}
-
-	QJsonObject root = document.object();
-	QJsonArray streams = root.value("streams").toArray();
-
-	// we only support 1 stream of each type at the moment
-	QJsonObject format = root.value("format").toObject();
-	QJsonObject video;
-	QJsonObject audio;
-
-	for (QJsonValueRef streamRef : streams) {
-		QJsonObject stream = streamRef.toObject();
-		QJsonValue type = stream.value("codec_type");
-
-		if (type == "video" && video.isEmpty()) {
-			video = stream;
-		}
-
-		if (type == "audio" && audio.isEmpty()) {
-			audio = stream;
-		}
-	}
-
-	if (video.isEmpty() && audio.isEmpty()) {
-		return Error{tr("Media metadata is incomplete."),
-				 tr("Input file: %1\nFound metadata: %2").arg(path, data)};
-	}
-
-	Metadata metadata;
-	Error error{tr("Media metadata is incomplete."), ""};
-
-	auto value = [&error](QJsonObject& source, const QString& key) -> QVariant {
-		if (!source.contains(key)) {
-			error.details += tr("Could not find key '%1'.\n").arg(key);
-			return {};
-		}
-
-		return source.value(key).toVariant();
-	};
-
-	double duration = value(format, "duration").toDouble();
-	double nbrFrames = value(video, "nb_frames").toDouble();
-	QStringList aspectRatio = value(video, "display_aspect_ratio").toString().split(':');
-
-	metadata = Metadata{
-		.width = value(video, "width").toDouble(),
-		.height = value(video, "height").toDouble(),
-		.sizeKbps = value(format, "size").toDouble() * 0.001,
-		.audioBitrateKbps = value(audio, "bit_rate").toDouble() * 0.001,
-		.durationSeconds = duration,
-		.aspectRatioX = aspectRatio.first().toDouble(),
-		.aspectRatioY = aspectRatio.last().toDouble(),
-		.frameRate = nbrFrames / duration,
-		.videoCodec = value(video, "codec_name").toString(),
-		.audioCodec = value(audio, "codec_name").toString(),
-		.container = "" // TODO: Find a reliable way to query format type
-	};
-
-	if (!error.details.isEmpty()) {
-		error.details += tr("Raw metadata: %1").arg(data);
-		return error;
-	}
-
-	return metadata;
+	return Metadata::Builder::fromJson(data);
 }
 
 bool Compressor::Codec::operator==(const Codec& rhs) const

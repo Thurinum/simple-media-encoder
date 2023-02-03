@@ -93,7 +93,7 @@ private:
 	QHash<QString, Codec> audioCodecs;
 	QHash<QString, Container> containers;
 	QHash<QString, Preset> presets;
-	optional<Compressor::Metadata> metadata;
+	optional<Metadata>	  metadata;
 };
 
 #endif // MAINWINDOW_HPP
