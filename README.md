@@ -5,8 +5,9 @@ Re-encode and compress your media files quickly and efficiently with this conven
   <img height=400 src=https://user-images.githubusercontent.com/43908636/214199765-8b79ab79-b069-48e8-b41d-de67893a2b1f.png />
   <img height=400 src=https://user-images.githubusercontent.com/43908636/214199849-85893425-2850-44c1-92f8-ff6c2edcb525.png />  
 </div>  
-  
-The default interface allows anyone to quickly re-encode media files.  
+<br/>
+The default interface allows anyone to quickly re-encode media files.    
+
 The so-called "expert" interface gives advanced users a bit more control over the exported result.
   
 ## Features
@@ -40,7 +41,7 @@ Conveniently, all these parameters are **saved** when the tool is closed.
 
 ## How to install
 ### Binaries
-Binary releases should be available before February 2023.
+A <a href=https://github.com/Thurinum/simple-media-encoder/releases>binary release</a> is available for Windows! Although still in beta, it should be quite usable.
 
 ### Source
 This tool uses the Qt for Application Development framework, under the GNU GPL v3 open source license.  
