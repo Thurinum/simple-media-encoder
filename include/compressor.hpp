@@ -83,6 +83,7 @@ signals:
 					  QFile& output);
 	void compressionProgressUpdate(double progressPercent);
 	void compressionFailed(QString error, QString errorDetails = "");
+	void metadataComputed();
 
 private:
 	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";

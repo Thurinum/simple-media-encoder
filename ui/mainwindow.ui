@@ -177,7 +177,7 @@
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The &lt;span style=&quot; font-weight:700;&quot;&gt;input file&lt;/span&gt;. It must be a valid media file supported by ffmpeg.&lt;/p&gt;&lt;p&gt;If your file does not work, please report a bug on &lt;a href=&quot;https://github.com/Thurinum/free-video-compressor/issues&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#007af4;&quot;&gt;our issue tracker&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
-               <string>Select file to compress</string>
+               <string>Select file to re-encode</string>
               </property>
              </widget>
             </item>
@@ -1362,7 +1362,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Start compression</string>
+       <string>Start encoding</string>
       </property>
      </widget>
     </item>
