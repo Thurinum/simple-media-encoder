@@ -43,17 +43,17 @@ std::variant<Metadata, Metadata::Error> Metadata::Builder::fromJson(QByteArray d
 	std::pair<double, double> aspectRatio = getAspectRatio();
 
 	metadata = Metadata{
-		.width		= value(video, "width", true).toDouble(),
-		.height		= value(video, "height", true).toDouble(),
-		.sizeKbps		= value(format, "size", true).toDouble() * 0.001,
-		.audioBitrateKbps = value(audio, "bit_rate", true).toDouble() * 0.001,
-		.durationSeconds	= value(audio, "duration", true).toDouble(),
-		.aspectRatioX	= aspectRatio.first,
-		.aspectRatioY	= aspectRatio.second,
-		.frameRate		= getFrameRate(),
-		.videoCodec		= value(video, "codec_name", true).toString(),
-		.audioCodec		= value(audio, "codec_name", true).toString(),
-		.container		= "" // TODO: Find a reliable way to query format type
+		.width = value(video, "width", true).toDouble(),
+		.height = value(video, "height", true).toDouble(),
+		.sizeKbps = value(format, "size", true).toDouble() * 0.001,
+		.audioBitrateKbps = value(audio, "bit_rate").toDouble() * 0.001,
+		.durationSeconds = value(format, "duration", true).toDouble(),
+		.aspectRatioX = aspectRatio.first,
+		.aspectRatioY = aspectRatio.second,
+		.frameRate = getFrameRate(),
+		.videoCodec = value(video, "codec_name", true).toString(),
+		.audioCodec = value(audio, "codec_name", true).toString(),
+		.container = "" // TODO: Find a reliable way to query format type
 	};
 
 	if (!error.details.isEmpty()) {
