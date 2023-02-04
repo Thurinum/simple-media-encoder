@@ -343,6 +343,7 @@ std::variant<Metadata, Metadata::Error> Compressor::getMetadata(const QString& p
 	QByteArray		data = ffprobe->readAll();
 	Metadata::Builder builder;
 
+	emit metadataComputed();
 	return builder.fromJson(data);
 }
 

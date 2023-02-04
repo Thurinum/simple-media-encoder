@@ -204,6 +204,13 @@ void MainWindow::SetupUiInteractions()
 
 	// show name of file picked with file dialog
 	connect(ui->inputFileButton, &QPushButton::clicked, this, &MainWindow::OpenInputFile);
+
+	// restore progress bar
+	connect(compressor, &Compressor::metadataComputed, [this]() {
+		SetProgressShown(false);
+		ui->progressBar->setRange(0, 100);
+		ui->progressBarLabel->setText(tr("Compressing..."));
+	});
 }
 
 void MainWindow::LoadState()
@@ -514,16 +521,16 @@ void MainWindow::SetProgressShown(bool shown, int progressPercent)
 
 	if (shown && ui->progressWidget->maximumHeight() == 0) {
 		ui->centralWidget->setEnabled(false);
-		ui->startCompressionButton->setText(tr("Compressing..."));
+		ui->startCompressionButton->setText(tr("Encoding..."));
 		ui->progressWidgetTopSpacer->changeSize(0, 10);
 		heightAnimation->setStartValue(0);
 		heightAnimation->setEndValue(500);
 		heightAnimation->start();
 	}
 
-	if (!shown && ui->progressWidget->maximumHeight() > 0) {
+	if (!shown) {
 		ui->centralWidget->setEnabled(true);
-		ui->startCompressionButton->setText(tr("Start compression"));
+		ui->startCompressionButton->setText(tr("Start encoding"));
 		ui->progressWidgetTopSpacer->changeSize(0, 0);
 		heightAnimation->setStartValue(ui->progressWidget->height());
 		heightAnimation->setEndValue(0);
@@ -641,6 +648,10 @@ void MainWindow::OpenInputFile()
 
 	QString path = fileUrl.toLocalFile();
 	ui->inputFileLineEdit->setText(path);
+
+	ui->progressBar->setRange(0, 0);
+	ui->progressBarLabel->setText(tr("Parsing metadata..."));
+	SetProgressShown(true);
 
 	ParseMetadata(path);
 
