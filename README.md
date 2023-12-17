@@ -10,7 +10,11 @@ Re-encode and compress your media files quickly and efficiently with this conven
 The default interface allows anyone to quickly re-encode media files.
 
 The so-called "expert" interface gives advanced users a bit more control over the exported result.
-  
+
+## Compatibility
+- Windows 10, Windows 11, and Linux. Earlier versions of Windows are not supported.
+- **Tested on** Windows 11 and Arch Linux.
+
 ## Features
 
 With this tool, one may:
