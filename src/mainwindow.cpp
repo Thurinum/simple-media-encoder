@@ -382,7 +382,6 @@ void MainWindow::StartCompression()
 		return;
 	}
 
-	SetProgressShown(true);
 	compressor->Compress(Compressor::Options{
 		.inputPath		   = inputPath,
 		.outputPath		   = outputPath,
@@ -409,7 +408,9 @@ void MainWindow::StartCompression()
 
 void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
 {
-	ui->progressBarLabel->setText(
+    SetProgressShown(true);
+
+    ui->progressBarLabel->setText(
 		QString(tr("Video bitrate: %1 kbps | Audio bitrate: %2 kbps"))
 			.arg(QString::number(qRound(videoBitrateKbps)), QString::number(qRound(audioBitrateKbps))));
 }
