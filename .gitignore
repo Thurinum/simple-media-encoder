@@ -1,5 +1,12 @@
 *.pro.user
+
+# Build artifacts
 build/
 .qtc_clangd/
+
+# Binaries
 *.dll
 *.exe
+
+# Generated custom configuration
+bin/config.ini
