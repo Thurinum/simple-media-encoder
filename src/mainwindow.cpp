@@ -58,8 +58,8 @@ void MainWindow::Notify(Severity severity, const QString &title, const QString &
 	font.setBold(true);
 
 	QMessageBox dialog;
-	dialog.setWindowTitle(ui->centralWidget->windowTitle());
-	dialog.setIcon(severity == Severity::Critical ? QMessageBox::Critical
+    dialog.setWindowTitle(QApplication::applicationName());
+    dialog.setIcon(severity == Severity::Critical ? QMessageBox::Critical
 								    : (QMessageBox::Icon) severity);
 	dialog.setText("<font size=5><b>" + title + ".</b></font>");
 	dialog.setInformativeText(message);
@@ -410,9 +410,9 @@ void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
 {
     SetProgressShown(true);
 
-    ui->progressBarLabel->setText(
-		QString(tr("Video bitrate: %1 kbps | Audio bitrate: %2 kbps"))
-			.arg(QString::number(qRound(videoBitrateKbps)), QString::number(qRound(audioBitrateKbps))));
+    ui->progressBarLabel->setText(QString(tr("Video bitrate: %1 kbps | Audio bitrate: %2 kbps"))
+                                      .arg(QString::number(qRound(videoBitrateKbps)),
+                                           QString::number(qRound(audioBitrateKbps))));
 }
 
 void MainWindow::HandleSuccess(const Compressor::Options &options,
