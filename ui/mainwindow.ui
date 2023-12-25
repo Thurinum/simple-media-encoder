@@ -666,7 +666,7 @@
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;These options control behavior post-compression.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
-               <string>After compression</string>
+               <string>After encoding</string>
               </property>
              </widget>
             </item>
@@ -702,7 +702,7 @@
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, the resulting media will be opened with the default media player upon successful compression.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
-               <string>Play compressed media</string>
+               <string>Play encoded media</string>
               </property>
              </widget>
             </item>
@@ -1431,7 +1431,7 @@
        <item>
         <widget class="QLabel" name="progressBarLabel">
          <property name="text">
-          <string>Compressing...</string>
+          <string>Encoding...</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>

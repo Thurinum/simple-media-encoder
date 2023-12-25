@@ -49,7 +49,7 @@ MainWindow::~MainWindow()
 {
 	delete ui;
 	delete warnings;
-	delete compressor;
+    delete encoder;
 }
 
 void MainWindow::Notify(Severity severity, const QString &title, const QString &message, const QString &details)
@@ -60,18 +60,18 @@ void MainWindow::Notify(Severity severity, const QString &title, const QString &
 	QMessageBox dialog;
     dialog.setWindowTitle(QApplication::applicationName());
     dialog.setIcon(severity == Severity::Critical ? QMessageBox::Critical
-								    : (QMessageBox::Icon) severity);
-	dialog.setText("<font size=5><b>" + title + ".</b></font>");
-	dialog.setInformativeText(message);
-	dialog.setDetailedText(details);
-	dialog.setStandardButtons(QMessageBox::Ok);
-	dialog.exec();
+                                                  : (QMessageBox::Icon) severity);
+    dialog.setText("<font size=5><b>" + title + ".</b></font>");
+    dialog.setInformativeText(message);
+    dialog.setDetailedText(details);
+    dialog.setStandardButtons(QMessageBox::Ok);
+    dialog.exec();
 
-	// wait until event loop has begun before attempting to exit
-	if (severity == Severity::Critical) {
-		QMetaObject::invokeMethod(QApplication::instance(), "exit", Qt::QueuedConnection);
-		QApplication::exit();
-	}
+    // wait until event loop has begun before attempting to exit
+    if (severity == Severity::Critical) {
+        QMetaObject::invokeMethod(QApplication::instance(), "exit", Qt::QueuedConnection);
+        QApplication::exit();
+    }
 }
 
 void MainWindow::SetupSettings()
@@ -156,25 +156,34 @@ void MainWindow::SetupUiInteractions()
 	connect(ui->advancedModeCheckBox, &QCheckBox::clicked, this, &MainWindow::SetAdvancedMode);
 
 	// start compression button
-	connect(ui->startCompressionButton, &QPushButton::clicked, this, &MainWindow::StartCompression);
-	connect(compressor, &Compressor::compressionStarted, this, &MainWindow::HandleStart);
-	connect(compressor, &Compressor::compressionSucceeded, this, &MainWindow::HandleSuccess);
-	connect(compressor, &Compressor::compressionFailed, this, &MainWindow::HandleFailure);
-	connect(compressor, &Compressor::compressionProgressUpdate, this, [this](int progress) {
-		SetProgressShown(true, progress);
-	});
+    connect(ui->startCompressionButton, &QPushButton::clicked, this, &MainWindow::StartEncoding);
+    connect(encoder, &MediaEncoder::encodingStarted, this, &MainWindow::HandleStart);
+    connect(encoder, &MediaEncoder::encodingSucceeded, this, &MainWindow::HandleSuccess);
+    connect(encoder, &MediaEncoder::encodingFailed, this, &MainWindow::HandleFailure);
+    connect(encoder, &MediaEncoder::encodingProgressUpdate, this, [this](int progress) {
+        SetProgressShown(true, progress);
+    });
 
-	// select codecs matching with the current preset when selected
-	connect(ui->qualityPresetComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::SelectPresetCodecs);
+    // select codecs matching with the current preset when selected
+    connect(ui->qualityPresetComboBox,
+            &QComboBox::currentIndexChanged,
+            this,
+            &MainWindow::SelectPresetCodecs);
 
-	// check for conflicts between certain controls
-	connect(ui->widthSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckAspectRatioConflict);
-	connect(ui->heightSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckAspectRatioConflict);
-	connect(ui->aspectRatioSpinBoxH, &QSpinBox::valueChanged, this, &MainWindow::CheckAspectRatioConflict);
-	connect(ui->aspectRatioSpinBoxV, &QSpinBox::valueChanged, this, &MainWindow::CheckAspectRatioConflict);
+    // check for conflicts between certain controls
+    connect(ui->widthSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckAspectRatioConflict);
+    connect(ui->heightSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckAspectRatioConflict);
+    connect(ui->aspectRatioSpinBoxH,
+            &QSpinBox::valueChanged,
+            this,
+            &MainWindow::CheckAspectRatioConflict);
+    connect(ui->aspectRatioSpinBoxV,
+            &QSpinBox::valueChanged,
+            this,
+            &MainWindow::CheckAspectRatioConflict);
 
-	connect(ui->speedSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::CheckSpeedConflict);
-	connect(ui->fpsSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckSpeedConflict);
+    connect(ui->speedSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::CheckSpeedConflict);
+    connect(ui->fpsSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckSpeedConflict);
 
 	// show name of file picked with file dialog
 	connect(ui->outputFolderButton, &QPushButton::clicked, [this]() {
@@ -206,11 +215,11 @@ void MainWindow::SetupUiInteractions()
 	connect(ui->inputFileButton, &QPushButton::clicked, this, &MainWindow::OpenInputFile);
 
 	// restore progress bar
-	connect(compressor, &Compressor::metadataComputed, [this]() {
-		SetProgressShown(false);
-		ui->progressBar->setRange(0, 100);
-		ui->progressBarLabel->setText(tr("Compressing..."));
-	});
+    connect(encoder, &MediaEncoder::metadataComputed, [this]() {
+        SetProgressShown(false);
+        ui->progressBar->setRange(0, 100);
+        ui->progressBarLabel->setText(tr("Compressing..."));
+    });
 }
 
 void MainWindow::LoadState()
@@ -336,7 +345,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 	event->accept();
 }
 
-void MainWindow::StartCompression()
+void MainWindow::StartEncoding()
 {
 	QString inputPath = ui->inputFileLineEdit->text();
 
@@ -382,28 +391,32 @@ void MainWindow::StartCompression()
 		return;
 	}
 
-	compressor->Compress(Compressor::Options{
-		.inputPath		   = inputPath,
-		.outputPath		   = outputPath,
-		.videoCodec		   = videoCodec,
-		.audioCodec		   = audioCodec,
-		.container		   = container,
-		.sizeKbps		   = isAutoValue(ui->fileSizeSpinBox) ? std::optional<double>()
-											  : ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
-		.audioQualityPercent = ui->audioQualitySlider->value() / 100.0,
-		.outputWidth	   = ui->widthSpinBox->value() == 0 ? std::optional<int>() : ui->widthSpinBox->value(),
-		.outputHeight	   = ui->heightSpinBox->value() == 0 ? std::optional<int>() : ui->heightSpinBox->value(),
-		.aspectRatio	   = ui->aspectRatioSpinBoxH->value() != 0 && ui->aspectRatioSpinBoxV->value() != 0
-						     ? QPoint(ui->aspectRatioSpinBoxH->value(), ui->aspectRatioSpinBoxV->value())
-						     : optional<QPoint>(),
-		.fps			   = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
-		.speed		   = ui->speedSpinBox->value() == 0 ? optional<double>() : ui->speedSpinBox->value(),
-		.customArguments	   = ui->customCommandTextEdit->toPlainText(),
-		.inputMetadata	   = metadata.has_value() ? metadata : optional<Metadata>(),
-		.minVideoBitrateKbps = settings.get("Main/dMinBitrateVideoKbps").toDouble(),
-		.minAudioBitrateKbps = settings.get("Main/dMinBitrateAudioKbps").toDouble(),
-		.maxAudioBitrateKbps = settings.get("Main/dMaxBitrateAudioKbps").toDouble(),
-	});
+    encoder->Encode(MediaEncoder::Options{
+        .inputPath = inputPath,
+        .outputPath = outputPath,
+        .videoCodec = videoCodec,
+        .audioCodec = audioCodec,
+        .container = container,
+        .sizeKbps = isAutoValue(ui->fileSizeSpinBox)
+                        ? std::optional<double>()
+                        : ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
+        .audioQualityPercent = ui->audioQualitySlider->value() / 100.0,
+        .outputWidth = ui->widthSpinBox->value() == 0 ? std::optional<int>()
+                                                      : ui->widthSpinBox->value(),
+        .outputHeight = ui->heightSpinBox->value() == 0 ? std::optional<int>()
+                                                        : ui->heightSpinBox->value(),
+        .aspectRatio = ui->aspectRatioSpinBoxH->value() != 0 && ui->aspectRatioSpinBoxV->value() != 0
+                           ? QPoint(ui->aspectRatioSpinBoxH->value(),
+                                    ui->aspectRatioSpinBoxV->value())
+                           : optional<QPoint>(),
+        .fps = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
+        .speed = ui->speedSpinBox->value() == 0 ? optional<double>() : ui->speedSpinBox->value(),
+        .customArguments = ui->customCommandTextEdit->toPlainText(),
+        .inputMetadata = metadata.has_value() ? metadata : optional<Metadata>(),
+        .minVideoBitrateKbps = settings.get("Main/dMinBitrateVideoKbps").toDouble(),
+        .minAudioBitrateKbps = settings.get("Main/dMinBitrateAudioKbps").toDouble(),
+        .maxAudioBitrateKbps = settings.get("Main/dMaxBitrateAudioKbps").toDouble(),
+    });
 }
 
 void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
@@ -415,9 +428,9 @@ void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
                                            QString::number(qRound(audioBitrateKbps))));
 }
 
-void MainWindow::HandleSuccess(const Compressor::Options &options,
-					 const Compressor::ComputedOptions &computed,
-					 QFile &output)
+void MainWindow::HandleSuccess(const MediaEncoder::Options &options,
+                               const MediaEncoder::ComputedOptions &computed,
+                               QFile &output)
 {
 	SetProgressShown(true, 100);
 
@@ -683,36 +696,37 @@ void MainWindow::ParseCodecs(QHash<QString, Codec> *codecs, const QString &type,
 				 .arg(type));
 	}
 
-	QString availableCodecs = compressor->getAvailableFormats();
+    QString availableCodecs = encoder->getAvailableFormats();
 
-	for (const QString &codecLibrary : keys) {
-		if (!availableCodecs.contains(codecLibrary)) {
-			Notify(Severity::Warning,
-				 tr("Unsupported codec"),
-				 tr("Codec library '%1' does not appear to be supported by our version of "
-				    "FFMPEG. It has been skipped. Please validate the "
-				    "configuration in %2.")
-					 .arg(codecLibrary, settings.fileName()));
-			continue;
-		}
+    for (const QString &codecLibrary : keys) {
+        if (!availableCodecs.contains(codecLibrary)) {
+            Notify(Severity::Warning,
+                   tr("Unsupported codec"),
+                   tr("Codec library '%1' does not appear to be supported by our version of "
+                      "FFMPEG. It has been skipped. Please validate the "
+                      "configuration in %2.")
+                       .arg(codecLibrary, settings.fileName()));
+            continue;
+        }
 
-		if (codecLibrary.contains("nvenc") && !isNvidia)
-			continue;
+        if (codecLibrary.contains("nvenc") && !isNvidia)
+            continue;
 
-		if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
-			Notify(Severity::Critical,
-				 tr("Could not parse codec"),
-				 tr("Codec library '%1' could not be parsed. Please validate the "
-				    "configuration in %2. Exiting.")
-					 .arg(codecLibrary, settings.fileName()));
-		}
+        if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
+            Notify(Severity::Critical,
+                   tr("Could not parse codec"),
+                   tr("Codec library '%1' could not be parsed. Please validate the "
+                      "configuration in %2. Exiting.")
+                       .arg(codecLibrary, settings.fileName()));
+        }
 
-		QStringList values =
-			settings.get(type + "/" + codecLibrary).toString().split(QRegularExpression("(\\s*),(\\s*)"));
+        QStringList values = settings.get(type + "/" + codecLibrary)
+                                 .toString()
+                                 .split(QRegularExpression("(\\s*),(\\s*)"));
 
-		QString codecName = values.first();
+        QString codecName = values.first();
 
-		bool isConversionOk = false;
+        bool isConversionOk = false;
 		double codecMinBitrateKbps = values.size() == 2 ? values.last().toDouble(&isConversionOk) : 0;
 
 		if (values.size() == 2 && !isConversionOk) {
@@ -730,7 +744,7 @@ void MainWindow::ParseCodecs(QHash<QString, Codec> *codecs, const QString &type,
 		data.setValue(codec);
 
 		comboBox->addItem(codecName, data);
-	}
+    }
 }
 
 void MainWindow::ParseContainers(QHash<QString, Container> *containers, QComboBox *comboBox)
@@ -773,25 +787,25 @@ void MainWindow::ParsePresets(QHash<QString, Preset> &presets,
 					QComboBox *comboBox)
 {
 	QStringList keys = settings.keysInGroup("Presets");
-	QString supportedCodecs = compressor->getAvailableFormats();
+    QString supportedCodecs = encoder->getAvailableFormats();
 
-	for (const QString &key : keys) {
-		Preset preset;
-		preset.name = key;
+    for (const QString &key : keys) {
+        Preset preset;
+        preset.name = key;
 
-		QString data = settings.get("Presets/" + key).toString();
-		QStringList librariesData = data.split("+");
+        QString data = settings.get("Presets/" + key).toString();
+        QStringList librariesData = data.split("+");
 
-		if (librariesData.size() != 3) {
-			Notify(Severity::Error,
-				 tr("Could not parse presets"),
-				 tr("Failed to parse presets as the data is malformed. Please check the "
-				    "configuration in %1.")
-					 .arg(settings.fileName()));
-		}
+        if (librariesData.size() != 3) {
+            Notify(Severity::Error,
+                   tr("Could not parse presets"),
+                   tr("Failed to parse presets as the data is malformed. Please check the "
+                      "configuration in %1.")
+                       .arg(settings.fileName()));
+        }
 
-		optional<Codec> videoCodec;
-		optional<Codec> audioCodec;
+        optional<Codec> videoCodec;
+        optional<Codec> audioCodec;
 		QStringList videoLibrary = librariesData[0].split("|");
 
 		for (const QString &library : videoLibrary) {
@@ -829,22 +843,22 @@ void MainWindow::ParsePresets(QHash<QString, Preset> &presets,
 		QVariant itemData;
 		itemData.setValue(preset);
 		comboBox->addItem(preset.name, itemData);
-	}
+    }
 }
 
 void MainWindow::ParseMetadata(const QString &path)
 {
-	std::variant<Metadata, Metadata::Error> result = compressor->getMetadata(path);
+    std::variant<Metadata, Metadata::Error> result = encoder->getMetadata(path);
 
-	if (std::holds_alternative<Metadata::Error>(result)) {
-		Metadata::Error error = std::get<Metadata::Error>(result);
+    if (std::holds_alternative<Metadata::Error>(result)) {
+        Metadata::Error error = std::get<Metadata::Error>(result);
 
-		Notify(Severity::Error, tr("Failed to parse media metadata"), error.summary, error.details);
-		ui->inputFileLineEdit->clear();
-		return;
-	}
+        Notify(Severity::Error, tr("Failed to parse media metadata"), error.summary, error.details);
+        ui->inputFileLineEdit->clear();
+        return;
+    }
 
-	metadata = std::get<Metadata>(result);
+    metadata = std::get<Metadata>(result);
 }
 
 QString MainWindow::getOutputPath(QString inputFilePath)

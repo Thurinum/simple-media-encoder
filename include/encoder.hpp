@@ -1,5 +1,5 @@
-#ifndef COMPRESSOR_HPP
-#define COMPRESSOR_HPP
+#ifndef MEDIAENCODER_H
+#define MEDIAENCODER_H
 
 #include "metadata.hpp"
 
@@ -12,14 +12,14 @@
 
 using std::optional;
 
-class Compressor : public QObject
+class MediaEncoder : public QObject
 {
 	Q_OBJECT
 
 public:
-	explicit Compressor(QObject* parent);
+    explicit MediaEncoder(QObject *parent);
 
-	struct Codec
+    struct Codec
 	{
 		QString name;
 		QString library;
@@ -72,18 +72,16 @@ public:
 		optional<double> audioBitrateKbps;
 	};
 
-	void Compress(const Options& options);
-	std::variant<Metadata, Metadata::Error> getMetadata(const QString& path);
-	QString getAvailableFormats();
+    void Encode(const Options &options);
+    std::variant<Metadata, Metadata::Error> getMetadata(const QString &path);
+    QString getAvailableFormats();
 
 signals:
-	void compressionStarted(double videoBitrateKbps, double audioBitrateKbps);
-	void compressionSucceeded(const Options& options,
-					  const ComputedOptions& computed,
-					  QFile& output);
-	void compressionProgressUpdate(double progressPercent);
-	void compressionFailed(QString error, QString errorDetails = "");
-	void metadataComputed();
+    void encodingStarted(double videoBitrateKbps, double audioBitrateKbps);
+    void encodingSucceeded(const Options &options, const ComputedOptions &computed, QFile &output);
+    void encodingProgressUpdate(double progressPercent);
+    void encodingFailed(QString error, QString errorDetails = "");
+    void metadataComputed();
 
 private:
 	const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";
@@ -93,8 +91,8 @@ private:
 	void EndCompression(
 		const Options& options, const ComputedOptions& computed, QString outputPath, QString command, int exitCode);
 
-	bool areValidOptions(const Options& options);
-	void ComputeVideoBitrate(const Options& options, ComputedOptions& computed, const Metadata& metadata);
+    bool validateOptions(const Options &options);
+    void ComputeVideoBitrate(const Options& options, ComputedOptions& computed, const Metadata& metadata);
 	bool computeAudioBitrate(const Options& options, ComputedOptions& computed);
 	double computePixelRatio(const Options& options, const Metadata& metadata);
 
@@ -109,8 +107,8 @@ private:
 	QMetaObject::Connection* const processFinishedConnection = new QMetaObject::Connection();
 };
 
-Q_DECLARE_METATYPE(Compressor::Codec);
-Q_DECLARE_METATYPE(Compressor::Container);
-Q_DECLARE_METATYPE(Compressor::Preset);
+Q_DECLARE_METATYPE(MediaEncoder::Codec);
+Q_DECLARE_METATYPE(MediaEncoder::Container);
+Q_DECLARE_METATYPE(MediaEncoder::Preset);
 
-#endif // COMPRESSOR_HPP
+#endif // MEDIAENCODER_H

@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_HPP
 #define MAINWINDOW_HPP
 
-#include "compressor.hpp"
+#include "encoder.hpp"
 #include "settings.hpp"
 #include "warnings.hpp"
 
@@ -15,9 +15,9 @@
 #include <QSpinBox>
 #include <QUrl>
 
-using Codec = Compressor::Codec;
-using Container = Compressor::Container;
-using Preset = Compressor::Preset;
+using Codec = MediaEncoder::Codec;
+using Container = MediaEncoder::Container;
+using Preset = MediaEncoder::Preset;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -53,10 +53,12 @@ protected:
 	void closeEvent(QCloseEvent* event) override;
 
 	// core logic
-	void StartCompression();
-	void HandleStart(double videoBitrateKbps, double audioBitrateKbps);
-	void HandleSuccess(const Compressor::Options& options, const Compressor::ComputedOptions& computed, QFile& output);
-	void HandleFailure(const QString& shortError, const QString& longError);
+    void StartEncoding();
+    void HandleStart(double videoBitrateKbps, double audioBitrateKbps);
+    void HandleSuccess(const MediaEncoder::Options &options,
+                       const MediaEncoder::ComputedOptions &computed,
+                       QFile &output);
+    void HandleFailure(const QString &shortError, const QString &longError);
 
 private slots:
 	void SetAdvancedMode(bool enabled);
@@ -87,13 +89,13 @@ private:
 	Ui::MainWindow* ui;
 	Settings settings;
 	Warnings* warnings;
-	Compressor* compressor = new Compressor(this);
+    MediaEncoder *encoder = new MediaEncoder(this);
 
-	QHash<QString, Codec> videoCodecs;
-	QHash<QString, Codec> audioCodecs;
-	QHash<QString, Container> containers;
-	QHash<QString, Preset> presets;
-	optional<Metadata>	  metadata;
+    QHash<QString, Codec> videoCodecs;
+    QHash<QString, Codec> audioCodecs;
+    QHash<QString, Container> containers;
+    QHash<QString, Preset> presets;
+    optional<Metadata>	  metadata;
 };
 
 #endif // MAINWINDOW_HPP

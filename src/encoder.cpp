@@ -1,4 +1,4 @@
-#include "compressor.hpp"
+#include "encoder.hpp"
 
 #include "metadata.hpp"
 
@@ -14,21 +14,23 @@
 #include <QUrl>
 #include <QVariant>
 
-Compressor::Compressor(QObject* parent) : QObject{parent}
+MediaEncoder::MediaEncoder(QObject *parent)
+    : QObject{parent}
 
 {
 	ffmpeg->setProcessChannelMode(QProcess::MergedChannels);
-	connect(ffmpeg, &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
-		emit compressionFailed(tr("Process %1").arg(QVariant::fromValue(error).toString()));
-	});
+    connect(ffmpeg, &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
+        emit encodingFailed(tr("Process %1").arg(QVariant::fromValue(error).toString()));
+    });
 }
 
-void Compressor::Compress(const Options& options)
+void MediaEncoder::Encode(const Options &options)
 {
-	if (!areValidOptions(options))
-		return;
+    if (!validateOptions(options)) {
+        return;
+    }
 
-	Metadata metadata;
+    Metadata metadata;
 
 	if (!options.inputMetadata.has_value()) {
 		std::variant<Metadata, Metadata::Error> result = getMetadata(options.inputPath);
@@ -36,11 +38,11 @@ void Compressor::Compress(const Options& options)
 		if (std::holds_alternative<Metadata::Error>(result)) {
 			Metadata::Error error = std::get<Metadata::Error>(result);
 
-			emit compressionFailed(error.summary, error.details);
-			return;
-		}
+            emit encodingFailed(error.summary, error.details);
+            return;
+        }
 
-		metadata = std::get<Metadata>(result);
+        metadata = std::get<Metadata>(result);
 	} else {
 		metadata = *options.inputMetadata;
 	}
@@ -59,21 +61,26 @@ void Compressor::Compress(const Options& options)
 	StartCompression(options, computed, metadata);
 }
 
-void Compressor::StartCompression(const Options& options, const ComputedOptions& computed, const Metadata& metadata)
+void MediaEncoder::StartCompression(const Options &options,
+                                    const ComputedOptions &computed,
+                                    const Metadata &metadata)
 {
-	emit compressionStarted(computed.videoBitrateKbps.value_or(0), computed.audioBitrateKbps.value_or(0));
+    emit encodingStarted(computed.videoBitrateKbps.value_or(0),
+                         computed.audioBitrateKbps.value_or(0));
 
-	QString videoCodecParam = options.videoCodec.has_value() ? "-c:v " + options.videoCodec->library : "-vn";
-	QString audioCodecParam = options.audioCodec.has_value() ? "-c:a " + options.audioCodec->library : "-an";
-	QString videoBitrateParam = options.sizeKbps.has_value()
-						    ? "-b:v " + QString::number(*computed.videoBitrateKbps) + "k"
-						    : "";
-	QString audioBitrateParam = computed.audioBitrateKbps.has_value()
-						    ? "-b:a " + QString::number(*computed.audioBitrateKbps) + "k"
-						    : "";
+    QString videoCodecParam = options.videoCodec.has_value() ? "-c:v " + options.videoCodec->library
+                                                             : "-vn";
+    QString audioCodecParam = options.audioCodec.has_value() ? "-c:a " + options.audioCodec->library
+                                                             : "-an";
+    QString videoBitrateParam = options.sizeKbps.has_value()
+                                    ? "-b:v " + QString::number(*computed.videoBitrateKbps) + "k"
+                                    : "";
+    QString audioBitrateParam = computed.audioBitrateKbps.has_value()
+                                    ? "-b:a " + QString::number(*computed.audioBitrateKbps) + "k"
+                                    : "";
 
-	// video filters
-	QString aspectRatioFilter;
+    // video filters
+    QString aspectRatioFilter;
 	QString scaleFilter;
 	QString speedFilter;
 	QString fpsFilter;
@@ -152,7 +159,7 @@ void Compressor::StartCompression(const Options& options, const ComputedOptions&
 	ffmpeg->startCommand(command);
 }
 
-void Compressor::UpdateProgress(double mediaDuration)
+void MediaEncoder::UpdateProgress(double mediaDuration)
 {
 	QString line = QString(ffmpeg->readAll());
 	QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
@@ -167,63 +174,66 @@ void Compressor::UpdateProgress(double mediaDuration)
 	int currentDuration = timestamp.second() + timestamp.minute() * 60 + timestamp.hour() * 3600;
 	int progressPercent = currentDuration * 100 / mediaDuration;
 
-	emit compressionProgressUpdate(progressPercent);
+    emit encodingProgressUpdate(progressPercent);
 }
 
-void Compressor::EndCompression(
-	const Options& options, const ComputedOptions& computed, QString outputPath, QString command, int exitCode)
+void MediaEncoder::EndCompression(const Options &options,
+                                  const ComputedOptions &computed,
+                                  QString outputPath,
+                                  QString command,
+                                  int exitCode)
 {
 	if (exitCode != 0) {
 		disconnect(*processUpdateConnection);
 		disconnect(*processFinishedConnection);
 
-		emit compressionFailed(parseOutput(), command + "\n\n" + output);
-		output.clear();
-		return;
-	}
+        emit encodingFailed(parseOutput(), command + "\n\n" + output);
+        output.clear();
+        return;
+    }
 
 	QFile media(outputPath);
 	if (!media.open(QIODevice::ReadOnly)) {
 		disconnect(*processUpdateConnection);
 		disconnect(*processFinishedConnection);
-		emit compressionFailed("Could not open the compressed media.", media.errorString());
-		output.clear();
-		media.close();
-		return;
+        emit encodingFailed("Could not open the compressed media.", media.errorString());
+        output.clear();
+        media.close();
+        return;
 	}
 
 	media.close();
 	disconnect(*processUpdateConnection);
 	disconnect(*processFinishedConnection);
-	emit compressionSucceeded(options, computed, media);
-	output.clear();
+    emit encodingSucceeded(options, computed, media);
+    output.clear();
 }
 
-QString Compressor::getAvailableFormats()
+QString MediaEncoder::getAvailableFormats()
 {
 	ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(IS_WINDOWS ? ".exe" : ""));
 	ffmpeg->waitForFinished();
 	return ffmpeg->readAllStandardOutput();
 }
 
-bool Compressor::computeAudioBitrate(const Options& options, ComputedOptions& computed)
+bool MediaEncoder::computeAudioBitrate(const Options &options, ComputedOptions &computed)
 {
 	double audioBitrateKbps = qMax(options.minAudioBitrateKbps,
 						 options.audioQualityPercent.value_or(1) * options.maxAudioBitrateKbps);
 	if (audioBitrateKbps < options.audioCodec->minBitrateKbps) {
-		emit compressionFailed(tr("Selected audio codec %1 requires a minimum bitrate of %2 "
-						  "kbps, but requested was %3 kbps.")
-						     .arg(options.audioCodec->name,
-							    QString::number(options.audioCodec->minBitrateKbps),
-							    QString::number(audioBitrateKbps)));
-		return false;
-	}
+        emit encodingFailed(tr("Selected audio codec %1 requires a minimum bitrate of %2 "
+                               "kbps, but requested was %3 kbps.")
+                                .arg(options.audioCodec->name,
+                                     QString::number(options.audioCodec->minBitrateKbps),
+                                     QString::number(audioBitrateKbps)));
+        return false;
+    }
 
-	computed.audioBitrateKbps = audioBitrateKbps;
+    computed.audioBitrateKbps = audioBitrateKbps;
 	return true;
 }
 
-double Compressor::computePixelRatio(const Options& options, const Metadata& metadata)
+double MediaEncoder::computePixelRatio(const Options &options, const Metadata &metadata)
 {
 	double pixelRatio = 1;
 	int outputWidth;
@@ -248,7 +258,9 @@ double Compressor::computePixelRatio(const Options& options, const Metadata& met
 	return pixelRatio;
 }
 
-void Compressor::ComputeVideoBitrate(const Options& options, ComputedOptions& computed, const Metadata& metadata)
+void MediaEncoder::ComputeVideoBitrate(const Options &options,
+                                       ComputedOptions &computed,
+                                       const Metadata &metadata)
 {
 	double audioBitrateKbps = computed.audioBitrateKbps.value_or(0);
 
@@ -258,7 +270,7 @@ void Compressor::ComputeVideoBitrate(const Options& options, ComputedOptions& co
 	computed.videoBitrateKbps = qMax(options.minVideoBitrateKbps, pixelRatio * (bitrateKbps - audioBitrateKbps));
 }
 
-QString Compressor::parseOutput()
+QString MediaEncoder::parseOutput()
 {
 	QStringList split = output.split("Press [q] to stop, [?] for help");
 	if (split.length() == 1)
@@ -272,7 +284,7 @@ QString Compressor::parseOutput()
 		.trimmed();
 }
 
-bool Compressor::areValidOptions(const Options& options)
+bool MediaEncoder::validateOptions(const Options &options)
 {
 	QString error;
 
@@ -326,14 +338,14 @@ bool Compressor::areValidOptions(const Options& options)
 	}
 
 	if (!error.isEmpty()) {
-		emit compressionFailed(error, tr("rip bozo"));
-		return false;
-	}
+        emit encodingFailed(error, tr("rip bozo"));
+        return false;
+    }
 
-	return true;
+    return true;
 }
 
-std::variant<Metadata, Metadata::Error> Compressor::getMetadata(const QString& path)
+std::variant<Metadata, Metadata::Error> MediaEncoder::getMetadata(const QString &path)
 {
 	ffprobe->startCommand(
 		QString(R"(ffprobe%1 -v error -print_format json -show_format -show_streams "%2")")
@@ -347,12 +359,12 @@ std::variant<Metadata, Metadata::Error> Compressor::getMetadata(const QString& p
 	return builder.fromJson(data);
 }
 
-bool Compressor::Codec::operator==(const Codec& rhs) const
+bool MediaEncoder::Codec::operator==(const Codec &rhs) const
 {
 	return this->name == rhs.name && this->library == rhs.library;
 }
 
-QString Compressor::Codec::stringFromList(const QList<Codec>& list)
+QString MediaEncoder::Codec::stringFromList(const QList<Codec> &list)
 {
 	QString str;
 
