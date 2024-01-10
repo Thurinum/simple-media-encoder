@@ -1,5 +1,4 @@
 # Simple Media Encoder
-
 Re-encode and compress your media files quickly and efficiently with this convenient tool. Uses FFMPEG and the Qt toolkit under GPL v3.
 
 <div>
@@ -10,6 +9,14 @@ Re-encode and compress your media files quickly and efficiently with this conven
 The default interface allows anyone to quickly re-encode media files.
 
 The so-called "expert" interface gives advanced users a bit more control over the exported result.
+
+## News
+An update that will bring this app to release status is planned this February! Expected features are:
+- Enhanced compatibility, reducing the amount of edge-cases with incompatible files
+- Smart selection of optimal encoding parameters for the most popular codecs
+- Widened range of codecs displayed to all those available on the system
+- Better bitrate calculation when compressing to reach a target size
+- Numerous bug fixes and major code quality improvements!
 
 ## Compatibility
 - Windows 10, Windows 11, and Linux. Earlier versions of Windows are not supported.
