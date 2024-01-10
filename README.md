@@ -2,8 +2,7 @@
 Re-encode and compress your media files quickly and efficiently with this convenient tool. Uses FFMPEG and the Qt toolkit under GPL v3.
 
 <div>
-  <img height=400 src=https://user-images.githubusercontent.com/43908636/214199765-8b79ab79-b069-48e8-b41d-de67893a2b1f.png />
-  <img height=400 src=https://user-images.githubusercontent.com/43908636/214199849-85893425-2850-44c1-92f8-ff6c2edcb525.png />  
+  <img height=400 src=https://user-images.githubusercontent.com/43908636/214199765-8b79ab79-b069-48e8-b41d-de67893a2b1f.png /> <img height=400 src=https://user-images.githubusercontent.com/43908636/214199849-85893425-2850-44c1-92f8-ff6c2edcb525.png />  
 </div>  
 <br/>
 The default interface allows anyone to quickly re-encode media files.
