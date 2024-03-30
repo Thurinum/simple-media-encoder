@@ -1,8 +1,8 @@
-QT = core gui widgets network
+QT = core gui widgets
 
 CONFIG += c++20
 QMAKE_CXXFLAGS += -Werror -Wextra
-DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
+DEFINES += QT_DISABLE_DEPRECATED_UP_TO=0x060600
 
 
 INCLUDEPATH += $$PWD/include
@@ -17,6 +17,6 @@ FORMS += \
 	$$files("$$PWD/ui/*.ui", true)
 
 DISTFILES += \
-	$$files("$$PWD/bin/*	", true)
+      $$files("$$PWD/bin/*	", true)
 
 DESTDIR = $$PWD/bin

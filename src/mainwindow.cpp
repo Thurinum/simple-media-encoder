@@ -8,8 +8,6 @@
 #include <QMimeData>
 #include <QMimeDatabase>
 #include <QMovie>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 #include <QPixmap>
 #include <QProcess>
 #include <QPropertyAnimation>
@@ -82,14 +80,14 @@ void MainWindow::SetupSettings()
 			 tr("Configuration has not been initialized. Please contact the developers."));
 	});
 
-	settings.Init("config");
+    settings.Init("config");
 
-	connect(&settings, &Settings::configNotFound, [this](const QString &fileName) {
-		Notify(Severity::Critical,
+    connect(&settings, &Settings::configNotFound, [this](const QString &fileName) {
+        Notify(Severity::Critical,
 			 tr("Config not found"),
 			 tr("Default configuration file '%1' is missing. Please reinstall the program.").arg(fileName));
-	});
-	connect(&settings, &Settings::keyCreated, [this](const QString &key) {
+    });
+    connect(&settings, &Settings::keyCreated, [this](const QString &key) {
 		Notify(Severity::Warning,
 			 tr("Config key created"),
 			 tr("A new configuration key '%1' has been created.").arg(key));
