@@ -1,17 +1,20 @@
 #include "mainwindow.hpp"
+#include "platform_info.hpp"
 
 #include <QApplication>
 #include <QStyleFactory>
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	QApplication a(argc, argv);
-    a.setApplicationName("Efficient Media Encoder");
-    a.setStyle("Fusion");
+    QApplication app(argc, argv);
+    app.setApplicationName("Efficient Media Encoder");
+    app.setStyle("Fusion");
 
-    MainWindow w;
+    PlatformInfo platformInfo;
+
+    MainWindow w(platformInfo);
     w.setWindowIcon(QIcon("appicon.ico"));
     w.show();
 
-    return a.exec();
+    return app.exec();
 }

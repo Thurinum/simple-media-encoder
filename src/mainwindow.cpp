@@ -20,9 +20,10 @@
 
 using std::optional;
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(const PlatformInfo& platformInfo, QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , platformInfo(platformInfo)
 {
     ui->setupUi(this);
     this->resize(this->minimumSizeHint());
@@ -33,8 +34,6 @@ MainWindow::MainWindow(QWidget* parent)
     CheckForBinaries();
 
     SetupMenu();
-
-    DetectNvidia();
 
     ParseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
     ParseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecComboBox);
@@ -112,7 +111,7 @@ void MainWindow::SetupSettings()
 
 void MainWindow::CheckForBinaries()
 {
-    if (IS_WINDOWS && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe"))) {
+    if (platformInfo.isWindows() && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe"))) {
         Notify(Severity::Critical,
                tr("Could not find ffmpeg binaries"),
                tr("If compiling from source, this is not a bug. Please download ffmpeg.exe and ffprobe.exe and "
@@ -132,22 +131,6 @@ void MainWindow::SetupMenu()
     menu->addAction(tr("About Qt"), &QApplication::aboutQt);
     ui->infoMenuToolButton->setMenu(menu);
     connect(ui->infoMenuToolButton, &QToolButton::pressed, ui->infoMenuToolButton, &QToolButton::showMenu);
-}
-
-void MainWindow::DetectNvidia()
-{
-    QProcess process;
-    process.setProcessChannelMode(QProcess::MergedChannels);
-
-    if (IS_WINDOWS)
-        process.startCommand("wmic path win32_VideoController get name");
-    else
-        process.startCommand("lspci");
-
-    process.waitForFinished();
-
-    if (process.readAllStandardOutput().toLower().contains("nvidia"))
-        isNvidia = true;
 }
 
 void MainWindow::SetupUiInteractions()
@@ -458,7 +441,7 @@ void MainWindow::HandleSuccess(const MediaEncoder::Options& options,
     SetProgressShown(false);
 
     QFileInfo fileInfo(output);
-    QString command = IS_WINDOWS ? "explorer.exe" : "xdg-open";
+    QString command = platformInfo.isWindows() ? "explorer.exe" : "xdg-open";
 
     if (ui->deleteOnSuccessCheckBox->isChecked()) {
         QFile input(options.inputPath);
@@ -709,7 +692,7 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
             continue;
         }
 
-        if (codecLibrary.contains("nvenc") && !isNvidia)
+        if (codecLibrary.contains("nvenc") && !platformInfo.isNvidia())
             continue;
 
         if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
