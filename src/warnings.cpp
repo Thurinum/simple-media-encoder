@@ -1,23 +1,26 @@
 #include "warnings.hpp"
 
-Warnings::Warnings(QWidget* widget) : m_tooltipWidget{widget} {}
+Warnings::Warnings(QWidget* widget)
+    : m_tooltipWidget { widget }
+{
+}
 
 void Warnings::Add(const QString& key, const QString& text)
 {
-	m_warnings.insert(key, text);
-	UpdateWidget();
+    m_warnings.insert(key, text);
+    UpdateWidget();
 }
 
 void Warnings::Remove(const QString& key)
 {
-	m_warnings.remove(key);
-	UpdateWidget();
+    m_warnings.remove(key);
+    UpdateWidget();
 }
 
 void Warnings::UpdateWidget()
 {
-	bool hasWarnings = !m_warnings.isEmpty();
+    bool hasWarnings = !m_warnings.isEmpty();
 
-	m_tooltipWidget->setVisible(hasWarnings);
-	m_tooltipWidget->setToolTip(hasWarnings ? m_warnings.values().join("\n") : "");
+    m_tooltipWidget->setVisible(hasWarnings);
+    m_tooltipWidget->setToolTip(hasWarnings ? m_warnings.values().join("\n") : "");
 }
