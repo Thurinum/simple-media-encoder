@@ -30,7 +30,7 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit MainWindow(const PlatformInfo& platformInfo, QWidget* parent = nullptr);
+    explicit MainWindow(MediaEncoder& encoder, const PlatformInfo& platformInfo, QWidget* parent = nullptr);
     ~MainWindow() override;
 
     enum Severity {
@@ -86,7 +86,6 @@ private:
     Ui::MainWindow* ui;
     Settings settings;
     Warnings* warnings;
-    MediaEncoder* encoder = new MediaEncoder(this);
 
     QHash<QString, Codec> videoCodecs;
     QHash<QString, Codec> audioCodecs;
@@ -94,6 +93,8 @@ private:
     QHash<QString, Preset> presets;
     optional<Metadata> metadata;
 
+    // FIXME: Modify so it can be const (services should be immutable)
+    MediaEncoder& encoder;
     const PlatformInfo& platformInfo;
 };
 

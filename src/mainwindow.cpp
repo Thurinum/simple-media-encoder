@@ -20,9 +20,10 @@
 
 using std::optional;
 
-MainWindow::MainWindow(const PlatformInfo& platformInfo, QWidget* parent)
+MainWindow::MainWindow(MediaEncoder& encoder, const PlatformInfo& platformInfo, QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , encoder(encoder)
     , platformInfo(platformInfo)
 {
     ui->setupUi(this);
@@ -48,7 +49,6 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete warnings;
-    delete encoder;
 }
 
 void MainWindow::Notify(Severity severity, const QString& title, const QString& message, const QString& details)
@@ -140,10 +140,10 @@ void MainWindow::SetupUiInteractions()
 
     // start compression button
     connect(ui->startCompressionButton, &QPushButton::clicked, this, &MainWindow::StartEncoding);
-    connect(encoder, &MediaEncoder::encodingStarted, this, &MainWindow::HandleStart);
-    connect(encoder, &MediaEncoder::encodingSucceeded, this, &MainWindow::HandleSuccess);
-    connect(encoder, &MediaEncoder::encodingFailed, this, &MainWindow::HandleFailure);
-    connect(encoder, &MediaEncoder::encodingProgressUpdate, this, [this](int progress) {
+    connect(&encoder, &MediaEncoder::encodingStarted, this, &MainWindow::HandleStart);
+    connect(&encoder, &MediaEncoder::encodingSucceeded, this, &MainWindow::HandleSuccess);
+    connect(&encoder, &MediaEncoder::encodingFailed, this, &MainWindow::HandleFailure);
+    connect(&encoder, &MediaEncoder::encodingProgressUpdate, this, [this](int progress) {
         SetProgressShown(true, progress);
     });
 
@@ -198,7 +198,7 @@ void MainWindow::SetupUiInteractions()
     connect(ui->inputFileButton, &QPushButton::clicked, this, &MainWindow::OpenInputFile);
 
     // restore progress bar
-    connect(encoder, &MediaEncoder::metadataComputed, [this]() {
+    connect(&encoder, &MediaEncoder::metadataComputed, [this]() {
         SetProgressShown(false);
         ui->progressBar->setRange(0, 100);
         ui->progressBarLabel->setText(tr("Compressing..."));
@@ -374,7 +374,7 @@ void MainWindow::StartEncoding()
         return;
     }
 
-    encoder->Encode(MediaEncoder::Options {
+    encoder.Encode(MediaEncoder::Options {
         .inputPath = inputPath,
         .outputPath = outputPath,
         .videoCodec = videoCodec,
@@ -679,7 +679,7 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
                    .arg(type));
     }
 
-    QString availableCodecs = encoder->getAvailableFormats();
+    QString availableCodecs = encoder.getAvailableFormats();
 
     for (const QString& codecLibrary : keys) {
         if (!availableCodecs.contains(codecLibrary)) {
@@ -769,7 +769,7 @@ void MainWindow::ParsePresets(QHash<QString, Preset>& presets,
                               QComboBox* comboBox)
 {
     QStringList keys = settings.keysInGroup("Presets");
-    QString supportedCodecs = encoder->getAvailableFormats();
+    QString supportedCodecs = encoder.getAvailableFormats();
 
     for (const QString& key : keys) {
         Preset preset;
@@ -830,7 +830,7 @@ void MainWindow::ParsePresets(QHash<QString, Preset>& presets,
 
 void MainWindow::ParseMetadata(const QString& path)
 {
-    std::variant<Metadata, Metadata::Error> result = encoder->getMetadata(path);
+    std::variant<Metadata, Metadata::Error> result = encoder.getMetadata(path);
 
     if (std::holds_alternative<Metadata::Error>(result)) {
         Metadata::Error error = std::get<Metadata::Error>(result);

@@ -19,12 +19,18 @@ MediaEncoder::MediaEncoder(QObject *parent)
 
 {
 	ffmpeg->setProcessChannelMode(QProcess::MergedChannels);
-    connect(ffmpeg, &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
-        emit encodingFailed(tr("Process %1").arg(QVariant::fromValue(error).toString()));
-    });
+        connect(ffmpeg, &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
+            emit encodingFailed(tr("Process %1").arg(QVariant::fromValue(error).toString()));
+        });
 }
 
-void MediaEncoder::Encode(const Options &options)
+MediaEncoder::~MediaEncoder()
+{
+    delete ffmpeg;
+    delete ffprobe;
+}
+
+void MediaEncoder::Encode(const Options& options)
 {
     if (!validateOptions(options)) {
         return;
@@ -345,7 +351,7 @@ bool MediaEncoder::validateOptions(const Options &options)
     return true;
 }
 
-std::variant<Metadata, Metadata::Error> MediaEncoder::getMetadata(const QString &path)
+std::variant<Metadata, Metadata::Error> MediaEncoder::getMetadata(const QString& path)
 {
 	ffprobe->startCommand(
 		QString(R"(ffprobe%1 -v error -print_format json -show_format -show_streams "%2")")

@@ -1,3 +1,4 @@
+#include "encoder.hpp"
 #include "mainwindow.hpp"
 #include "platform_info.hpp"
 
@@ -10,9 +11,10 @@ int main(int argc, char* argv[])
     app.setApplicationName("Efficient Media Encoder");
     app.setStyle("Fusion");
 
+    MediaEncoder* encoder = new MediaEncoder(&app);
     PlatformInfo platformInfo;
 
-    MainWindow w(platformInfo);
+    MainWindow w(*encoder, platformInfo);
     w.setWindowIcon(QIcon("appicon.ico"));
     w.show();
 
