@@ -1,5 +1,6 @@
 #include "settings.hpp"
 
+#include <QDir>
 #include <QFile>
 
 QVariant Settings::get(const QString& key)
@@ -58,6 +59,8 @@ void Settings::Set(const QString& key, const QVariant& value)
 
 void Settings::Init(const QString& fileName)
 {
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QDir::current().absolutePath());
+
     QString defaultFileName = fileName + "_default.ini";
     QString currentFileName = fileName + ".ini";
 
