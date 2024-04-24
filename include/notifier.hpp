@@ -13,15 +13,15 @@ enum Severity {
 };
 
 //!
-//! \brief A simple immutable message that invokes tr() upon construction.
+//! \brief Represents a message to be displayed to the user.
 //!
 struct Message {
 public:
-    Message(Severity severity, const char* title, const char* message, const char* details = "")
+    Message(Severity severity, QString title, QString message, QString details = "")
         : severity(severity)
-        , title(QObject::tr(title))
-        , message(QObject::tr(message))
-        , details(QObject::tr(details))
+        , title(title)
+        , message(message)
+        , details(details)
     {
     }
 

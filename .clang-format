@@ -1,6 +1,8 @@
 BasedOnStyle: WebKit
 ---
 Language: Cpp
-AlignAfterOpenBracket: Align
+AlignAfterOpenBracket: BlockIndent
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 BreakBeforeBraces: Linux
+AlignOperands: AlignAfterOperator
+AllowAllArgumentsOnNextLine: true
