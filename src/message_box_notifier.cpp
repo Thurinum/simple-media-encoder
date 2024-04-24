@@ -1,4 +1,4 @@
-#include "notifier.hpp"
+#include "message_box_notifier.hpp"
 
 #include <QApplication>
 

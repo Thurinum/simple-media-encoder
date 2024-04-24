@@ -28,6 +28,8 @@ public:
             right.~R();
     }
 
+    const bool isLeft;
+
     const L& getLeft() const
     {
         if (!isLeft)
@@ -58,8 +60,6 @@ private:
         L left;
         R right;
     };
-
-    const bool isLeft;
 };
 
 #endif

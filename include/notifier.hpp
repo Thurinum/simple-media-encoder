@@ -3,8 +3,6 @@
 
 #include <QMessageBox>
 
-// TODO: Move to service
-
 enum Severity {
     Info = QMessageBox::Information,
     Warning = QMessageBox::Warning,
@@ -19,9 +17,9 @@ struct Message {
 public:
     Message(Severity severity, QString title, QString message, QString details = "")
         : severity(severity)
-        , title(title)
-        , message(message)
-        , details(details)
+        , title(std::move(title))
+        , message(std::move(message))
+        , details(std::move(details))
     {
     }
 
@@ -36,13 +34,6 @@ class Notifier
 public:
     virtual void Notify(const Message& message) const = 0;
     virtual void Notify(Severity severity, const QString& title, const QString& message, const QString& details = "") const = 0;
-};
-
-class MessageBoxNotifier : public Notifier
-{
-public:
-    void Notify(const Message& message) const override;
-    void Notify(Severity severity, const QString& title, const QString& message, const QString& details) const override;
 };
 
 #endif

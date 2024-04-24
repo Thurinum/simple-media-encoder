@@ -1,6 +1,7 @@
 #include "either.hpp"
 #include "encoder.hpp"
 #include "mainwindow.hpp"
+#include "message_box_notifier.hpp"
 #include "platform_info.hpp"
 #include "settings_factory.hpp"
 
