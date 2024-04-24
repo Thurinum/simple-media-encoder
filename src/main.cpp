@@ -1,6 +1,8 @@
+#include "either.hpp"
 #include "encoder.hpp"
 #include "mainwindow.hpp"
 #include "platform_info.hpp"
+#include "settings_factory.hpp"
 
 #include <QApplication>
 #include <QStyleFactory>
@@ -12,10 +14,21 @@ int main(int argc, char* argv[])
     app.setStyle("Fusion");
 
     MediaEncoder* encoder = new MediaEncoder(&app);
-    PlatformInfo platformInfo;
-    MessageBoxNotifier notifier;
+    const PlatformInfo platformInfo;
+    const MessageBoxNotifier notifier;
 
-    MainWindow w(*encoder, notifier, platformInfo);
+    auto maybeSettings = SettingsFactory::createIniSettings("config.ini", "config_default.ini");
+    if (maybeSettings.isLeft) {
+        notifier.Notify(maybeSettings.getLeft());
+        return EXIT_FAILURE;
+    }
+
+    const QPointer<Settings> settings = maybeSettings.getRight();
+    QObject::connect(settings, &Settings::problemOccured, [notifier](const Message& problem) {
+        notifier.Notify(problem);
+    });
+
+    MainWindow w(*encoder, settings, notifier, platformInfo);
     w.setWindowIcon(QIcon("appicon.ico"));
     w.show();
 

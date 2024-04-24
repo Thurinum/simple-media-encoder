@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <QPointer>
 #include <QPropertyAnimation>
 #include <QSettings>
 #include <QSpinBox>
@@ -31,12 +32,17 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit MainWindow(MediaEncoder& encoder, const Notifier& notifier, const PlatformInfo& platformInfo, QWidget* parent = nullptr);
+    MainWindow(
+        MediaEncoder& encoder,
+        const QPointer<Settings> settings,
+        const Notifier& notifier,
+        const PlatformInfo& platformInfo,
+        QWidget* parent = nullptr
+    );
     ~MainWindow() override;
 
 protected:
     // initialization
-    void SetupSettings();
     void CheckForBinaries();
     void SetupMenu();
     void SetupUiInteractions();
@@ -76,7 +82,6 @@ private:
     inline bool isAutoValue(QAbstractSpinBox* spinBox);
 
     Ui::MainWindow* ui;
-    Settings settings;
     Warnings* warnings;
 
     QHash<QString, Codec> videoCodecs;
@@ -87,6 +92,7 @@ private:
 
     // FIXME: Modify so it can be const (services should be immutable)
     MediaEncoder& encoder;
+    QPointer<Settings> settings;
     const Notifier& notifier;
     const PlatformInfo& platformInfo;
 };

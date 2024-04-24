@@ -21,18 +21,23 @@
 
 using std::optional;
 
-MainWindow::MainWindow(MediaEncoder& encoder, const Notifier& notifier, const PlatformInfo& platformInfo, QWidget* parent)
+MainWindow::MainWindow(
+    MediaEncoder& encoder,
+    const QPointer<Settings> settings,
+    const Notifier& notifier,
+    const PlatformInfo& platformInfo,
+    QWidget* parent
+)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , encoder(encoder)
+    , settings(settings)
     , notifier(notifier)
     , platformInfo(platformInfo)
 {
     ui->setupUi(this);
     this->resize(this->minimumSizeHint());
     this->warnings = new Warnings(ui->warningTooltipButton);
-
-    SetupSettings();
 
     CheckForBinaries();
 
@@ -53,15 +58,6 @@ MainWindow::~MainWindow()
     delete warnings;
 }
 
-void MainWindow::SetupSettings()
-{
-    connect(&settings, &Settings::problemOccured, [this](const Message& problem) {
-        notifier.Notify(problem);
-    });
-
-    settings.Init("config");
-}
-
 void MainWindow::CheckForBinaries()
 {
     if (platformInfo.isWindows() && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe"))) {
@@ -77,7 +73,7 @@ void MainWindow::SetupMenu()
     menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
     menu->addSeparator();
     menu->addAction(tr("About"), [this]() {
-        notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), settings.get("Main/sAbout").toString());
+        notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), settings->get("Main/sAbout").toString());
     });
     menu->addAction(tr("About Qt"), &QApplication::aboutQt);
     ui->infoMenuToolButton->setMenu(menu);
@@ -128,9 +124,7 @@ void MainWindow::SetupUiInteractions()
 
     // show value in kbps of audio quality slider
     connect(ui->audioQualitySlider, &QSlider::valueChanged, [this]() {
-        double currentValue = qMax(settings.get("Main/dMinBitrateAudioKbps").toDouble(),
-                                   ui->audioQualitySlider->value() / 100.0
-                                       * settings.get("Main/dMaxBitrateAudioKbps").toDouble());
+        double currentValue = qMax(settings->get("Main/dMinBitrateAudioKbps").toDouble(), ui->audioQualitySlider->value() / 100.0 * settings->get("Main/dMaxBitrateAudioKbps").toDouble());
         ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
     });
 
@@ -160,11 +154,11 @@ void MainWindow::LoadState()
 {
     ui->warningTooltipButton->setVisible(false);
 
-    if (!settings.get("LastDesired/bAdvancedMode").toBool())
+    if (!settings->get("LastDesired/bAdvancedMode").toBool())
         ui->advancedModeCheckBox->click();
 
-    QString selectedUrl = settings.get("LastDesired/sInputFile").toString();
-    QString selectedDir = settings.get("LastDesired/sOutputDir").toString();
+    QString selectedUrl = settings->get("LastDesired/sInputFile").toString();
+    QString selectedDir = settings->get("LastDesired/sOutputDir").toString();
 
     if (selectedUrl == "" || QFile::exists(selectedUrl))
         ui->inputFileLineEdit->setText(selectedUrl);
@@ -174,36 +168,36 @@ void MainWindow::LoadState()
     if (QFile::exists(selectedUrl))
         ParseMetadata(selectedUrl);
 
-    ui->outputFileNameLineEdit->setText(settings.get("LastDesired/sFileNameOrSuffix").toString());
+    ui->outputFileNameLineEdit->setText(settings->get("LastDesired/sFileNameOrSuffix").toString());
 
-    ui->fileSizeSpinBox->setValue(settings.get("LastDesired/dFileSize").toDouble());
-    ui->fileSizeUnitComboBox->setCurrentText(settings.get("LastDesired/sFileSizeUnit").toString());
-    ui->audioQualitySlider->setValue(settings.get("LastDesired/iQualityRatio").toInt());
+    ui->fileSizeSpinBox->setValue(settings->get("LastDesired/dFileSize").toDouble());
+    ui->fileSizeUnitComboBox->setCurrentText(settings->get("LastDesired/sFileSizeUnit").toString());
+    ui->audioQualitySlider->setValue(settings->get("LastDesired/iQualityRatio").toInt());
     emit ui->audioQualitySlider->valueChanged(ui->audioQualitySlider->value());
 
-    ui->videoCodecComboBox->setCurrentText(settings.get("LastDesired/sVideoCodec").toString());
-    ui->audioCodecComboBox->setCurrentText(settings.get("LastDesired/sAudioCodec").toString());
-    ui->containerComboBox->setCurrentText(settings.get("LastDesired/sContainer").toString());
+    ui->videoCodecComboBox->setCurrentText(settings->get("LastDesired/sVideoCodec").toString());
+    ui->audioCodecComboBox->setCurrentText(settings->get("LastDesired/sAudioCodec").toString());
+    ui->containerComboBox->setCurrentText(settings->get("LastDesired/sContainer").toString());
 
-    ui->widthSpinBox->setValue(settings.get("LastDesired/iWidth").toInt());
-    ui->heightSpinBox->setValue(settings.get("LastDesired/iHeight").toInt());
+    ui->widthSpinBox->setValue(settings->get("LastDesired/iWidth").toInt());
+    ui->heightSpinBox->setValue(settings->get("LastDesired/iHeight").toInt());
 
-    ui->aspectRatioSpinBoxH->setValue(settings.get("LastDesired/iAspectRatioH").toInt());
-    ui->aspectRatioSpinBoxV->setValue(settings.get("LastDesired/iAspectRatioV").toInt());
+    ui->aspectRatioSpinBoxH->setValue(settings->get("LastDesired/iAspectRatioH").toInt());
+    ui->aspectRatioSpinBoxV->setValue(settings->get("LastDesired/iAspectRatioV").toInt());
 
-    ui->customCommandTextEdit->setPlainText(settings.get("LastDesired/sCustomParameters").toString());
+    ui->customCommandTextEdit->setPlainText(settings->get("LastDesired/sCustomParameters").toString());
 
-    ui->outputFileNameSuffixCheckBox->setChecked(settings.get("LastDesired/bHasFileSuffix").toBool());
-    ui->warnOnOverwriteCheckBox->setChecked(settings.get("LastDesired/bWarnOnOverwrite").toBool());
+    ui->outputFileNameSuffixCheckBox->setChecked(settings->get("LastDesired/bHasFileSuffix").toBool());
+    ui->warnOnOverwriteCheckBox->setChecked(settings->get("LastDesired/bWarnOnOverwrite").toBool());
 
-    ui->speedSpinBox->setValue(settings.get("LastDesired/dSpeed").toDouble());
-    ui->fpsSpinBox->setValue(settings.get("LastDesired/iFps").toInt());
+    ui->speedSpinBox->setValue(settings->get("LastDesired/dSpeed").toDouble());
+    ui->fpsSpinBox->setValue(settings->get("LastDesired/iFps").toInt());
 
-    ui->autoFillCheckBox->setChecked(settings.get("LastDesired/bAutoFillMetadata").toBool());
+    ui->autoFillCheckBox->setChecked(settings->get("LastDesired/bAutoFillMetadata").toBool());
 
-    ui->deleteOnSuccessCheckBox->setChecked(settings.get("LastDesired/bDeleteInputOnSuccess").toBool());
+    ui->deleteOnSuccessCheckBox->setChecked(settings->get("LastDesired/bDeleteInputOnSuccess").toBool());
 
-    switch (settings.get("LastDesired/iSelectedStreams").toInt()) {
+    switch (settings->get("LastDesired/iSelectedStreams").toInt()) {
     case 0:
         ui->radVideoAudio->setChecked(true);
         break;
@@ -215,62 +209,61 @@ void MainWindow::LoadState()
         break;
     }
 
-    ui->openExplorerOnSuccessCheckBox->setChecked(settings.get("LastDesired/bOpenInExplorerOnSuccess").toBool());
-    ui->playOnSuccessCheckBox->setChecked(settings.get("LastDesired/bPlayResultOnSuccess").toBool());
-    ui->closeOnSuccessCheckBox->setChecked(settings.get("LastDesired/bCloseOnSuccess").toBool());
+    ui->openExplorerOnSuccessCheckBox->setChecked(settings->get("LastDesired/bOpenInExplorerOnSuccess").toBool());
+    ui->playOnSuccessCheckBox->setChecked(settings->get("LastDesired/bPlayResultOnSuccess").toBool());
+    ui->closeOnSuccessCheckBox->setChecked(settings->get("LastDesired/bCloseOnSuccess").toBool());
 
-    ui->codecSelectionGroupBox->setChecked(settings.get("LastDesired/bUseCustomCodecs").toBool());
+    ui->codecSelectionGroupBox->setChecked(settings->get("LastDesired/bUseCustomCodecs").toBool());
 
     SetControlsState(ui->audioVideoButtonGroup->checkedButton());
 }
 
 void MainWindow::SaveState()
 {
-    settings.Set("LastDesired/bAdvancedMode", ui->advancedModeCheckBox->isChecked());
+    settings->Set("LastDesired/bAdvancedMode", ui->advancedModeCheckBox->isChecked());
 
-    settings.Set("LastDesired/sInputFile", ui->inputFileLineEdit->text());
-    settings.Set("LastDesired/sOutputDir", ui->outputFolderLineEdit->text());
-    settings.Set("LastDesired/dFileSize", ui->fileSizeSpinBox->value());
-    settings.Set("LastDesired/sFileSizeUnit", ui->fileSizeUnitComboBox->currentText());
-    settings.Set("LastDesired/sFileNameOrSuffix", ui->outputFileNameLineEdit->text());
-    settings.Set("LastDesired/iQualityRatio", ui->audioQualitySlider->value());
+    settings->Set("LastDesired/sInputFile", ui->inputFileLineEdit->text());
+    settings->Set("LastDesired/sOutputDir", ui->outputFolderLineEdit->text());
+    settings->Set("LastDesired/dFileSize", ui->fileSizeSpinBox->value());
+    settings->Set("LastDesired/sFileSizeUnit", ui->fileSizeUnitComboBox->currentText());
+    settings->Set("LastDesired/sFileNameOrSuffix", ui->outputFileNameLineEdit->text());
+    settings->Set("LastDesired/iQualityRatio", ui->audioQualitySlider->value());
 
-    settings.Set("LastDesired/sVideoCodec", ui->videoCodecComboBox->currentText());
-    settings.Set("LastDesired/sAudioCodec", ui->audioCodecComboBox->currentText());
-    settings.Set("LastDesired/sContainer", ui->containerComboBox->currentText());
+    settings->Set("LastDesired/sVideoCodec", ui->videoCodecComboBox->currentText());
+    settings->Set("LastDesired/sAudioCodec", ui->audioCodecComboBox->currentText());
+    settings->Set("LastDesired/sContainer", ui->containerComboBox->currentText());
 
-    settings.Set("LastDesired/iWidth", ui->widthSpinBox->value());
-    settings.Set("LastDesired/iHeight", ui->heightSpinBox->value());
+    settings->Set("LastDesired/iWidth", ui->widthSpinBox->value());
+    settings->Set("LastDesired/iHeight", ui->heightSpinBox->value());
 
-    settings.Set("LastDesired/iAspectRatioH", ui->aspectRatioSpinBoxH->value());
-    settings.Set("LastDesired/iAspectRatioV", ui->aspectRatioSpinBoxV->value());
+    settings->Set("LastDesired/iAspectRatioH", ui->aspectRatioSpinBoxH->value());
+    settings->Set("LastDesired/iAspectRatioV", ui->aspectRatioSpinBoxV->value());
 
-    settings.Set("LastDesired/sCustomParameters", ui->customCommandTextEdit->toPlainText());
+    settings->Set("LastDesired/sCustomParameters", ui->customCommandTextEdit->toPlainText());
 
-    settings.Set("LastDesired/bHasFileSuffix", ui->outputFileNameSuffixCheckBox->isChecked());
-    settings.Set("LastDesired/bWarnOnOverwrite", ui->warnOnOverwriteCheckBox->isChecked());
+    settings->Set("LastDesired/bHasFileSuffix", ui->outputFileNameSuffixCheckBox->isChecked());
+    settings->Set("LastDesired/bWarnOnOverwrite", ui->warnOnOverwriteCheckBox->isChecked());
 
-    settings.Set("LastDesired/dSpeed", ui->speedSpinBox->value());
-    settings.Set("LastDesired/iFps", ui->fpsSpinBox->value());
+    settings->Set("LastDesired/dSpeed", ui->speedSpinBox->value());
+    settings->Set("LastDesired/iFps", ui->fpsSpinBox->value());
 
-    settings.Set("LastDesired/bDeleteInputOnSuccess", ui->deleteOnSuccessCheckBox->isChecked());
+    settings->Set("LastDesired/bDeleteInputOnSuccess", ui->deleteOnSuccessCheckBox->isChecked());
 
-    settings.Set("LastDesired/bUseCustomCodecs", ui->codecSelectionGroupBox->isChecked());
+    settings->Set("LastDesired/bUseCustomCodecs", ui->codecSelectionGroupBox->isChecked());
 
-    settings.Set("LastDesired/bAutoFillMetadata", ui->autoFillCheckBox->isChecked());
+    settings->Set("LastDesired/bAutoFillMetadata", ui->autoFillCheckBox->isChecked());
 
     auto* streamSelection = ui->audioVideoButtonGroup->checkedButton();
     if (streamSelection == ui->radVideoAudio)
-        settings.Set("LastDesired/iSelectedStreams", 0);
+        settings->Set("LastDesired/iSelectedStreams", 0);
     else if (streamSelection == ui->radVideoOnly)
-        settings.Set("LastDesired/iSelectedStreams", 1);
+        settings->Set("LastDesired/iSelectedStreams", 1);
     else if (streamSelection == ui->radAudioOnly)
-        settings.Set("LastDesired/iSelectedStreams", 2);
+        settings->Set("LastDesired/iSelectedStreams", 2);
 
-    settings.Set("LastDesired/bOpenInExplorerOnSuccess",
-                 ui->openExplorerOnSuccessCheckBox->isChecked());
-    settings.Set("LastDesired/bPlayResultOnSuccess", ui->playOnSuccessCheckBox->isChecked());
-    settings.Set("LastDesired/bCloseOnSuccess", ui->closeOnSuccessCheckBox->isChecked());
+    settings->Set("LastDesired/bOpenInExplorerOnSuccess", ui->openExplorerOnSuccessCheckBox->isChecked());
+    settings->Set("LastDesired/bPlayResultOnSuccess", ui->playOnSuccessCheckBox->isChecked());
+    settings->Set("LastDesired/bCloseOnSuccess", ui->closeOnSuccessCheckBox->isChecked());
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -330,24 +323,23 @@ void MainWindow::StartEncoding()
         .audioCodec = audioCodec,
         .container = container,
         .sizeKbps = isAutoValue(ui->fileSizeSpinBox)
-            ? std::optional<double>()
-            : ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
+                      ? std::optional<double>()
+                      : ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
         .audioQualityPercent = ui->audioQualitySlider->value() / 100.0,
         .outputWidth = ui->widthSpinBox->value() == 0 ? std::optional<int>()
                                                       : ui->widthSpinBox->value(),
         .outputHeight = ui->heightSpinBox->value() == 0 ? std::optional<int>()
                                                         : ui->heightSpinBox->value(),
         .aspectRatio = ui->aspectRatioSpinBoxH->value() != 0 && ui->aspectRatioSpinBoxV->value() != 0
-            ? QPoint(ui->aspectRatioSpinBoxH->value(),
-                     ui->aspectRatioSpinBoxV->value())
-            : optional<QPoint>(),
+                         ? QPoint(ui->aspectRatioSpinBoxH->value(), ui->aspectRatioSpinBoxV->value())
+                         : optional<QPoint>(),
         .fps = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
         .speed = ui->speedSpinBox->value() == 0 ? optional<double>() : ui->speedSpinBox->value(),
         .customArguments = ui->customCommandTextEdit->toPlainText(),
         .inputMetadata = metadata.has_value() ? metadata : optional<Metadata>(),
-        .minVideoBitrateKbps = settings.get("Main/dMinBitrateVideoKbps").toDouble(),
-        .minAudioBitrateKbps = settings.get("Main/dMinBitrateAudioKbps").toDouble(),
-        .maxAudioBitrateKbps = settings.get("Main/dMaxBitrateAudioKbps").toDouble(),
+        .minVideoBitrateKbps = settings->get("Main/dMinBitrateVideoKbps").toDouble(),
+        .minAudioBitrateKbps = settings->get("Main/dMinBitrateAudioKbps").toDouble(),
+        .maxAudioBitrateKbps = settings->get("Main/dMaxBitrateAudioKbps").toDouble(),
     });
 }
 
@@ -456,11 +448,11 @@ void MainWindow::CheckSpeedConflict()
 void MainWindow::SetProgressShown(bool shown, int progressPercent)
 {
     auto* valueAnimation = new QPropertyAnimation(ui->progressBar, "value");
-    valueAnimation->setDuration(settings.get("Main/iProgressBarAnimDurationMs").toInt());
+    valueAnimation->setDuration(settings->get("Main/iProgressBarAnimDurationMs").toInt());
     valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
 
     auto* heightAnimation = new QPropertyAnimation(ui->progressWidget, "maximumHeight");
-    valueAnimation->setDuration(settings.get("Main/iProgressWidgetAnimDurationMs").toInt());
+    valueAnimation->setDuration(settings->get("Main/iProgressWidgetAnimDurationMs").toInt());
     valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
 
     if (shown && ui->progressWidget->maximumHeight() == 0) {
@@ -491,7 +483,7 @@ void MainWindow::SetAdvancedMode(bool enabled)
     auto* sectionWidthAnim = new QPropertyAnimation(ui->advancedSection, "maximumWidth", this);
     auto* sectionHeightAnim = new QPropertyAnimation(ui->advancedSection, "maximumHeight", this);
     auto* windowSizeAnim = new QPropertyAnimation(this, "size");
-    int duration = settings.get("Main/iSectionAnimDurationMs").toInt();
+    int duration = settings->get("Main/iSectionAnimDurationMs").toInt();
 
     sectionWidthAnim->setDuration(duration);
     sectionWidthAnim->setEasingCurve(QEasingCurve::InOutQuad);
@@ -614,7 +606,7 @@ void MainWindow::OpenInputFile()
 
 void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type, QComboBox* comboBox)
 {
-    QStringList keys = settings.keysInGroup(type);
+    QStringList keys = settings->keysInGroup(type);
 
     if (keys.empty()) {
         notifier.Notify(Severity::Critical, tr("Missing codecs definition").arg(type), tr("Could not find codecs list of type '%1' in the configuration file. "
@@ -629,7 +621,7 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
             notifier.Notify(Severity::Warning, tr("Unsupported codec"), tr("Codec library '%1' does not appear to be supported by our version of "
                                                                            "FFMPEG. It has been skipped. Please validate the "
                                                                            "configuration in %2.")
-                                                                            .arg(codecLibrary, settings.fileName()));
+                                                                            .arg(codecLibrary, settings->fileName()));
             continue;
         }
 
@@ -639,10 +631,10 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
         if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
             notifier.Notify(Severity::Critical, tr("Could not parse codec"), tr("Codec library '%1' could not be parsed. Please validate the "
                                                                                 "configuration in %2. Exiting.")
-                                                                                 .arg(codecLibrary, settings.fileName()));
+                                                                                 .arg(codecLibrary, settings->fileName()));
         }
 
-        QStringList values = settings.get(type + "/" + codecLibrary)
+        QStringList values = settings->get(type + "/" + codecLibrary)
                                  .toString()
                                  .split(QRegularExpression("(\\s*),(\\s*)"));
 
@@ -654,7 +646,7 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
         if (values.size() == 2 && !isConversionOk) {
             notifier.Notify(Severity::Critical, tr("Invalid codec bitrate"), tr("Minimum bitrate of codec '%1' could not be parsed. Please "
                                                                                 "validate the configuration in %2. Exiting.")
-                                                                                 .arg(values.last(), settings.fileName()));
+                                                                                 .arg(values.last(), settings->fileName()));
         }
 
         Codec codec { codecName, codecLibrary, codecMinBitrateKbps };
@@ -669,22 +661,22 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
 
 void MainWindow::ParseContainers(QHash<QString, Container>* containers, QComboBox* comboBox)
 {
-    QStringList keys = settings.keysInGroup("Containers");
+    QStringList keys = settings->keysInGroup("Containers");
 
     if (keys.empty()) {
         notifier.Notify(Severity::Critical, tr("Missing containers definition"), tr("Could not find list of container in the configuration file. Please "
                                                                                     "validate the configuration in %1. Exiting.")
-                                                                                     .arg(settings.fileName()));
+                                                                                     .arg(settings->fileName()));
     }
 
     for (const QString& containerName : keys) {
         if (QRegularExpression("[^-_a-z0-9]").match(containerName).hasMatch()) {
             notifier.Notify(Severity::Critical, tr("Invalid container name"), tr("Name of container '%1' could not be parsed. Please "
                                                                                  "validate the configuration in %2. Exiting.")
-                                                                                  .arg(containerName, settings.fileName()));
+                                                                                  .arg(containerName, settings->fileName()));
         }
 
-        QStringList supportedCodecs = settings.get("Containers/" + containerName).toString().split(QRegularExpression("(\\s*),(\\s*)"));
+        QStringList supportedCodecs = settings->get("Containers/" + containerName).toString().split(QRegularExpression("(\\s*),(\\s*)"));
         Container container { containerName, supportedCodecs };
         containers->insert(containerName, container);
 
@@ -701,20 +693,20 @@ void MainWindow::ParsePresets(QHash<QString, Preset>& presets,
                               QHash<QString, Container>& containers,
                               QComboBox* comboBox)
 {
-    QStringList keys = settings.keysInGroup("Presets");
+    QStringList keys = settings->keysInGroup("Presets");
     QString supportedCodecs = encoder.getAvailableFormats();
 
     for (const QString& key : keys) {
         Preset preset;
         preset.name = key;
 
-        QString data = settings.get("Presets/" + key).toString();
+        QString data = settings->get("Presets/" + key).toString();
         QStringList librariesData = data.split("+");
 
         if (librariesData.size() != 3) {
             notifier.Notify(Severity::Error, tr("Could not parse presets"), tr("Failed to parse presets as the data is malformed. Please check the "
                                                                                "configuration in %1.")
-                                                                                .arg(settings.fileName()));
+                                                                                .arg(settings->fileName()));
         }
 
         optional<Codec> videoCodec;

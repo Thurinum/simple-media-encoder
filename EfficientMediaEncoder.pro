@@ -8,15 +8,15 @@ DEFINES += QT_DISABLE_DEPRECATED_UP_TO=0x060600
 INCLUDEPATH += $$PWD/include
 
 SOURCES += \
-	$$files("$$PWD/src/*.cpp", true)
+    $$files("$$PWD/src/*.cpp", true)
 
 HEADERS += \
-	$$files("$$PWD/include/*.hpp", true)
+    $$files("$$PWD/include/*.hpp", true)
 
 FORMS += \
-	$$files("$$PWD/ui/*.ui", true)
+    $$files("$$PWD/ui/*.ui", true)
 
 DISTFILES += \
-      $$files("$$PWD/bin/*	", true)
+    $$files("$$PWD/bin/*", true)
 
 DESTDIR = $$PWD/bin
