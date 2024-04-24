@@ -13,8 +13,9 @@ int main(int argc, char* argv[])
 
     MediaEncoder* encoder = new MediaEncoder(&app);
     PlatformInfo platformInfo;
+    MessageBoxNotifier notifier;
 
-    MainWindow w(*encoder, platformInfo);
+    MainWindow w(*encoder, notifier, platformInfo);
     w.setWindowIcon(QIcon("appicon.ico"));
     w.show();
 

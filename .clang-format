@@ -2,3 +2,5 @@ BasedOnStyle: WebKit
 ---
 Language: Cpp
 AlignAfterOpenBracket: Align
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+BreakBeforeBraces: Linux

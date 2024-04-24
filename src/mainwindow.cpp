@@ -16,14 +16,16 @@
 #include <QWhatsThis>
 
 #include "mainwindow.hpp"
+#include "notifier.hpp"
 #include "ui_mainwindow.h"
 
 using std::optional;
 
-MainWindow::MainWindow(MediaEncoder& encoder, const PlatformInfo& platformInfo, QWidget* parent)
+MainWindow::MainWindow(MediaEncoder& encoder, const Notifier& notifier, const PlatformInfo& platformInfo, QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , encoder(encoder)
+    , notifier(notifier)
     , platformInfo(platformInfo)
 {
     ui->setupUi(this);
@@ -51,72 +53,50 @@ MainWindow::~MainWindow()
     delete warnings;
 }
 
-void MainWindow::Notify(Severity severity, const QString& title, const QString& message, const QString& details)
-{
-    QFont font;
-    font.setBold(true);
-
-    QMessageBox dialog;
-    dialog.setWindowTitle(QApplication::applicationName());
-    dialog.setIcon(severity == Severity::Critical ? QMessageBox::Critical
-                                                  : (QMessageBox::Icon)severity);
-    dialog.setText("<font size=5><b>" + title + ".</b></font>");
-    dialog.setInformativeText(message);
-    dialog.setDetailedText(details);
-    dialog.setStandardButtons(QMessageBox::Ok);
-    dialog.exec();
-
-    // wait until event loop has begun before attempting to exit
-    if (severity == Severity::Critical) {
-        QMetaObject::invokeMethod(QApplication::instance(), "exit", Qt::QueuedConnection);
-        QApplication::exit();
-    }
-}
-
 void MainWindow::SetupSettings()
 {
     connect(&settings, &Settings::notInitialized, [this]() {
-        Notify(Severity::Critical,
-               tr("Config not initialized"),
-               tr("Configuration has not been initialized. Please contact the developers."));
+        notifier.Notify(Severity::Critical,
+                        tr("Config not initialized"),
+                        tr("Configuration has not been initialized. Please contact the developers."));
     });
 
     settings.Init("config");
 
     connect(&settings, &Settings::configNotFound, [this](const QString& fileName) {
-        Notify(Severity::Critical,
-               tr("Config not found"),
-               tr("Default configuration file '%1' is missing. Please reinstall the program.").arg(fileName));
+        notifier.Notify(Severity::Critical,
+                        tr("Config not found"),
+                        tr("Default configuration file '%1' is missing. Please reinstall the program.").arg(fileName));
     });
     connect(&settings, &Settings::keyCreated, [this](const QString& key) {
-        Notify(Severity::Warning,
-               tr("Config key created"),
-               tr("A new configuration key '%1' has been created.").arg(key));
+        notifier.Notify(Severity::Warning,
+                        tr("Config key created"),
+                        tr("A new configuration key '%1' has been created.").arg(key));
     });
     connect(&settings, &Settings::keyFallbackUsed, [this](const QString& key) {
-        Notify(Severity::Warning,
-               tr("Config fallback used"),
-               tr("Configuration key '%1' was missing in '%2' and was created from the "
-                  "fallback value in the default configuration file.")
-                   .arg(key, settings.fileName()));
+        notifier.Notify(Severity::Warning,
+                        tr("Config fallback used"),
+                        tr("Configuration key '%1' was missing in '%2' and was created from the "
+                           "fallback value in the default configuration file.")
+                            .arg(key, settings.fileName()));
     });
     connect(&settings, &Settings::keyNotFound, [this](const QString& key) {
-        Notify(Severity::Critical,
-               tr("Config key not found"),
-               tr("Configuration key '%1' is missing. Please add it manually in %2 or "
-                  "reinstall the program.")
-                   .arg(key, settings.fileName()));
+        notifier.Notify(Severity::Critical,
+                        tr("Config key not found"),
+                        tr("Configuration key '%1' is missing. Please add it manually in %2 or "
+                           "reinstall the program.")
+                            .arg(key, settings.fileName()));
     });
 }
 
 void MainWindow::CheckForBinaries()
 {
     if (platformInfo.isWindows() && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe"))) {
-        Notify(Severity::Critical,
-               tr("Could not find ffmpeg binaries"),
-               tr("If compiling from source, this is not a bug. Please download ffmpeg.exe and ffprobe.exe and "
-                  "place them into the binaries directory. Otherwise, there is an error with the release; please "
-                  "report this as a bug."));
+        notifier.Notify(Severity::Critical,
+                        tr("Could not find ffmpeg binaries"),
+                        tr("If compiling from source, this is not a bug. Please download ffmpeg.exe and ffprobe.exe and "
+                           "place them into the binaries directory. Otherwise, there is an error with the release; please "
+                           "report this as a bug."));
     }
 }
 
@@ -126,7 +106,7 @@ void MainWindow::SetupMenu()
     menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
     menu->addSeparator();
     menu->addAction(tr("About"), [this]() {
-        Notify(Severity::Info, "About " + QApplication::applicationName(), settings.get("Main/sAbout").toString());
+        notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), settings.get("Main/sAbout").toString());
     });
     menu->addAction(tr("About Qt"), &QApplication::aboutQt);
     ui->infoMenuToolButton->setMenu(menu);
@@ -333,9 +313,9 @@ void MainWindow::StartEncoding()
     QString inputPath = ui->inputFileLineEdit->text();
 
     if (!QFile::exists(inputPath)) {
-        Notify(Severity::Info,
-               tr("File not found"),
-               tr("File '%1' does not exist. Please select a valid file.").arg(inputPath));
+        notifier.Notify(Severity::Info,
+                        tr("File not found"),
+                        tr("File '%1' does not exist. Please select a valid file.").arg(inputPath));
         return;
     }
 
@@ -370,7 +350,7 @@ void MainWindow::StartEncoding()
                                  "Overwrite?",
                                  "Output at path '" + outputPath + "' already exists. Overwrite it?")
             == QMessageBox::No) {
-        Notify(Severity::Info, "Operation canceled", "Compression aborted.");
+        notifier.Notify(Severity::Info, "Operation canceled", "Compression aborted.");
         return;
     }
 
@@ -436,7 +416,7 @@ void MainWindow::HandleSuccess(const MediaEncoder::Options& options,
                        .arg(QString::number(*options.sizeKbps), QString::number(output.size() / 125.0));
     }
 
-    Notify(Severity::Info, tr("Compressed successfully"), summary);
+    notifier.Notify(Severity::Info, tr("Compressed successfully"), summary);
 
     SetProgressShown(false);
 
@@ -448,9 +428,9 @@ void MainWindow::HandleSuccess(const MediaEncoder::Options& options,
         input.open(QIODevice::WriteOnly);
 
         if (!(input.remove())) {
-            Notify(Severity::Error,
-                   tr("Failed to remove input file"),
-                   output.errorString() + "\n\n" + options.inputPath);
+            notifier.Notify(Severity::Error,
+                            tr("Failed to remove input file"),
+                            output.errorString() + "\n\n" + options.inputPath);
         } else {
             ui->inputFileLineEdit->clear();
         }
@@ -473,7 +453,7 @@ void MainWindow::HandleSuccess(const MediaEncoder::Options& options,
 
 void MainWindow::HandleFailure(const QString& shortError, const QString& longError)
 {
-    Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
+    notifier.Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
     SetProgressShown(false);
 }
 
@@ -616,15 +596,15 @@ void MainWindow::SetControlsState(QAbstractButton* button)
 void MainWindow::ShowMetadata()
 {
     if (!metadata.has_value()) {
-        Notify(Severity::Info, tr("No file selected"), tr("Please select a file to continue."));
+        notifier.Notify(Severity::Info, tr("No file selected"), tr("Please select a file to continue."));
         return;
     }
 
-    Notify(Severity::Info,
-           tr("Metadata"),
-           tr("Video codec: %1\nAudio codec: %2\nContainer: %3\nAudio bitrate: %4 kbps\n\n "
-              "(complete data to be implemented in a future update)")
-               .arg(metadata->videoCodec, metadata->audioCodec, "N/A", QString::number(metadata->audioBitrateKbps)));
+    notifier.Notify(Severity::Info,
+                    tr("Metadata"),
+                    tr("Video codec: %1\nAudio codec: %2\nContainer: %3\nAudio bitrate: %4 kbps\n\n "
+                       "(complete data to be implemented in a future update)")
+                        .arg(metadata->videoCodec, metadata->audioCodec, "N/A", QString::number(metadata->audioBitrateKbps)));
 }
 
 void MainWindow::SelectPresetCodecs()
@@ -672,23 +652,23 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
     QStringList keys = settings.keysInGroup(type);
 
     if (keys.empty()) {
-        Notify(Severity::Critical,
-               tr("Missing codecs definition").arg(type),
-               tr("Could not find codecs list of type '%1' in the configuration file. "
-                  "Please validate the configuration in %2. Exiting.")
-                   .arg(type));
+        notifier.Notify(Severity::Critical,
+                        tr("Missing codecs definition").arg(type),
+                        tr("Could not find codecs list of type '%1' in the configuration file. "
+                           "Please validate the configuration in %2. Exiting.")
+                            .arg(type));
     }
 
     QString availableCodecs = encoder.getAvailableFormats();
 
     for (const QString& codecLibrary : keys) {
         if (!availableCodecs.contains(codecLibrary)) {
-            Notify(Severity::Warning,
-                   tr("Unsupported codec"),
-                   tr("Codec library '%1' does not appear to be supported by our version of "
-                      "FFMPEG. It has been skipped. Please validate the "
-                      "configuration in %2.")
-                       .arg(codecLibrary, settings.fileName()));
+            notifier.Notify(Severity::Warning,
+                            tr("Unsupported codec"),
+                            tr("Codec library '%1' does not appear to be supported by our version of "
+                               "FFMPEG. It has been skipped. Please validate the "
+                               "configuration in %2.")
+                                .arg(codecLibrary, settings.fileName()));
             continue;
         }
 
@@ -696,11 +676,11 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
             continue;
 
         if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
-            Notify(Severity::Critical,
-                   tr("Could not parse codec"),
-                   tr("Codec library '%1' could not be parsed. Please validate the "
-                      "configuration in %2. Exiting.")
-                       .arg(codecLibrary, settings.fileName()));
+            notifier.Notify(Severity::Critical,
+                            tr("Could not parse codec"),
+                            tr("Codec library '%1' could not be parsed. Please validate the "
+                               "configuration in %2. Exiting.")
+                                .arg(codecLibrary, settings.fileName()));
         }
 
         QStringList values = settings.get(type + "/" + codecLibrary)
@@ -713,11 +693,11 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
         double codecMinBitrateKbps = values.size() == 2 ? values.last().toDouble(&isConversionOk) : 0;
 
         if (values.size() == 2 && !isConversionOk) {
-            Notify(Severity::Critical,
-                   tr("Invalid codec bitrate"),
-                   tr("Minimum bitrate of codec '%1' could not be parsed. Please "
-                      "validate the configuration in %2. Exiting.")
-                       .arg(values.last(), settings.fileName()));
+            notifier.Notify(Severity::Critical,
+                            tr("Invalid codec bitrate"),
+                            tr("Minimum bitrate of codec '%1' could not be parsed. Please "
+                               "validate the configuration in %2. Exiting.")
+                                .arg(values.last(), settings.fileName()));
         }
 
         Codec codec { codecName, codecLibrary, codecMinBitrateKbps };
@@ -735,20 +715,20 @@ void MainWindow::ParseContainers(QHash<QString, Container>* containers, QComboBo
     QStringList keys = settings.keysInGroup("Containers");
 
     if (keys.empty()) {
-        Notify(Severity::Critical,
-               tr("Missing containers definition"),
-               tr("Could not find list of container in the configuration file. Please "
-                  "validate the configuration in %1. Exiting.")
-                   .arg(settings.fileName()));
+        notifier.Notify(Severity::Critical,
+                        tr("Missing containers definition"),
+                        tr("Could not find list of container in the configuration file. Please "
+                           "validate the configuration in %1. Exiting.")
+                            .arg(settings.fileName()));
     }
 
     for (const QString& containerName : keys) {
         if (QRegularExpression("[^-_a-z0-9]").match(containerName).hasMatch()) {
-            Notify(Severity::Critical,
-                   tr("Invalid container name"),
-                   tr("Name of container '%1' could not be parsed. Please "
-                      "validate the configuration in %2. Exiting.")
-                       .arg(containerName, settings.fileName()));
+            notifier.Notify(Severity::Critical,
+                            tr("Invalid container name"),
+                            tr("Name of container '%1' could not be parsed. Please "
+                               "validate the configuration in %2. Exiting.")
+                                .arg(containerName, settings.fileName()));
         }
 
         QStringList supportedCodecs = settings.get("Containers/" + containerName).toString().split(QRegularExpression("(\\s*),(\\s*)"));
@@ -779,11 +759,11 @@ void MainWindow::ParsePresets(QHash<QString, Preset>& presets,
         QStringList librariesData = data.split("+");
 
         if (librariesData.size() != 3) {
-            Notify(Severity::Error,
-                   tr("Could not parse presets"),
-                   tr("Failed to parse presets as the data is malformed. Please check the "
-                      "configuration in %1.")
-                       .arg(settings.fileName()));
+            notifier.Notify(Severity::Error,
+                            tr("Could not parse presets"),
+                            tr("Failed to parse presets as the data is malformed. Please check the "
+                               "configuration in %1.")
+                                .arg(settings.fileName()));
         }
 
         optional<Codec> videoCodec;
@@ -807,12 +787,12 @@ void MainWindow::ParsePresets(QHash<QString, Preset>& presets,
         }
 
         if (!videoCodec.has_value() || !audioCodec.has_value()) {
-            Notify(Severity::Warning,
-                   tr("Preset not supported"),
-                   tr("Skipped encoding quality preset '%1' preset because it contains no "
-                      "available encoders.")
-                       .arg(preset.name),
-                   tr("Available codecs: %1\nPreset data: %2").arg(supportedCodecs, data));
+            notifier.Notify(Severity::Warning,
+                            tr("Preset not supported"),
+                            tr("Skipped encoding quality preset '%1' preset because it contains no "
+                               "available encoders.")
+                                .arg(preset.name),
+                            tr("Available codecs: %1\nPreset data: %2").arg(supportedCodecs, data));
             continue;
         }
 
@@ -835,7 +815,7 @@ void MainWindow::ParseMetadata(const QString& path)
     if (std::holds_alternative<Metadata::Error>(result)) {
         Metadata::Error error = std::get<Metadata::Error>(result);
 
-        Notify(Severity::Error, tr("Failed to parse media metadata"), error.summary, error.details);
+        notifier.Notify(Severity::Error, tr("Failed to parse media metadata"), error.summary, error.details);
         ui->inputFileLineEdit->clear();
         return;
     }

@@ -2,6 +2,7 @@
 #define MAINWINDOW_HPP
 
 #include "encoder.hpp"
+#include "notifier.hpp"
 #include "platform_info.hpp"
 #include "settings.hpp"
 #include "warnings.hpp"
@@ -30,17 +31,8 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit MainWindow(MediaEncoder& encoder, const PlatformInfo& platformInfo, QWidget* parent = nullptr);
+    explicit MainWindow(MediaEncoder& encoder, const Notifier& notifier, const PlatformInfo& platformInfo, QWidget* parent = nullptr);
     ~MainWindow() override;
-
-    enum Severity {
-        Info = QMessageBox::Information,
-        Warning = QMessageBox::Warning,
-        Error = QMessageBox::Critical,
-        Critical // Will terminate program
-    };
-
-    void Notify(Severity severity, const QString& title, const QString& message, const QString& details = "");
 
 protected:
     // initialization
@@ -95,6 +87,7 @@ private:
 
     // FIXME: Modify so it can be const (services should be immutable)
     MediaEncoder& encoder;
+    const Notifier& notifier;
     const PlatformInfo& platformInfo;
 };
 
