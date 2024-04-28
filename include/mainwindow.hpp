@@ -57,6 +57,7 @@ protected:
                        const MediaEncoder::ComputedOptions& computed,
                        QFile& output);
     void HandleFailure(const QString& shortError, const QString& longError);
+    void ShowAbout();
 
 private slots:
     void StartEncoding();
@@ -85,6 +86,7 @@ private:
     void SetProgressShown(bool shown, int progressPercent = 0);
     void ValidateSelectedUrl();
     void ValidateSelectedDir();
+    void SetupAdvancedModeAnimation();
 
     Ui::MainWindow* ui;
     Warnings* warnings;
@@ -94,6 +96,10 @@ private:
     QHash<QString, Container> containers;
     QHash<QString, Preset> presets;
     optional<Metadata> metadata;
+
+    QPropertyAnimation* sectionWidthAnim;
+    QPropertyAnimation* sectionHeightAnim;
+    QPropertyAnimation* windowSizeAnim;
 
     MediaEncoder& encoder;
     QSharedPointer<Settings> settings;

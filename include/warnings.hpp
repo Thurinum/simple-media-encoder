@@ -8,16 +8,16 @@
 class Warnings
 {
 public:
-	Warnings(QWidget* widget);
+    Warnings(QWidget* widget);
 
-	void Add(const QString& key, const QString& text);
-	void Remove(const QString& key);
+    void Add(const QString& key, const QString& text);
+    void Remove(const QString& key);
 
 private:
-	void UpdateWidget();
+    void UpdateWidget();
 
-	QWidget*			m_tooltipWidget;
-	QHash<QString, QString> m_warnings;
+    QWidget* m_tooltipWidget;
+    QHash<QString, QString> m_warnings;
 };
 
 #endif // WARNINGS_HPP

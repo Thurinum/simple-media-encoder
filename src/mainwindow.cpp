@@ -43,6 +43,8 @@ MainWindow::MainWindow(
     this->resize(this->minimumSizeHint());
     this->warnings = new Warnings(ui->warningTooltipButton);
 
+    SetupAdvancedModeAnimation();
+
     ui->audioVideoButtonGroup->setId(ui->radVideoAudio, 0);
     ui->audioVideoButtonGroup->setId(ui->radVideoOnly, 1);
     ui->audioVideoButtonGroup->setId(ui->radAudioOnly, 2);
@@ -81,12 +83,10 @@ void MainWindow::SetupMenu()
 
     menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
     menu->addSeparator();
-    menu->addAction(tr("About"), [this]() {
-        notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), settings->get("Main/sAbout").toString());
-    });
+    menu->addAction(tr("About"), this, &MainWindow::ShowAbout);
     menu->addAction(tr("About Qt"), &QApplication::aboutQt);
+
     ui->infoMenuToolButton->setMenu(menu);
-    connect(ui->infoMenuToolButton, &QToolButton::pressed, ui->infoMenuToolButton, &QToolButton::showMenu);
 }
 
 void MainWindow::SetupEncodingCallbacks()
@@ -97,7 +97,7 @@ void MainWindow::SetupEncodingCallbacks()
     connect(&encoder, &MediaEncoder::encodingProgressUpdate, this, [this](int progress) {
         SetProgressShown(true, progress);
     });
-    connect(&encoder, &MediaEncoder::metadataComputed, [this]() {
+    connect(&encoder, &MediaEncoder::metadataComputed, this, [this]() {
         SetProgressShown(false);
         ui->progressBar->setRange(0, 100);
         ui->progressBarLabel->setText(tr("Compressing..."));
@@ -328,9 +328,8 @@ void MainWindow::CheckAspectRatioConflict()
     bool hasCustomAspect = ui->widthSpinBox->value() != 0 || ui->heightSpinBox->value() != 0;
 
     if (hasCustomScale && hasCustomAspect) {
-        warnings->Add("aspectRatioConflict",
-                      tr("A custom aspect ratio has been set. It will take priority over the "
-                         "one defined by custom scaling."));
+        warnings->Add("aspectRatioConflict", tr("A custom aspect ratio has been set. It will take priority over the "
+                                                "one defined by custom scaling."));
     } else {
         warnings->Remove("aspectRatioConflict");
     }
@@ -342,10 +341,9 @@ void MainWindow::CheckSpeedConflict()
     bool hasFps = ui->fpsSpinBox->value() != 0;
 
     if (hasSpeed && hasFps) {
-        warnings->Add("speedConflict",
-                      tr("A custom speed was set alongside a custom fps; this may cause "
-                         "strange behavior. Note that fps is automatically compensated when "
-                         "changing the speed."));
+        warnings->Add("speedConflict", tr("A custom speed was set alongside a custom fps; this may cause "
+                                          "strange behavior. Note that fps is automatically compensated when "
+                                          "changing the speed."));
     } else {
         warnings->Remove("speedConflict");
     }
@@ -369,6 +367,11 @@ void MainWindow::UpdateAudioQualityLabel(int value)
 void MainWindow::SetAllowPresetSelection(bool allowed)
 {
     ui->qualityPresetComboBox->setEnabled(!allowed);
+}
+
+void MainWindow::ShowAbout()
+{
+    notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), settings->get("Main/sAbout").toString());
 }
 
 void MainWindow::SetProgressShown(bool shown, int progressPercent)
@@ -406,25 +409,6 @@ void MainWindow::SetProgressShown(bool shown, int progressPercent)
 
 void MainWindow::SetAdvancedMode(bool enabled)
 {
-    // FIXME: Declare and connect once
-    auto* sectionWidthAnim = new QPropertyAnimation(ui->advancedSection, "maximumWidth", this);
-    auto* sectionHeightAnim = new QPropertyAnimation(ui->advancedSection, "maximumHeight", this);
-    auto* windowSizeAnim = new QPropertyAnimation(this, "size");
-    int duration = settings->get("Main/iSectionAnimDurationMs").toInt();
-
-    sectionWidthAnim->setDuration(duration);
-    sectionWidthAnim->setEasingCurve(QEasingCurve::InOutQuad);
-    sectionHeightAnim->setDuration(duration);
-    sectionHeightAnim->setEasingCurve(QEasingCurve::InOutQuad);
-    windowSizeAnim->setDuration(duration);
-    windowSizeAnim->setEasingCurve(QEasingCurve::InOutQuad);
-
-    connect(sectionWidthAnim, &QPropertyAnimation::finished, [this, windowSizeAnim]() {
-        windowSizeAnim->setStartValue(this->size());
-        windowSizeAnim->setEndValue(this->minimumSizeHint());
-        windowSizeAnim->start();
-    });
-
     if (enabled) {
         sectionWidthAnim->setStartValue(0);
         sectionWidthAnim->setEndValue(1000);
@@ -555,15 +539,17 @@ void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type,
         if (codecLibrary.contains("nvenc") && !platformInfo.isNvidia())
             continue;
 
-        if (QRegularExpression("[^-_a-z0-9]").match(codecLibrary).hasMatch()) {
+        static QRegularExpression expression("[^-_a-z0-9]");
+        if (expression.match(codecLibrary).hasMatch()) {
             notifier.Notify(Severity::Critical, tr("Could not parse codec"), tr("Codec library '%1' could not be parsed. Please validate the "
                                                                                 "configuration in %2. Exiting.")
                                                                                  .arg(codecLibrary, settings->fileName()));
         }
 
+        static QRegularExpression splitExpression("(\\s*),(\\s*)");
         QStringList values = settings->get(type + "/" + codecLibrary)
                                  .toString()
-                                 .split(QRegularExpression("(\\s*),(\\s*)"));
+                                 .split(splitExpression);
 
         QString codecName = values.first();
 
@@ -597,13 +583,15 @@ void MainWindow::ParseContainers(QHash<QString, Container>* containers, QComboBo
     }
 
     for (const QString& containerName : keys) {
-        if (QRegularExpression("[^-_a-z0-9]").match(containerName).hasMatch()) {
+        static QRegularExpression expression("[^-_a-z0-9]");
+        if (expression.match(containerName).hasMatch()) {
             notifier.Notify(Severity::Critical, tr("Invalid container name"), tr("Name of container '%1' could not be parsed. Please "
                                                                                  "validate the configuration in %2. Exiting.")
                                                                                   .arg(containerName, settings->fileName()));
         }
 
-        QStringList supportedCodecs = settings->get("Containers/" + containerName).toString().split(QRegularExpression("(\\s*),(\\s*)"));
+        static QRegularExpression splitExpression("(\\s*),(\\s*)");
+        QStringList supportedCodecs = settings->get("Containers/" + containerName).toString().split(splitExpression);
         Container container { containerName, supportedCodecs };
         containers->insert(containerName, container);
 
@@ -738,4 +726,27 @@ void MainWindow::ValidateSelectedDir()
         ui->outputFolderLineEdit->clear();
 
     ui->warningTooltipButton->setVisible(false);
+}
+
+void MainWindow::SetupAdvancedModeAnimation()
+{
+    const int duration = settings->get("Main/iSectionAnimDurationMs").toInt();
+
+    sectionWidthAnim = new QPropertyAnimation(ui->advancedSection, "maximumWidth", this);
+    sectionWidthAnim->setDuration(duration);
+    sectionWidthAnim->setEasingCurve(QEasingCurve::InOutQuad);
+
+    sectionHeightAnim = new QPropertyAnimation(ui->advancedSection, "maximumHeight", this);
+    sectionHeightAnim->setDuration(duration);
+    sectionHeightAnim->setEasingCurve(QEasingCurve::InOutQuad);
+
+    windowSizeAnim = new QPropertyAnimation(this, "size");
+    windowSizeAnim->setDuration(duration);
+    windowSizeAnim->setEasingCurve(QEasingCurve::InOutQuad);
+
+    connect(sectionWidthAnim, &QPropertyAnimation::finished, windowSizeAnim, [this]() {
+        windowSizeAnim->setStartValue(this->size());
+        windowSizeAnim->setEndValue(this->minimumSizeHint());
+        windowSizeAnim->start();
+    });
 }
