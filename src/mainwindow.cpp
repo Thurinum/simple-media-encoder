@@ -371,7 +371,17 @@ void MainWindow::SetAllowPresetSelection(bool allowed)
 
 void MainWindow::ShowAbout()
 {
-    notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), settings->get("Main/sAbout").toString());
+    static const QString msg = "\r\n<h4>Acknowledgements</h4>\r\n"
+
+                               "A convenient graphical frontend for <i>ffmpeg</i>, the media encoding and decoding suite.<br /><br />\r\n"
+                               "On Linux, uses system <a href=https://ffmpeg.org/ffprobe.html>ffprobe</a> and <a href=https://ffmpeg.org>ffmpeg</a>.<br />\r\n"
+                               "On Windows, uses pre-compiled binaries of <i>ffprobe.exe</i> and <i>ffmpeg.exe</i> from <a href=https://github.com/GyanD/codexffmpeg/releases/>gyan.dev</a>.<br /><br />\r\nBuilt with <a href=https://www.qt.io>Qt</a>, the complete toolkit for cross-platform application development, under GPLv3 licensing. See About Qt.<br /><br />\r\n"
+                               "For more information, visit our <a href=https://github.com/Thurinum/free-video-compressor>GitHub repository</a>.\r\n"
+
+                               "<h4>Credits</h4>\r\n"
+                               "Special thanks to Theodore L'Heureux for his helpful advice on refactoring and beta-testing of the product.\r\n";
+
+    notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), msg);
 }
 
 void MainWindow::SetProgressShown(bool shown, int progressPercent)
