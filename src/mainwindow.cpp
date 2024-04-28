@@ -12,18 +12,21 @@
 #include <QProcess>
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
+#include <QThread>
 #include <QTimer>
 #include <QWhatsThis>
 
 #include "mainwindow.hpp"
 #include "notifier.hpp"
+#include "serializer.hpp"
 #include "ui_mainwindow.h"
 
 using std::optional;
 
 MainWindow::MainWindow(
     MediaEncoder& encoder,
-    const QPointer<Settings> settings,
+    QSharedPointer<Settings> settings,
+    QSharedPointer<Serializer> serializer,
     const Notifier& notifier,
     const PlatformInfo& platformInfo,
     QWidget* parent
@@ -31,13 +34,18 @@ MainWindow::MainWindow(
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , encoder(encoder)
-    , settings(settings)
+    , settings(std::move(settings))
+    , serializer(std::move(serializer))
     , notifier(notifier)
     , platformInfo(platformInfo)
 {
     ui->setupUi(this);
     this->resize(this->minimumSizeHint());
     this->warnings = new Warnings(ui->warningTooltipButton);
+
+    ui->audioVideoButtonGroup->setId(ui->radVideoAudio, 0);
+    ui->audioVideoButtonGroup->setId(ui->radVideoOnly, 1);
+    ui->audioVideoButtonGroup->setId(ui->radAudioOnly, 2);
 
     CheckForBinaries();
 
@@ -152,118 +160,70 @@ void MainWindow::SetupUiInteractions()
 
 void MainWindow::LoadState()
 {
-    ui->warningTooltipButton->setVisible(false);
+    serializer->deserialize(ui->advancedModeCheckBox);
+    SetAdvancedMode(ui->advancedModeCheckBox->isChecked());
 
-    if (!settings->get("LastDesired/bAdvancedMode").toBool())
-        ui->advancedModeCheckBox->click();
-
-    QString selectedUrl = settings->get("LastDesired/sInputFile").toString();
-    QString selectedDir = settings->get("LastDesired/sOutputDir").toString();
-
-    if (selectedUrl == "" || QFile::exists(selectedUrl))
-        ui->inputFileLineEdit->setText(selectedUrl);
-    if (selectedDir == "" || QDir(selectedDir).exists())
-        ui->outputFolderLineEdit->setText(selectedDir);
-
-    if (QFile::exists(selectedUrl))
-        ParseMetadata(selectedUrl);
-
-    ui->outputFileNameLineEdit->setText(settings->get("LastDesired/sFileNameOrSuffix").toString());
-
-    ui->fileSizeSpinBox->setValue(settings->get("LastDesired/dFileSize").toDouble());
-    ui->fileSizeUnitComboBox->setCurrentText(settings->get("LastDesired/sFileSizeUnit").toString());
-    ui->audioQualitySlider->setValue(settings->get("LastDesired/iQualityRatio").toInt());
-    emit ui->audioQualitySlider->valueChanged(ui->audioQualitySlider->value());
-
-    ui->videoCodecComboBox->setCurrentText(settings->get("LastDesired/sVideoCodec").toString());
-    ui->audioCodecComboBox->setCurrentText(settings->get("LastDesired/sAudioCodec").toString());
-    ui->containerComboBox->setCurrentText(settings->get("LastDesired/sContainer").toString());
-
-    ui->widthSpinBox->setValue(settings->get("LastDesired/iWidth").toInt());
-    ui->heightSpinBox->setValue(settings->get("LastDesired/iHeight").toInt());
-
-    ui->aspectRatioSpinBoxH->setValue(settings->get("LastDesired/iAspectRatioH").toInt());
-    ui->aspectRatioSpinBoxV->setValue(settings->get("LastDesired/iAspectRatioV").toInt());
-
-    ui->customCommandTextEdit->setPlainText(settings->get("LastDesired/sCustomParameters").toString());
-
-    ui->outputFileNameSuffixCheckBox->setChecked(settings->get("LastDesired/bHasFileSuffix").toBool());
-    ui->warnOnOverwriteCheckBox->setChecked(settings->get("LastDesired/bWarnOnOverwrite").toBool());
-
-    ui->speedSpinBox->setValue(settings->get("LastDesired/dSpeed").toDouble());
-    ui->fpsSpinBox->setValue(settings->get("LastDesired/iFps").toInt());
-
-    ui->autoFillCheckBox->setChecked(settings->get("LastDesired/bAutoFillMetadata").toBool());
-
-    ui->deleteOnSuccessCheckBox->setChecked(settings->get("LastDesired/bDeleteInputOnSuccess").toBool());
-
-    switch (settings->get("LastDesired/iSelectedStreams").toInt()) {
-    case 0:
-        ui->radVideoAudio->setChecked(true);
-        break;
-    case 1:
-        ui->radVideoOnly->setChecked(true);
-        break;
-    case 2:
-        ui->radAudioOnly->setChecked(true);
-        break;
-    }
-
-    ui->openExplorerOnSuccessCheckBox->setChecked(settings->get("LastDesired/bOpenInExplorerOnSuccess").toBool());
-    ui->playOnSuccessCheckBox->setChecked(settings->get("LastDesired/bPlayResultOnSuccess").toBool());
-    ui->closeOnSuccessCheckBox->setChecked(settings->get("LastDesired/bCloseOnSuccess").toBool());
-
-    ui->codecSelectionGroupBox->setChecked(settings->get("LastDesired/bUseCustomCodecs").toBool());
-
+    serializer->deserialize(ui->audioVideoButtonGroup);
     SetControlsState(ui->audioVideoButtonGroup->checkedButton());
+
+    serializer->deserialize(ui->outputFileNameLineEdit);
+    ValidateSelectedUrl();
+
+    serializer->deserialize(ui->outputFolderLineEdit);
+    ValidateSelectedDir();
+
+    serializer->deserialize(ui->aspectRatioSpinBoxH);
+    serializer->deserialize(ui->aspectRatioSpinBoxV);
+    serializer->deserialize(ui->audioCodecComboBox);
+    serializer->deserialize(ui->audioQualitySlider);
+    serializer->deserialize(ui->autoFillCheckBox);
+    serializer->deserialize(ui->closeOnSuccessCheckBox);
+    serializer->deserialize(ui->codecSelectionGroupBox);
+    serializer->deserialize(ui->containerComboBox);
+    serializer->deserialize(ui->customCommandTextEdit);
+    serializer->deserialize(ui->deleteOnSuccessCheckBox);
+    serializer->deserialize(ui->fileSizeSpinBox);
+    serializer->deserialize(ui->fileSizeUnitComboBox);
+    serializer->deserialize(ui->fpsSpinBox);
+    serializer->deserialize(ui->heightSpinBox);
+    serializer->deserialize(ui->inputFileLineEdit);
+    serializer->deserialize(ui->openExplorerOnSuccessCheckBox);
+    serializer->deserialize(ui->outputFileNameSuffixCheckBox);
+    serializer->deserialize(ui->playOnSuccessCheckBox);
+    serializer->deserialize(ui->speedSpinBox);
+    serializer->deserialize(ui->videoCodecComboBox);
+    serializer->deserialize(ui->warnOnOverwriteCheckBox);
+    serializer->deserialize(ui->widthSpinBox);
 }
 
 void MainWindow::SaveState()
 {
-    settings->Set("LastDesired/bAdvancedMode", ui->advancedModeCheckBox->isChecked());
-
-    settings->Set("LastDesired/sInputFile", ui->inputFileLineEdit->text());
-    settings->Set("LastDesired/sOutputDir", ui->outputFolderLineEdit->text());
-    settings->Set("LastDesired/dFileSize", ui->fileSizeSpinBox->value());
-    settings->Set("LastDesired/sFileSizeUnit", ui->fileSizeUnitComboBox->currentText());
-    settings->Set("LastDesired/sFileNameOrSuffix", ui->outputFileNameLineEdit->text());
-    settings->Set("LastDesired/iQualityRatio", ui->audioQualitySlider->value());
-
-    settings->Set("LastDesired/sVideoCodec", ui->videoCodecComboBox->currentText());
-    settings->Set("LastDesired/sAudioCodec", ui->audioCodecComboBox->currentText());
-    settings->Set("LastDesired/sContainer", ui->containerComboBox->currentText());
-
-    settings->Set("LastDesired/iWidth", ui->widthSpinBox->value());
-    settings->Set("LastDesired/iHeight", ui->heightSpinBox->value());
-
-    settings->Set("LastDesired/iAspectRatioH", ui->aspectRatioSpinBoxH->value());
-    settings->Set("LastDesired/iAspectRatioV", ui->aspectRatioSpinBoxV->value());
-
-    settings->Set("LastDesired/sCustomParameters", ui->customCommandTextEdit->toPlainText());
-
-    settings->Set("LastDesired/bHasFileSuffix", ui->outputFileNameSuffixCheckBox->isChecked());
-    settings->Set("LastDesired/bWarnOnOverwrite", ui->warnOnOverwriteCheckBox->isChecked());
-
-    settings->Set("LastDesired/dSpeed", ui->speedSpinBox->value());
-    settings->Set("LastDesired/iFps", ui->fpsSpinBox->value());
-
-    settings->Set("LastDesired/bDeleteInputOnSuccess", ui->deleteOnSuccessCheckBox->isChecked());
-
-    settings->Set("LastDesired/bUseCustomCodecs", ui->codecSelectionGroupBox->isChecked());
-
-    settings->Set("LastDesired/bAutoFillMetadata", ui->autoFillCheckBox->isChecked());
-
-    auto* streamSelection = ui->audioVideoButtonGroup->checkedButton();
-    if (streamSelection == ui->radVideoAudio)
-        settings->Set("LastDesired/iSelectedStreams", 0);
-    else if (streamSelection == ui->radVideoOnly)
-        settings->Set("LastDesired/iSelectedStreams", 1);
-    else if (streamSelection == ui->radAudioOnly)
-        settings->Set("LastDesired/iSelectedStreams", 2);
-
-    settings->Set("LastDesired/bOpenInExplorerOnSuccess", ui->openExplorerOnSuccessCheckBox->isChecked());
-    settings->Set("LastDesired/bPlayResultOnSuccess", ui->playOnSuccessCheckBox->isChecked());
-    settings->Set("LastDesired/bCloseOnSuccess", ui->closeOnSuccessCheckBox->isChecked());
+    serializer->serialize(ui->advancedModeCheckBox);
+    serializer->serialize(ui->aspectRatioSpinBoxH);
+    serializer->serialize(ui->aspectRatioSpinBoxV);
+    serializer->serialize(ui->audioCodecComboBox);
+    serializer->serialize(ui->audioQualitySlider);
+    serializer->serialize(ui->audioVideoButtonGroup);
+    serializer->serialize(ui->autoFillCheckBox);
+    serializer->serialize(ui->closeOnSuccessCheckBox);
+    serializer->serialize(ui->codecSelectionGroupBox);
+    serializer->serialize(ui->containerComboBox);
+    serializer->serialize(ui->customCommandTextEdit);
+    serializer->serialize(ui->deleteOnSuccessCheckBox);
+    serializer->serialize(ui->fileSizeSpinBox);
+    serializer->serialize(ui->fileSizeUnitComboBox);
+    serializer->serialize(ui->fpsSpinBox);
+    serializer->serialize(ui->heightSpinBox);
+    serializer->serialize(ui->inputFileLineEdit);
+    serializer->serialize(ui->openExplorerOnSuccessCheckBox);
+    serializer->serialize(ui->outputFileNameLineEdit);
+    serializer->serialize(ui->outputFileNameSuffixCheckBox);
+    serializer->serialize(ui->outputFolderLineEdit);
+    serializer->serialize(ui->playOnSuccessCheckBox);
+    serializer->serialize(ui->speedSpinBox);
+    serializer->serialize(ui->videoCodecComboBox);
+    serializer->serialize(ui->warnOnOverwriteCheckBox);
+    serializer->serialize(ui->widthSpinBox);
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -480,6 +440,7 @@ void MainWindow::SetProgressShown(bool shown, int progressPercent)
 
 void MainWindow::SetAdvancedMode(bool enabled)
 {
+    // FIXME: Declare and connect once
     auto* sectionWidthAnim = new QPropertyAnimation(ui->advancedSection, "maximumWidth", this);
     auto* sectionHeightAnim = new QPropertyAnimation(ui->advancedSection, "maximumHeight", this);
     auto* windowSizeAnim = new QPropertyAnimation(this, "size");
@@ -791,4 +752,24 @@ QString MainWindow::getOutputPath(QString inputFilePath)
 bool MainWindow::isAutoValue(QAbstractSpinBox* spinBox)
 {
     return spinBox->text() == spinBox->specialValueText();
+}
+
+void MainWindow::ValidateSelectedUrl()
+{
+    const QString selectedUrl = ui->inputFileLineEdit->text();
+    bool isValidInput = QFile::exists(selectedUrl);
+    if (isValidInput)
+        ParseMetadata(selectedUrl);
+    else
+        ui->inputFileLineEdit->clear();
+}
+
+void MainWindow::ValidateSelectedDir()
+{
+    const QString selectedDir = ui->outputFolderLineEdit->text();
+    bool isValidOutput = QDir(selectedDir).exists();
+    if (!isValidOutput)
+        ui->outputFolderLineEdit->clear();
+
+    ui->warningTooltipButton->setVisible(false);
 }

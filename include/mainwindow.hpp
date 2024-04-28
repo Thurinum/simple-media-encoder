@@ -4,6 +4,7 @@
 #include "encoder.hpp"
 #include "notifier.hpp"
 #include "platform_info.hpp"
+#include "serializer.hpp"
 #include "settings.hpp"
 #include "warnings.hpp"
 
@@ -34,7 +35,8 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow(
         MediaEncoder& encoder,
-        const QPointer<Settings> settings,
+        QSharedPointer<Settings> settings,
+        QSharedPointer<Serializer> serializer,
         const Notifier& notifier,
         const PlatformInfo& platformInfo,
         QWidget* parent = nullptr
@@ -59,7 +61,7 @@ protected:
                        QFile& output);
     void HandleFailure(const QString& shortError, const QString& longError);
 
-private slots:
+public slots:
     void SetAdvancedMode(bool enabled);
     void OpenInputFile();
     void ShowMetadata();
@@ -81,6 +83,10 @@ private:
     QString getOutputPath(QString inputFilePath);
     inline bool isAutoValue(QAbstractSpinBox* spinBox);
 
+    // fixme: temporary
+    void ValidateSelectedUrl();
+    void ValidateSelectedDir();
+
     Ui::MainWindow* ui;
     Warnings* warnings;
 
@@ -92,7 +98,8 @@ private:
 
     // FIXME: Modify so it can be const (services should be immutable)
     MediaEncoder& encoder;
-    QPointer<Settings> settings;
+    QSharedPointer<Settings> settings;
+    QSharedPointer<Serializer> serializer;
     const Notifier& notifier;
     const PlatformInfo& platformInfo;
 };

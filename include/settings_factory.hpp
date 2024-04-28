@@ -11,7 +11,7 @@ class Message;
 class SettingsFactory
 {
 public:
-    static Either<QPointer<Settings>, Message> createIniSettings(const QString& fileName, const QString& defaultFileName);
+    static Either<QSharedPointer<Settings>, Message> createIniSettings(const QString& fileName, const QString& defaultFileName);
 };
 
 #endif

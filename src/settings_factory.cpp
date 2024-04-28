@@ -1,12 +1,13 @@
 #include "settings_factory.hpp"
 
 #include "ini_settings.hpp"
+#include "notifier.hpp"
 
 #include <QDir>
 #include <QFile>
 #include <QSettings>
 
-Either<QPointer<Settings>, Message> SettingsFactory::createIniSettings(const QString& fileName, const QString& defaultFileName)
+Either<QSharedPointer<Settings>, Message> SettingsFactory::createIniSettings(const QString& fileName, const QString& defaultFileName)
 {
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QDir::current().absolutePath());
 
@@ -21,5 +22,5 @@ Either<QPointer<Settings>, Message> SettingsFactory::createIniSettings(const QSt
     if (!QFile::exists(fileName))
         QFile::copy(defaultFileName, fileName);
 
-    return QPointer<Settings>(new IniSettings(fileName, defaultFileName));
+    return QSharedPointer<Settings>(new IniSettings(fileName, defaultFileName));
 }

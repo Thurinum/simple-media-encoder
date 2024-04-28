@@ -1,4 +1,5 @@
 #include "ini_settings.hpp"
+#include "notifier.hpp"
 
 #include <QDir>
 #include <QFile>
@@ -10,7 +11,7 @@ IniSettings::IniSettings(const QString& fileName, const QString& defaultFileName
     defaultSettings = new QSettings(defaultFileName, QSettings::IniFormat);
 }
 
-QVariant IniSettings::get(const QString& key) const
+QVariant IniSettings::get(const QString& key)
 {
     if (settings->contains(key))
         return settings->value(key);

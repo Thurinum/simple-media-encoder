@@ -4,7 +4,10 @@
 
 void MessageBoxNotifier::Notify(const Message& message) const
 {
-    Notify(message.severity, message.title, message.message, message.details);
+    if (message.isLikelyBug || message.severity == Severity::Critical)
+        Notify(message.severity, message.title, message.message + bugReportPrompt, message.details);
+    else
+        Notify(message.severity, message.title, message.message, message.details);
 }
 
 void MessageBoxNotifier::Notify(Severity severity, const QString& title, const QString& message, const QString& details) const
@@ -22,8 +25,6 @@ void MessageBoxNotifier::Notify(Severity severity, const QString& title, const Q
     dialog.exec();
 
     // wait until event loop has begun before attempting to exit
-    if (severity == Severity::Critical) {
+    if (severity == Severity::Critical)
         QMetaObject::invokeMethod(QApplication::instance(), "exit", Qt::QueuedConnection);
-        QApplication::exit();
-    }
 }

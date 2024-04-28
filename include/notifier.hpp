@@ -15,11 +15,12 @@ enum Severity {
 //!
 struct Message {
 public:
-    Message(Severity severity, QString title, QString message, QString details = "")
+    Message(Severity severity, QString title, QString message, QString details = "", bool isLikelyBug = false)
         : severity(severity)
         , title(std::move(title))
         , message(std::move(message))
         , details(std::move(details))
+        , isLikelyBug(isLikelyBug)
     {
     }
 
@@ -27,6 +28,7 @@ public:
     const QString title;
     const QString message;
     const QString details;
+    const bool isLikelyBug;
 };
 
 class Notifier

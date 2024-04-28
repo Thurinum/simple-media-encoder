@@ -3,6 +3,7 @@
 #include "mainwindow.hpp"
 #include "message_box_notifier.hpp"
 #include "platform_info.hpp"
+#include "serializer.hpp"
 #include "settings_factory.hpp"
 
 #include <QApplication>
@@ -24,12 +25,14 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    const QPointer<Settings> settings = maybeSettings.getRight();
-    QObject::connect(settings, &Settings::problemOccured, [notifier](const Message& problem) {
+    const QSharedPointer<Settings> settings = maybeSettings.getRight();
+    QObject::connect(settings.get(), &Settings::problemOccured, [notifier](const Message& problem) {
         notifier.Notify(problem);
     });
 
-    MainWindow w(*encoder, settings, notifier, platformInfo);
+    const QSharedPointer<Serializer> serializer(new Serializer(settings));
+
+    MainWindow w(*encoder, settings, serializer, notifier, platformInfo);
     w.setWindowIcon(QIcon("appicon.ico"));
     w.show();
 
