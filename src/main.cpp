@@ -1,4 +1,3 @@
-#include "either.hpp"
 #include "encoder.hpp"
 #include "mainwindow.hpp"
 #include "message_box_notifier.hpp"
@@ -20,12 +19,12 @@ int main(int argc, char* argv[])
     const MessageBoxNotifier notifier;
 
     auto maybeSettings = SettingsFactory::createIniSettings("config.ini", "config_default.ini");
-    if (maybeSettings.isLeft()) {
-        notifier.Notify(maybeSettings.getLeft());
+    if (std::holds_alternative<Message>(maybeSettings)) {
+        notifier.Notify(std::get<Message>(maybeSettings));
         return EXIT_FAILURE;
     }
 
-    const QSharedPointer<Settings> settings = maybeSettings.getRight();
+    const QSharedPointer<Settings> settings = std::get<QSharedPointer<Settings>>(maybeSettings);
     QObject::connect(settings.get(), &Settings::problemOccured, [notifier](const Message& problem) {
         notifier.Notify(problem);
     });

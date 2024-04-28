@@ -6,8 +6,9 @@
 #include <QDir>
 #include <QFile>
 #include <QSettings>
+#include <variant>
 
-Either<QSharedPointer<Settings>, Message> SettingsFactory::createIniSettings(const QString& fileName, const QString& defaultFileName)
+std::variant<QSharedPointer<Settings>, Message> SettingsFactory::createIniSettings(const QString& fileName, const QString& defaultFileName)
 {
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QDir::current().absolutePath());
 
