@@ -2,6 +2,7 @@
 #define EITHER_H
 
 #include <stdexcept>
+#include <variant>
 
 //!
 //! \brief A simple monadic class that can hold one of two types at a time.
@@ -13,53 +14,39 @@ class Either
 {
 public:
     Either(const L& left)
-        : isLeft(true)
-        , left(left) { }
+        : value(std::in_place_type<L>, left) { }
 
     Either(const R& right)
-        : isLeft(false)
-        , right(right) { }
+        : value(std::in_place_type<R>, right) { }
 
-    ~Either()
+    bool isLeft() const
     {
-        if (isLeft)
-            left.~L();
-        else
-            right.~R();
+        return std::holds_alternative<L>(value);
     }
-
-    const bool isLeft;
 
     const L& getLeft() const
     {
-        if (!isLeft)
+        if (!isLeft())
             throw std::logic_error("Either::getLeft() called on a right value.");
 
-        return left;
+        return std::get<L>(value);
     }
     const R& getRight() const
     {
-        if (isLeft)
+        if (isLeft())
             throw std::logic_error("Either::getRight() called on a left value.");
 
-        return right;
-    }
-    auto value() const
-    {
-        return isLeft ? left : right;
+        return std::get<R>(value);
     }
 
     template <typename F, typename G>
     auto fold(const F&& rightFunc, const G&& leftFunc) const
     {
-        return isLeft ? leftFunc(left) : rightFunc(right);
+        return isLeft() ? leftFunc(getLeft()) : rightFunc(getRight());
     }
 
 private:
-    const union {
-        L left;
-        R right;
-    };
+    std::variant<L, R> value;
 };
 
 #endif

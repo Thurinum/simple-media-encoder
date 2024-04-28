@@ -1444,8 +1444,299 @@
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>advancedModeCheckBox</tabstop>
+  <tabstop>infoMenuToolButton</tabstop>
+  <tabstop>inputFileLineEdit</tabstop>
+  <tabstop>inputFileButton</tabstop>
+  <tabstop>radVideoAudio</tabstop>
+  <tabstop>radVideoOnly</tabstop>
+  <tabstop>radAudioOnly</tabstop>
+  <tabstop>outputFileNameLineEdit</tabstop>
+  <tabstop>outputFileNameSuffixCheckBox</tabstop>
+  <tabstop>outputFolderLineEdit</tabstop>
+  <tabstop>outputFolderButton</tabstop>
+  <tabstop>qualityPresetComboBox</tabstop>
+  <tabstop>widthSpinBox</tabstop>
+  <tabstop>heightSpinBox</tabstop>
+  <tabstop>speedSpinBox</tabstop>
+  <tabstop>openExplorerOnSuccessCheckBox</tabstop>
+  <tabstop>playOnSuccessCheckBox</tabstop>
+  <tabstop>closeOnSuccessCheckBox</tabstop>
+  <tabstop>codecSelectionGroupBox</tabstop>
+  <tabstop>videoCodecComboBox</tabstop>
+  <tabstop>audioCodecComboBox</tabstop>
+  <tabstop>containerComboBox</tabstop>
+  <tabstop>audioQualitySlider</tabstop>
+  <tabstop>fileSizeSpinBox</tabstop>
+  <tabstop>fileSizeUnitComboBox</tabstop>
+  <tabstop>aspectRatioSpinBoxH</tabstop>
+  <tabstop>aspectRatioSpinBoxV</tabstop>
+  <tabstop>fpsSpinBox</tabstop>
+  <tabstop>customCommandTextEdit</tabstop>
+  <tabstop>warnOnOverwriteCheckBox</tabstop>
+  <tabstop>deleteOnSuccessCheckBox</tabstop>
+  <tabstop>autoFillCheckBox</tabstop>
+  <tabstop>statisticsButton</tabstop>
+  <tabstop>warningTooltipButton</tabstop>
+  <tabstop>startCompressionButton</tabstop>
+ </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>advancedModeCheckBox</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SetAdvancedMode(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>862</x>
+     <y>33</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>526</x>
+     <y>614</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>startCompressionButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>StartEncoding()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>295</x>
+     <y>587</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>301</x>
+     <y>617</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>qualityPresetComboBox</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SelectPresetCodecs()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>106</x>
+     <y>311</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>71</x>
+     <y>614</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>widthSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CheckAspectRatioConflict()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>179</x>
+     <y>314</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>167</x>
+     <y>614</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>heightSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CheckAspectRatioConflict()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>307</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>611</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>aspectRatioSpinBoxH</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CheckAspectRatioConflict()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>723</x>
+     <y>235</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>598</x>
+     <y>607</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>aspectRatioSpinBoxV</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CheckAspectRatioConflict()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>774</x>
+     <y>234</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>761</x>
+     <y>607</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>speedSpinBox</sender>
+   <signal>valueChanged(double)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CheckSpeedConflict()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>415</x>
+     <y>310</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>396</x>
+     <y>612</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>fpsSpinBox</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CheckSpeedConflict()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>839</x>
+     <y>237</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>798</x>
+     <y>605</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>outputFolderButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SelectOutputDirectory()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>246</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>433</x>
+     <y>6</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>audioQualitySlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>UpdateAudioQualityLabel(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>661</x>
+     <y>157</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>891</x>
+     <y>611</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>codecSelectionGroupBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SetAllowPresetSelection(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>602</x>
+     <y>64</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>614</x>
+     <y>8</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>statisticsButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>ShowMetadata()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>742</x>
+     <y>451</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>914</x>
+     <y>563</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>inputFileButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>OpenInputFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>408</x>
+     <y>87</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>397</x>
+     <y>13</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>audioVideoButtonGroup</sender>
+   <signal>buttonClicked(QAbstractButton*)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SetControlsState(QAbstractButton*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>461</x>
+     <y>309</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>SetAdvancedMode(bool)</slot>
+  <slot>StartEncoding()</slot>
+  <slot>CheckAspectRatioConflict()</slot>
+  <slot>SelectPresetCodecs()</slot>
+  <slot>CheckSpeedConflict()</slot>
+  <slot>SelectOutputDirectory()</slot>
+  <slot>UpdateAudioQualityLabel(int)</slot>
+  <slot>SetControlsState(QAbstractButton*)</slot>
+  <slot>SetAllowPresetSelection(bool)</slot>
+  <slot>ShowMetadata()</slot>
+  <slot>OpenInputFile()</slot>
+ </slots>
  <buttongroups>
   <buttongroup name="audioVideoButtonGroup"/>
  </buttongroups>

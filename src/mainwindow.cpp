@@ -56,7 +56,7 @@ MainWindow::MainWindow(
     ParseContainers(&containers, ui->containerComboBox);
     ParsePresets(presets, videoCodecs, audioCodecs, containers, ui->qualityPresetComboBox);
 
-    SetupUiInteractions();
+    SetupEncodingCallbacks();
     LoadState();
 }
 
@@ -78,6 +78,7 @@ void MainWindow::CheckForBinaries()
 void MainWindow::SetupMenu()
 {
     QMenu* menu = new QMenu(this);
+
     menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
     menu->addSeparator();
     menu->addAction(tr("About"), [this]() {
@@ -88,69 +89,14 @@ void MainWindow::SetupMenu()
     connect(ui->infoMenuToolButton, &QToolButton::pressed, ui->infoMenuToolButton, &QToolButton::showMenu);
 }
 
-void MainWindow::SetupUiInteractions()
+void MainWindow::SetupEncodingCallbacks()
 {
-    // toggle advanced mode
-    connect(ui->advancedModeCheckBox, &QCheckBox::clicked, this, &MainWindow::SetAdvancedMode);
-
-    // start compression button
-    connect(ui->startCompressionButton, &QPushButton::clicked, this, &MainWindow::StartEncoding);
     connect(&encoder, &MediaEncoder::encodingStarted, this, &MainWindow::HandleStart);
     connect(&encoder, &MediaEncoder::encodingSucceeded, this, &MainWindow::HandleSuccess);
     connect(&encoder, &MediaEncoder::encodingFailed, this, &MainWindow::HandleFailure);
     connect(&encoder, &MediaEncoder::encodingProgressUpdate, this, [this](int progress) {
         SetProgressShown(true, progress);
     });
-
-    // select codecs matching with the current preset when selected
-    connect(ui->qualityPresetComboBox,
-            &QComboBox::currentIndexChanged,
-            this,
-            &MainWindow::SelectPresetCodecs);
-
-    // check for conflicts between certain controls
-    connect(ui->widthSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckAspectRatioConflict);
-    connect(ui->heightSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckAspectRatioConflict);
-    connect(ui->aspectRatioSpinBoxH,
-            &QSpinBox::valueChanged,
-            this,
-            &MainWindow::CheckAspectRatioConflict);
-    connect(ui->aspectRatioSpinBoxV,
-            &QSpinBox::valueChanged,
-            this,
-            &MainWindow::CheckAspectRatioConflict);
-
-    connect(ui->speedSpinBox, &QDoubleSpinBox::valueChanged, this, &MainWindow::CheckSpeedConflict);
-    connect(ui->fpsSpinBox, &QSpinBox::valueChanged, this, &MainWindow::CheckSpeedConflict);
-
-    // show name of file picked with file dialog
-    connect(ui->outputFolderButton, &QPushButton::clicked, [this]() {
-        QDir dir = QFileDialog::getExistingDirectory(this, tr("Select output directory"), QDir::currentPath());
-
-        ui->outputFolderLineEdit->setText(dir.absolutePath());
-    });
-
-    // show value in kbps of audio quality slider
-    connect(ui->audioQualitySlider, &QSlider::valueChanged, [this]() {
-        double currentValue = qMax(settings->get("Main/dMinBitrateAudioKbps").toDouble(), ui->audioQualitySlider->value() / 100.0 * settings->get("Main/dMaxBitrateAudioKbps").toDouble());
-        ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
-    });
-
-    // disable appropriate controls when only video or audio selected
-    connect(ui->audioVideoButtonGroup, &QButtonGroup::buttonClicked, this, &MainWindow::SetControlsState);
-
-    // disable preset selection when manual codec selection enabled
-    connect(ui->codecSelectionGroupBox, &QGroupBox::clicked, [this](bool checked) {
-        ui->qualityPresetComboBox->setEnabled(!checked);
-    });
-
-    // show statistics on click
-    connect(ui->statisticsButton, &QPushButton::clicked, this, &MainWindow::ShowMetadata);
-
-    // show name of file picked with file dialog
-    connect(ui->inputFileButton, &QPushButton::clicked, this, &MainWindow::OpenInputFile);
-
-    // restore progress bar
     connect(&encoder, &MediaEncoder::metadataComputed, [this]() {
         SetProgressShown(false);
         ui->progressBar->setRange(0, 100);
@@ -403,6 +349,26 @@ void MainWindow::CheckSpeedConflict()
     } else {
         warnings->Remove("speedConflict");
     }
+}
+
+void MainWindow::SelectOutputDirectory()
+{
+    QDir dir = QFileDialog::getExistingDirectory(this, tr("Select output directory"), QDir::currentPath());
+    ui->outputFolderLineEdit->setText(dir.absolutePath());
+}
+
+void MainWindow::UpdateAudioQualityLabel(int value)
+{
+    static double minBitrate = settings->get("Main/dMinBitrateAudioKbps").toDouble();
+    static double maxBitrate = settings->get("Main/dMaxBitrateAudioKbps").toDouble();
+    double currentValue = qMax(minBitrate, value / 100.0 * maxBitrate);
+
+    ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
+}
+
+void MainWindow::SetAllowPresetSelection(bool allowed)
+{
+    ui->qualityPresetComboBox->setEnabled(!allowed);
 }
 
 void MainWindow::SetProgressShown(bool shown, int progressPercent)

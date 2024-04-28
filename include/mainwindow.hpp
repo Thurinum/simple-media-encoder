@@ -44,32 +44,32 @@ public:
     ~MainWindow() override;
 
 protected:
-    // initialization
     void CheckForBinaries();
     void SetupMenu();
-    void SetupUiInteractions();
+    void SetupEncodingCallbacks();
 
     void LoadState();
     void SaveState();
     void closeEvent(QCloseEvent* event) override;
 
-    // core logic
-    void StartEncoding();
     void HandleStart(double videoBitrateKbps, double audioBitrateKbps);
     void HandleSuccess(const MediaEncoder::Options& options,
                        const MediaEncoder::ComputedOptions& computed,
                        QFile& output);
     void HandleFailure(const QString& shortError, const QString& longError);
 
-public slots:
+private slots:
+    void StartEncoding();
     void SetAdvancedMode(bool enabled);
     void OpenInputFile();
+    void SelectOutputDirectory();
     void ShowMetadata();
     void SelectPresetCodecs();
-    void SetProgressShown(bool shown, int progressPercent = 0);
     void SetControlsState(QAbstractButton* button);
     void CheckAspectRatioConflict();
     void CheckSpeedConflict();
+    void UpdateAudioQualityLabel(int value);
+    void SetAllowPresetSelection(bool allowed);
 
 private:
     void ParseCodecs(QHash<QString, Codec>* codecs, const QString& type, QComboBox* comboBox);
@@ -82,8 +82,7 @@ private:
     void ParseMetadata(const QString& path);
     QString getOutputPath(QString inputFilePath);
     inline bool isAutoValue(QAbstractSpinBox* spinBox);
-
-    // fixme: temporary
+    void SetProgressShown(bool shown, int progressPercent = 0);
     void ValidateSelectedUrl();
     void ValidateSelectedDir();
 
@@ -96,7 +95,6 @@ private:
     QHash<QString, Preset> presets;
     optional<Metadata> metadata;
 
-    // FIXME: Modify so it can be const (services should be immutable)
     MediaEncoder& encoder;
     QSharedPointer<Settings> settings;
     QSharedPointer<Serializer> serializer;

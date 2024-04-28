@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     const MessageBoxNotifier notifier;
 
     auto maybeSettings = SettingsFactory::createIniSettings("config.ini", "config_default.ini");
-    if (maybeSettings.isLeft) {
+    if (maybeSettings.isLeft()) {
         notifier.Notify(maybeSettings.getLeft());
         return EXIT_FAILURE;
     }
