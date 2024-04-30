@@ -1,7 +1,7 @@
 #ifndef MEDIAENCODER_H
 #define MEDIAENCODER_H
 
-#include "metadata.hpp"
+#include "formats/metadata.hpp"
 
 #include <QDir>
 #include <QEventLoop>

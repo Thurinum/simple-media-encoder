@@ -1,12 +1,12 @@
 #ifndef MAINWINDOW_HPP
 #define MAINWINDOW_HPP
 
-#include "encoder.hpp"
-#include "notifier.hpp"
-#include "platform_info.hpp"
-#include "serializer.hpp"
-#include "settings.hpp"
-#include "warnings.hpp"
+#include "encoder/encoder.hpp"
+#include "notifier/notifier.hpp"
+#include "settings/serializer.hpp"
+#include "settings/settings.hpp"
+#include "utils/platform_info.hpp"
+#include "utils/warnings.hpp"
 
 #include <QComboBox>
 #include <QGraphicsBlurEffect>

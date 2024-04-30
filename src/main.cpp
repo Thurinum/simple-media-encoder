@@ -1,9 +1,9 @@
-#include "encoder.hpp"
+#include "encoder/encoder.hpp"
 #include "mainwindow.hpp"
-#include "message_box_notifier.hpp"
-#include "platform_info.hpp"
-#include "serializer.hpp"
-#include "settings_factory.hpp"
+#include "notifier/message_box_notifier.hpp"
+#include "settings/serializer.hpp"
+#include "settings/settings_factory.hpp"
+#include "utils/platform_info.hpp"
 
 #include <QApplication>
 #include <QStyleFactory>

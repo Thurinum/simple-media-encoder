@@ -17,8 +17,8 @@
 #include <QWhatsThis>
 
 #include "mainwindow.hpp"
-#include "notifier.hpp"
-#include "serializer.hpp"
+#include "notifier/notifier.hpp"
+#include "settings/serializer.hpp"
 #include "ui_mainwindow.h"
 
 using std::optional;
@@ -39,18 +39,17 @@ MainWindow::MainWindow(
     , notifier(notifier)
     , platformInfo(platformInfo)
 {
+    CheckForBinaries();
+
     ui->setupUi(this);
     this->resize(this->minimumSizeHint());
     this->warnings = new Warnings(ui->warningTooltipButton);
-
-    SetupAdvancedModeAnimation();
 
     ui->audioVideoButtonGroup->setId(ui->radVideoAudio, 0);
     ui->audioVideoButtonGroup->setId(ui->radVideoOnly, 1);
     ui->audioVideoButtonGroup->setId(ui->radAudioOnly, 2);
 
-    CheckForBinaries();
-
+    SetupAdvancedModeAnimation();
     SetupMenu();
 
     ParseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
