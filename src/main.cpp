@@ -1,4 +1,5 @@
 #include "encoder/encoder.hpp"
+#include "formats/ffmpeg_format_support_loader.hpp"
 #include "mainwindow.hpp"
 #include "notifier/message_box_notifier.hpp"
 #include "settings/serializer.hpp"
@@ -31,7 +32,8 @@ int main(int argc, char* argv[])
 
     const QSharedPointer<Serializer> serializer(new Serializer(settings));
 
-    MainWindow w(*encoder, settings, serializer, notifier, platformInfo);
+    FFmpegFormatSupportLoader formats;
+    MainWindow w(*encoder, settings, serializer, notifier, platformInfo, formats);
     w.setWindowIcon(QIcon("appicon.ico"));
     w.show();
 

@@ -2,8 +2,7 @@ QT = core gui widgets
 
 CONFIG += c++20
 QMAKE_CXXFLAGS += -Werror -Wextra -fconcepts-diagnostics-depth=5
-DEFINES += QT_DISABLE_DEPRECATED_UP_TO=0x060600
-
+DEFINES += QT_DISABLE_DEPRECATED_UP_TO=0x060700
 
 INCLUDEPATH += $$PWD/include
 

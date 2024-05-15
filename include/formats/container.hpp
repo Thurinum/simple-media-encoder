@@ -2,12 +2,15 @@
 #define CONTAINER_H
 
 #include <QList>
+#include <QMetaType>
 
 struct Codec;
 
 struct Container {
-    const QString name;
-    const QList<Codec> supportedCodecs;
+    QString displayName;
+    QString formatName;
 };
+
+Q_DECLARE_METATYPE(Container)
 
 #endif

@@ -1,12 +1,15 @@
 #ifndef CODEC_H
 #define CODEC_H
 
+#include <QMetaType>
 #include <QString>
 
 struct Codec {
-    const QString displayName;
-    const QString libraryName;
-    const bool isAudioCodec;
+    QString displayName;
+    QString libraryName;
+    bool isAudioCodec;
 };
+
+Q_DECLARE_METATYPE(Codec)
 
 #endif

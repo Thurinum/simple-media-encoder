@@ -2,6 +2,7 @@
 #define MAINWINDOW_HPP
 
 #include "encoder/encoder.hpp"
+#include "formats/format_support_loader.hpp"
 #include "notifier/notifier.hpp"
 #include "settings/serializer.hpp"
 #include "settings/settings.hpp"
@@ -19,10 +20,6 @@
 #include <QSpinBox>
 #include <QUrl>
 
-using Codec = MediaEncoder::Codec;
-using Container = MediaEncoder::Container;
-using Preset = MediaEncoder::Preset;
-
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -39,6 +36,7 @@ public:
         QSharedPointer<Serializer> serializer,
         const Notifier& notifier,
         const PlatformInfo& platformInfo,
+        FormatSupportLoader& formatSupportLoader,
         QWidget* parent = nullptr
     );
     ~MainWindow() override;
@@ -46,7 +44,8 @@ public:
 protected:
     void CheckForBinaries();
     void SetupMenu();
-    void SetupEncodingCallbacks();
+    void SetupEventCallbacks();
+    void QuerySupportedFormats();
 
     void LoadState();
     void SaveState();
@@ -71,19 +70,14 @@ private slots:
     void CheckSpeedConflict();
     void UpdateAudioQualityLabel(int value);
     void SetAllowPresetSelection(bool allowed);
+    void HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupport>, Message> maybeFormats);
 
 private:
-    void ParseCodecs(QHash<QString, Codec>* codecs, const QString& type, QComboBox* comboBox);
-    void ParseContainers(QHash<QString, Container>* containers, QComboBox* comboBox);
-    void ParsePresets(QHash<QString, Preset>& presets,
-                      QHash<QString, Codec>& videoCodecs,
-                      QHash<QString, Codec>& audioCodecs,
-                      QHash<QString, Container>& containers,
-                      QComboBox* comboBox);
     void ParseMetadata(const QString& path);
     QString getOutputPath(QString inputFilePath);
     inline bool isAutoValue(QAbstractSpinBox* spinBox);
     void SetProgressShown(bool shown, int progressPercent = 0);
+    void SetProgressIndeterminate(bool indeterminate);
     void ValidateSelectedUrl();
     void ValidateSelectedDir();
     void SetupAdvancedModeAnimation();
@@ -91,10 +85,6 @@ private:
     Ui::MainWindow* ui;
     Warnings* warnings;
 
-    QHash<QString, Codec> videoCodecs;
-    QHash<QString, Codec> audioCodecs;
-    QHash<QString, Container> containers;
-    QHash<QString, Preset> presets;
     optional<Metadata> metadata;
 
     QPropertyAnimation* sectionWidthAnim;
@@ -106,6 +96,7 @@ private:
     QSharedPointer<Serializer> serializer;
     const Notifier& notifier;
     const PlatformInfo& platformInfo;
+    FormatSupportLoader& formatSupport;
 };
 
 #endif // MAINWINDOW_HPP

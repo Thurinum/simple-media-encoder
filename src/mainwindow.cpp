@@ -29,6 +29,7 @@ MainWindow::MainWindow(
     QSharedPointer<Serializer> serializer,
     const Notifier& notifier,
     const PlatformInfo& platformInfo,
+    FormatSupportLoader& formatSupportLoader,
     QWidget* parent
 )
     : QMainWindow(parent)
@@ -38,6 +39,7 @@ MainWindow::MainWindow(
     , serializer(std::move(serializer))
     , notifier(notifier)
     , platformInfo(platformInfo)
+    , formatSupport(formatSupportLoader)
 {
     CheckForBinaries();
 
@@ -51,14 +53,9 @@ MainWindow::MainWindow(
 
     SetupAdvancedModeAnimation();
     SetupMenu();
+    SetupEventCallbacks();
 
-    ParseCodecs(&videoCodecs, "VideoCodecs", ui->videoCodecComboBox);
-    ParseCodecs(&audioCodecs, "AudioCodecs", ui->audioCodecComboBox);
-    ParseContainers(&containers, ui->containerComboBox);
-    ParsePresets(presets, videoCodecs, audioCodecs, containers, ui->qualityPresetComboBox);
-
-    SetupEncodingCallbacks();
-    LoadState();
+    QuerySupportedFormats();
 }
 
 MainWindow::~MainWindow()
@@ -88,8 +85,10 @@ void MainWindow::SetupMenu()
     ui->infoMenuToolButton->setMenu(menu);
 }
 
-void MainWindow::SetupEncodingCallbacks()
+void MainWindow::SetupEventCallbacks()
 {
+    connect(&formatSupport, &FormatSupportLoader::queryCompleted, this, &MainWindow::HandleFormatsQueryResult);
+
     connect(&encoder, &MediaEncoder::encodingStarted, this, &MainWindow::HandleStart);
     connect(&encoder, &MediaEncoder::encodingSucceeded, this, &MainWindow::HandleSuccess);
     connect(&encoder, &MediaEncoder::encodingFailed, this, &MainWindow::HandleFailure);
@@ -101,6 +100,13 @@ void MainWindow::SetupEncodingCallbacks()
         ui->progressBar->setRange(0, 100);
         ui->progressBarLabel->setText(tr("Compressing..."));
     });
+}
+
+void MainWindow::QuerySupportedFormats()
+{
+    SetProgressIndeterminate(true);
+    SetProgressShown(true);
+    formatSupport.QuerySupportedFormats();
 }
 
 void MainWindow::LoadState()
@@ -203,20 +209,17 @@ void MainWindow::StartEncoding()
     bool hasAudio = ui->radVideoAudio->isChecked() || ui->radAudioOnly->isChecked();
     QString outputPath = getOutputPath(inputPath);
 
-    // get codecs
     optional<Codec> videoCodec;
     optional<Codec> audioCodec;
-    optional<Container> container;
 
     videoCodec = hasVideo ? ui->videoCodecComboBox->currentData().value<Codec>() : optional<Codec>();
     audioCodec = hasAudio ? ui->audioCodecComboBox->currentData().value<Codec>() : optional<Codec>();
-    container = containers.value(ui->containerComboBox->currentText());
 
-    if (QFile::exists(outputPath + "." + container->name) && ui->warnOnOverwriteCheckBox->isChecked()
-        && QMessageBox::question(this,
-                                 "Overwrite?",
-                                 "Output at path '" + outputPath + "' already exists. Overwrite it?")
-            == QMessageBox::No) {
+    optional<Container> container = ui->containerComboBox->currentData().value<Container>();
+
+    if (QFile::exists(outputPath + "." + container->formatName) && ui->warnOnOverwriteCheckBox->isChecked()
+        && QMessageBox::question(this, "Overwrite?", "Output at path '" + outputPath + "' already exists. Overwrite it?")
+               == QMessageBox::No) {
         notifier.Notify(Severity::Info, "Operation canceled", "Compression aborted.");
         return;
     }
@@ -270,11 +273,11 @@ void MainWindow::HandleSuccess(const MediaEncoder::Options& options,
 
     if (options.videoCodec.has_value()) {
         summary += tr("Using video codec %1 at %2 with container %3.\n")
-                       .arg(options.videoCodec->name, videoBitrate, options.container->name);
+                       .arg(options.videoCodec->displayName, videoBitrate, options.container->displayName);
     }
     if (options.audioCodec.has_value()) {
         summary += tr("Using audio codec %1 at %2kbps.\n")
-                       .arg(options.audioCodec->name, QString::number(*computed.audioBitrateKbps));
+                       .arg(options.audioCodec->displayName, QString::number(*computed.audioBitrateKbps));
     }
     if (options.sizeKbps.has_value()) {
         summary += tr("Requested size was %1 kb.\nActual "
@@ -368,6 +371,32 @@ void MainWindow::SetAllowPresetSelection(bool allowed)
     ui->qualityPresetComboBox->setEnabled(!allowed);
 }
 
+void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupport>, Message> maybeFormats)
+{
+    if (std::holds_alternative<Message>(maybeFormats)) {
+        notifier.Notify(std::get<Message>(maybeFormats));
+        return;
+    }
+
+    QSharedPointer<FormatSupport> formats = std::get<QSharedPointer<FormatSupport>>(maybeFormats);
+    SetProgressIndeterminate(false);
+    SetProgressShown(false);
+
+    for (const Codec& codec : formats->videoCodecs) {
+        ui->videoCodecComboBox->addItem(codec.displayName, QVariant::fromValue(codec));
+    }
+
+    for (const Codec& codec : formats->audioCodecs) {
+        ui->audioCodecComboBox->addItem(codec.displayName, QVariant::fromValue(codec));
+    }
+
+    for (const Container& container : formats->containers) {
+        ui->containerComboBox->addItem(container.displayName, QVariant::fromValue(container));
+    }
+
+    LoadState();
+}
+
 void MainWindow::ShowAbout()
 {
     static const QString msg = "\r\n<h4>Acknowledgements</h4>\r\n"
@@ -414,6 +443,15 @@ void MainWindow::SetProgressShown(bool shown, int progressPercent)
     valueAnimation->setStartValue(ui->progressBar->value());
     valueAnimation->setEndValue(progressPercent);
     valueAnimation->start();
+}
+
+void MainWindow::SetProgressIndeterminate(bool indeterminate)
+{
+    if (indeterminate) {
+        ui->progressBar->setRange(0, 0);
+    } else {
+        ui->progressBar->setRange(0, 100);
+    }
 }
 
 void MainWindow::SetAdvancedMode(bool enabled)
@@ -489,11 +527,7 @@ void MainWindow::SelectPresetCodecs()
     if (ui->codecSelectionGroupBox->isChecked())
         return;
 
-    Preset p = qvariant_cast<Preset>(ui->qualityPresetComboBox->currentData());
-
-    ui->videoCodecComboBox->setCurrentText(p.videoCodec.name);
-    ui->audioCodecComboBox->setCurrentText(p.audioCodec.name);
-    ui->containerComboBox->setCurrentText(p.container.name);
+    // TODO: Reimplement now broken presets
 }
 
 void MainWindow::OpenInputFile()
@@ -521,155 +555,6 @@ void MainWindow::OpenInputFile()
 
         int qualityPercent = metadata->audioBitrateKbps * 100 / 256;
         ui->audioQualitySlider->setValue(qualityPercent);
-    }
-}
-
-void MainWindow::ParseCodecs(QHash<QString, Codec>* codecs, const QString& type, QComboBox* comboBox)
-{
-    QStringList keys = settings->keysInGroup(type);
-
-    if (keys.empty()) {
-        notifier.Notify(Severity::Critical, tr("Missing codecs definition").arg(type), tr("Could not find codecs list of type '%1' in the configuration file. "
-                                                                                          "Please validate the configuration in %2. Exiting.")
-                                                                                           .arg(type));
-    }
-
-    QString availableCodecs = encoder.getAvailableFormats();
-
-    for (const QString& codecLibrary : keys) {
-        if (!availableCodecs.contains(codecLibrary)) {
-            notifier.Notify(Severity::Warning, tr("Unsupported codec"), tr("Codec library '%1' does not appear to be supported by our version of "
-                                                                           "FFMPEG. It has been skipped. Please validate the "
-                                                                           "configuration in %2.")
-                                                                            .arg(codecLibrary, settings->fileName()));
-            continue;
-        }
-
-        if (codecLibrary.contains("nvenc") && !platformInfo.isNvidia())
-            continue;
-
-        static QRegularExpression expression("[^-_a-z0-9]");
-        if (expression.match(codecLibrary).hasMatch()) {
-            notifier.Notify(Severity::Critical, tr("Could not parse codec"), tr("Codec library '%1' could not be parsed. Please validate the "
-                                                                                "configuration in %2. Exiting.")
-                                                                                 .arg(codecLibrary, settings->fileName()));
-        }
-
-        static QRegularExpression splitExpression("(\\s*),(\\s*)");
-        QStringList values = settings->get(type + "/" + codecLibrary)
-                                 .toString()
-                                 .split(splitExpression);
-
-        QString codecName = values.first();
-
-        bool isConversionOk = false;
-        double codecMinBitrateKbps = values.size() == 2 ? values.last().toDouble(&isConversionOk) : 0;
-
-        if (values.size() == 2 && !isConversionOk) {
-            notifier.Notify(Severity::Critical, tr("Invalid codec bitrate"), tr("Minimum bitrate of codec '%1' could not be parsed. Please "
-                                                                                "validate the configuration in %2. Exiting.")
-                                                                                 .arg(values.last(), settings->fileName()));
-        }
-
-        Codec codec { codecName, codecLibrary, codecMinBitrateKbps };
-        codecs->insert(codec.library, codec);
-
-        QVariant data;
-        data.setValue(codec);
-
-        comboBox->addItem(codecName, data);
-    }
-}
-
-void MainWindow::ParseContainers(QHash<QString, Container>* containers, QComboBox* comboBox)
-{
-    QStringList keys = settings->keysInGroup("Containers");
-
-    if (keys.empty()) {
-        notifier.Notify(Severity::Critical, tr("Missing containers definition"), tr("Could not find list of container in the configuration file. Please "
-                                                                                    "validate the configuration in %1. Exiting.")
-                                                                                     .arg(settings->fileName()));
-    }
-
-    for (const QString& containerName : keys) {
-        static QRegularExpression expression("[^-_a-z0-9]");
-        if (expression.match(containerName).hasMatch()) {
-            notifier.Notify(Severity::Critical, tr("Invalid container name"), tr("Name of container '%1' could not be parsed. Please "
-                                                                                 "validate the configuration in %2. Exiting.")
-                                                                                  .arg(containerName, settings->fileName()));
-        }
-
-        static QRegularExpression splitExpression("(\\s*),(\\s*)");
-        QStringList supportedCodecs = settings->get("Containers/" + containerName).toString().split(splitExpression);
-        Container container { containerName, supportedCodecs };
-        containers->insert(containerName, container);
-
-        QVariant data;
-        data.setValue(container);
-
-        comboBox->addItem(containerName, data);
-    }
-}
-
-void MainWindow::ParsePresets(QHash<QString, Preset>& presets,
-                              QHash<QString, Codec>& videoCodecs,
-                              QHash<QString, Codec>& audioCodecs,
-                              QHash<QString, Container>& containers,
-                              QComboBox* comboBox)
-{
-    QStringList keys = settings->keysInGroup("Presets");
-    QString supportedCodecs = encoder.getAvailableFormats();
-
-    for (const QString& key : keys) {
-        Preset preset;
-        preset.name = key;
-
-        QString data = settings->get("Presets/" + key).toString();
-        QStringList librariesData = data.split("+");
-
-        if (librariesData.size() != 3) {
-            notifier.Notify(Severity::Error, tr("Could not parse presets"), tr("Failed to parse presets as the data is malformed. Please check the "
-                                                                               "configuration in %1.")
-                                                                                .arg(settings->fileName()));
-        }
-
-        optional<Codec> videoCodec;
-        optional<Codec> audioCodec;
-        QStringList videoLibrary = librariesData[0].split("|");
-
-        for (const QString& library : videoLibrary) {
-            if (supportedCodecs.contains(library)) {
-                videoCodec = videoCodecs.value(library);
-                break;
-            }
-        }
-
-        QStringList audioLibrary = librariesData[1].split("|");
-
-        for (const QString& library : audioLibrary) {
-            if (supportedCodecs.contains(library)) {
-                audioCodec = audioCodecs.value(library);
-                break;
-            }
-        }
-
-        if (!videoCodec.has_value() || !audioCodec.has_value()) {
-            notifier.Notify(Severity::Warning, tr("Preset not supported"), tr("Skipped encoding quality preset '%1' preset because it contains no "
-                                                                              "available encoders.")
-                                                                               .arg(preset.name),
-                            tr("Available codecs: %1\nPreset data: %2").arg(supportedCodecs, data));
-            continue;
-        }
-
-        preset.videoCodec = *videoCodec;
-        preset.audioCodec = *audioCodec;
-        preset.container = containers.value(librariesData[2]);
-
-        presets.insert(preset.name, preset);
-
-        QVariant itemData;
-        itemData.setValue(preset);
-        comboBox->addItem(preset.name, itemData);
     }
 }
 

@@ -1,6 +1,8 @@
 #ifndef MEDIAENCODER_H
 #define MEDIAENCODER_H
 
+#include "formats/codec.hpp"
+#include "formats/container.hpp"
 #include "formats/metadata.hpp"
 
 #include <QDir>
@@ -10,6 +12,7 @@
 #include <QPoint>
 #include <QProcess>
 
+struct Message;
 using std::optional;
 
 class MediaEncoder : public QObject {
@@ -18,28 +21,6 @@ class MediaEncoder : public QObject {
 public:
     explicit MediaEncoder(QObject* parent);
     ~MediaEncoder() override;
-
-    struct Codec {
-        QString name;
-        QString library;
-        double minBitrateKbps = 0;
-
-        bool operator==(const Codec& rhs) const;
-
-        static QString stringFromList(const QList<Codec>& list);
-    };
-
-    struct Container {
-        QString name;
-        QStringList supportedCodecs;
-    };
-
-    struct Preset {
-        QString name;
-        Codec videoCodec;
-        Codec audioCodec;
-        Container container;
-    };
 
     struct Options {
         const QString inputPath;
@@ -91,6 +72,8 @@ private:
     bool computeAudioBitrate(const Options& options, ComputedOptions& computed);
     double computePixelRatio(const Options& options, const Metadata& metadata);
 
+    std::variant<QString, Message> extensionForContainer(const Container& container);
+
     QString output = "";
     QString parseOutput();
 
@@ -101,9 +84,5 @@ private:
     QMetaObject::Connection* const processUpdateConnection = new QMetaObject::Connection();
     QMetaObject::Connection* const processFinishedConnection = new QMetaObject::Connection();
 };
-
-Q_DECLARE_METATYPE(MediaEncoder::Codec);
-Q_DECLARE_METATYPE(MediaEncoder::Container);
-Q_DECLARE_METATYPE(MediaEncoder::Preset);
 
 #endif // MEDIAENCODER_H

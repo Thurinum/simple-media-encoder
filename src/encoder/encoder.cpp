@@ -1,6 +1,7 @@
-#include "encoder.hpp"
+#include "encoder/encoder.hpp"
 
-#include "metadata.hpp"
+#include "formats/metadata.hpp"
+#include "notifier/notifier.hpp"
 
 #include <QEventLoop>
 #include <QFile>
@@ -71,9 +72,9 @@ void MediaEncoder::StartCompression(const Options& options, const ComputedOption
 {
     emit encodingStarted(computed.videoBitrateKbps.value_or(0), computed.audioBitrateKbps.value_or(0));
 
-    QString videoCodecParam = options.videoCodec.has_value() ? "-c:v " + options.videoCodec->library
+    QString videoCodecParam = options.videoCodec.has_value() ? "-c:v " + options.videoCodec->libraryName
                                                              : "-vn";
-    QString audioCodecParam = options.audioCodec.has_value() ? "-c:a " + options.audioCodec->library
+    QString audioCodecParam = options.audioCodec.has_value() ? "-c:a " + options.audioCodec->libraryName
                                                              : "-an";
     QString videoBitrateParam = options.sizeKbps.has_value()
                                   ? "-b:v " + QString::number(*computed.videoBitrateKbps) + "k"
@@ -81,6 +82,7 @@ void MediaEncoder::StartCompression(const Options& options, const ComputedOption
     QString audioBitrateParam = computed.audioBitrateKbps.has_value()
                                   ? "-b:a " + QString::number(*computed.audioBitrateKbps) + "k"
                                   : "";
+    QString formatParam = QString("-f %1").arg(options.container->formatName);
 
     // video filters
     QString aspectRatioFilter;
@@ -134,12 +136,16 @@ void MediaEncoder::StartCompression(const Options& options, const ComputedOption
     if (audioFilters.length() > 0)
         audioFiltersParam = "-filter:a " + audioFilters.join(',');
 
-    QString fileExtension = options.videoCodec.has_value() ? options.container->name
-                                                           : options.audioCodec->name.toLower();
+    auto maybeFileExtension = extensionForContainer(*options.container);
+    if (std::holds_alternative<Message>(maybeFileExtension)) {
+        emit encodingFailed(std::get<Message>(maybeFileExtension).message); // TODO: Use Message instead
+        return;
+    }
+    QString fileExtension = std::get<QString>(maybeFileExtension);
     QString outputPath = options.outputPath + "." + fileExtension;
 
-    QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 %8 %9 "%10" -y)")
-                          .arg(IS_WINDOWS ? ".exe" : "", options.inputPath, videoCodecParam, audioCodecParam, videoBitrateParam, audioBitrateParam, videoFiltersParam, audioFiltersParam, *options.customArguments, outputPath);
+    QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 %8 %9 %10 "%11" -y)")
+                          .arg(IS_WINDOWS ? ".exe" : "", options.inputPath, videoCodecParam, audioCodecParam, videoBitrateParam, audioBitrateParam, videoFiltersParam, audioFiltersParam, *options.customArguments, formatParam, outputPath);
 
     *processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [metadata, this]() {
         UpdateProgress(metadata.durationSeconds);
@@ -208,12 +214,7 @@ QString MediaEncoder::getAvailableFormats()
 bool MediaEncoder::computeAudioBitrate(const Options& options, ComputedOptions& computed)
 {
     double audioBitrateKbps = qMax(options.minAudioBitrateKbps, options.audioQualityPercent.value_or(1) * options.maxAudioBitrateKbps);
-    if (audioBitrateKbps < options.audioCodec->minBitrateKbps) {
-        emit encodingFailed(tr("Selected audio codec %1 requires a minimum bitrate of %2 "
-                               "kbps, but requested was %3 kbps.")
-                                .arg(options.audioCodec->name, QString::number(options.audioCodec->minBitrateKbps), QString::number(audioBitrateKbps)));
-        return false;
-    }
+    // TODO: Using the strategy pattern, specialize certain codecs to use different bitrate formulas
 
     computed.audioBitrateKbps = audioBitrateKbps;
     return true;
@@ -242,6 +243,53 @@ double MediaEncoder::computePixelRatio(const Options& options, const Metadata& m
         pixelRatio = outputPixelCount / inputPixelCount;
 
     return pixelRatio;
+}
+
+std::variant<QString, Message> MediaEncoder::extensionForContainer(const Container& container)
+{
+    QProcess process;
+    QString command = QString("ffmpeg -hide_banner -h muxer=%1").arg(container.formatName);
+
+    process.startCommand(command);
+
+    bool result = process.waitForFinished(10000);
+    if (!result) {
+        return Message(
+            Severity::Critical,
+            tr("Failed to query file extension for container"),
+            tr("FFmpeg did not respond in time to query the file extension for container %1.")
+                .arg(container.formatName),
+            process.readAllStandardError()
+        );
+    }
+
+    QString output = process.readAllStandardOutput();
+    static QRegularExpression regex(R"(Common extensions: (.+(?=\.)))");
+    QRegularExpressionMatch match = regex.match(output);
+
+    if (!match.hasMatch()) {
+        return Message(
+            Severity::Critical,
+            tr("Failed to query file extension for container"),
+            tr("FFmpeg did not return a file extension for container %1.")
+                .arg(container.formatName),
+            output
+        );
+    }
+
+    QStringList extensions = match.captured(1).split(",");
+
+    if (extensions.isEmpty()) {
+        return Message(
+            Severity::Critical,
+            tr("Failed to query file extension for container"),
+            tr("FFmpeg did not return a file extension for container %1.")
+                .arg(container.formatName),
+            output
+        );
+    }
+
+    return extensions.first().trimmed();
 }
 
 void MediaEncoder::ComputeVideoBitrate(const Options& options, ComputedOptions& computed, const Metadata& metadata)
@@ -280,16 +328,6 @@ bool MediaEncoder::validateOptions(const Options& options)
     if (!options.videoCodec.has_value() && !options.container.has_value())
         error = tr("A container was selected but audio-only encoding was specified.");
 
-    if (options.videoCodec.has_value()
-        && !options.container->supportedCodecs.contains(options.videoCodec->library)) {
-        error = tr("Selected container %1 does not support selected video codec: %2.")
-                    .arg(options.container->name.toUpper(), options.videoCodec->name);
-    }
-    if (options.audioCodec.has_value()
-        && !options.container->supportedCodecs.contains(options.audioCodec->library)) {
-        error = tr("Selected container %1 does not support selected audio codec: %2.")
-                    .arg(options.container->name.toUpper(), options.audioCodec->name);
-    }
     if (options.outputWidth.has_value() && options.outputWidth < 0) {
         error = tr("Output width must be greater than 0, but was %1")
                     .arg(QString::number(*options.outputWidth));
@@ -344,21 +382,4 @@ std::variant<Metadata, Metadata::Error> MediaEncoder::getMetadata(const QString&
 
     emit metadataComputed();
     return builder.fromJson(data);
-}
-
-bool MediaEncoder::Codec::operator==(const Codec& rhs) const
-{
-    return this->name == rhs.name && this->library == rhs.library;
-}
-
-QString MediaEncoder::Codec::stringFromList(const QList<Codec>& list)
-{
-    QString str;
-
-    for (const Codec& format : list)
-        str += format.name % ", ";
-
-    str.chop(2);
-
-    return str;
 }
