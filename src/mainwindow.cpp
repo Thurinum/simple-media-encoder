@@ -383,15 +383,18 @@ void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupp
     SetProgressShown(false);
 
     for (const Codec& codec : formats->videoCodecs) {
-        ui->videoCodecComboBox->addItem(codec.displayName, QVariant::fromValue(codec));
+        ui->videoCodecComboBox->addItem(codec.libraryName, QVariant::fromValue(codec));
+        ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, codec.displayName, Qt::ToolTipRole);
     }
 
     for (const Codec& codec : formats->audioCodecs) {
-        ui->audioCodecComboBox->addItem(codec.displayName, QVariant::fromValue(codec));
+        ui->audioCodecComboBox->addItem(codec.libraryName, QVariant::fromValue(codec));
+        ui->audioCodecComboBox->setItemData(ui->audioCodecComboBox->count() - 1, codec.displayName, Qt::ToolTipRole);
     }
 
     for (const Container& container : formats->containers) {
-        ui->containerComboBox->addItem(container.displayName, QVariant::fromValue(container));
+        ui->containerComboBox->addItem(container.formatName, QVariant::fromValue(container));
+        ui->containerComboBox->setItemData(ui->containerComboBox->count() - 1, container.displayName, Qt::ToolTipRole);
     }
 
     LoadState();
