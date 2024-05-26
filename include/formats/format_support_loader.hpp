@@ -11,7 +11,7 @@ class FormatSupportLoader : public QObject
     Q_OBJECT
 
 public:
-    virtual void QuerySupportedFormats() = 0;
+    virtual void QuerySupportedFormatsAsync() = 0;
 
 signals:
     void queryCompleted(std::variant<QSharedPointer<FormatSupport>, Message> maybeFormats);

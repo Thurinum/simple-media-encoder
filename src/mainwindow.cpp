@@ -16,6 +16,7 @@
 #include <QTimer>
 #include <QWhatsThis>
 
+#include "encoder/encoder_options_builder.hpp"
 #include "mainwindow.hpp"
 #include "notifier/notifier.hpp"
 #include "settings/serializer.hpp"
@@ -106,7 +107,7 @@ void MainWindow::QuerySupportedFormats()
 {
     SetProgressIndeterminate(true);
     SetProgressShown(true);
-    formatSupport.QuerySupportedFormats();
+    formatSupport.QuerySupportedFormatsAsync();
 }
 
 void MainWindow::LoadState()
@@ -130,6 +131,7 @@ void MainWindow::LoadState()
     serializer->deserialize(ui->autoFillCheckBox);
     serializer->deserialize(ui->closeOnSuccessCheckBox);
     serializer->deserialize(ui->codecSelectionGroupBox);
+    serializer->deserialize(ui->commonFormatsOnlyCheckbox);
     serializer->deserialize(ui->containerComboBox);
     serializer->deserialize(ui->customCommandTextEdit);
     serializer->deserialize(ui->deleteOnSuccessCheckBox);
@@ -158,6 +160,7 @@ void MainWindow::SaveState()
     serializer->serialize(ui->autoFillCheckBox);
     serializer->serialize(ui->closeOnSuccessCheckBox);
     serializer->serialize(ui->codecSelectionGroupBox);
+    serializer->serialize(ui->commonFormatsOnlyCheckbox);
     serializer->serialize(ui->containerComboBox);
     serializer->serialize(ui->customCommandTextEdit);
     serializer->serialize(ui->deleteOnSuccessCheckBox);
@@ -185,70 +188,47 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
 void MainWindow::StartEncoding()
 {
+    EncoderOptionsBuilder builder;
+
     QString inputPath = ui->inputFileLineEdit->text();
-
-    if (!QFile::exists(inputPath)) {
-        notifier.Notify(Severity::Info, tr("File not found"), tr("File '%1' does not exist. Please select a valid file.").arg(inputPath));
-        return;
-    }
-
-    double sizeKbpsConversionFactor = -1;
-    switch (ui->fileSizeUnitComboBox->currentIndex()) {
-    case 0: // KB to kb
-        sizeKbpsConversionFactor = 8;
-        break;
-    case 1: // MB to kb
-        sizeKbpsConversionFactor = 8000;
-        break;
-    case 2: // GB to kb
-        sizeKbpsConversionFactor = 8e+6;
-        break;
-    }
-
-    bool hasVideo = ui->radVideoAudio->isChecked() || ui->radVideoOnly->isChecked();
-    bool hasAudio = ui->radVideoAudio->isChecked() || ui->radAudioOnly->isChecked();
     QString outputPath = getOutputPath(inputPath);
+    // FIXME: emit fileExists() signal
+    // if (QFile::exists(outputPath + "." + container->formatName) && ui->warnOnOverwriteCheckBox->isChecked()
+    //     && QMessageBox::question(this, "Overwrite?", "Output at path '" + outputPath + "' already exists. Overwrite it?")
+    //            == QMessageBox::No) {
+    //     notifier.Notify(Severity::Info, "Operation canceled", "Compression aborted.");
+    //     return;
+    // }
 
-    optional<Codec> videoCodec;
-    optional<Codec> audioCodec;
+    if (metadata.has_value())
+        builder.useMetadata(*metadata);
 
-    videoCodec = hasVideo ? ui->videoCodecComboBox->currentData().value<Codec>() : optional<Codec>();
-    audioCodec = hasAudio ? ui->audioCodecComboBox->currentData().value<Codec>() : optional<Codec>();
+    builder
+        .inputFrom(inputPath)
+        .outputTo(outputPath)
+        .withVideoCodec(ui->videoCodecComboBox->currentData().value<Codec>())
+        .withAudioCodec(ui->audioCodecComboBox->currentData().value<Codec>())
+        .withContainer(ui->containerComboBox->currentData().value<Container>())
+        .withTargetOutputSize(getOutputSizeKbps())
+        .withAudioQuality(ui->audioQualitySlider->value() / 100.0)
+        .withOutputWidth(ui->widthSpinBox->value())
+        .withOutputHeight(ui->heightSpinBox->value())
+        .withAspectRatio(QPoint(ui->aspectRatioSpinBoxH->value(), ui->aspectRatioSpinBoxV->value()))
+        .atFps(ui->fpsSpinBox->value())
+        .atSpeed(ui->speedSpinBox->value())
+        .withCustomArguments(ui->customCommandTextEdit->toPlainText())
+        .withMinVideoBitrate(settings->get("Main/dMinBitrateVideoKbps").toDouble())
+        .withMinAudioBitrate(settings->get("Main/dMinBitrateAudioKbps").toDouble())
+        .withMaxAudioBitrate(settings->get("Main/dMaxBitrateAudioKbps").toDouble());
 
-    optional<Container> container = ui->containerComboBox->currentData().value<Container>();
-
-    if (QFile::exists(outputPath + "." + container->formatName) && ui->warnOnOverwriteCheckBox->isChecked()
-        && QMessageBox::question(this, "Overwrite?", "Output at path '" + outputPath + "' already exists. Overwrite it?")
-               == QMessageBox::No) {
-        notifier.Notify(Severity::Info, "Operation canceled", "Compression aborted.");
+    auto maybeOptions = builder.build();
+    if (std::holds_alternative<QList<QString>>(maybeOptions)) {
+        notifier.Notify(Severity::Error, "Invalid encoding options", std::get<QList<QString>>(maybeOptions).join("\n"));
         return;
     }
 
-    encoder.Encode(MediaEncoder::Options {
-        .inputPath = inputPath,
-        .outputPath = outputPath,
-        .videoCodec = videoCodec,
-        .audioCodec = audioCodec,
-        .container = container,
-        .sizeKbps = isAutoValue(ui->fileSizeSpinBox)
-                      ? std::optional<double>()
-                      : ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor,
-        .audioQualityPercent = ui->audioQualitySlider->value() / 100.0,
-        .outputWidth = ui->widthSpinBox->value() == 0 ? std::optional<int>()
-                                                      : ui->widthSpinBox->value(),
-        .outputHeight = ui->heightSpinBox->value() == 0 ? std::optional<int>()
-                                                        : ui->heightSpinBox->value(),
-        .aspectRatio = ui->aspectRatioSpinBoxH->value() != 0 && ui->aspectRatioSpinBoxV->value() != 0
-                         ? QPoint(ui->aspectRatioSpinBoxH->value(), ui->aspectRatioSpinBoxV->value())
-                         : optional<QPoint>(),
-        .fps = ui->fpsSpinBox->value() == 0 ? optional<int>() : ui->fpsSpinBox->value(),
-        .speed = ui->speedSpinBox->value() == 0 ? optional<double>() : ui->speedSpinBox->value(),
-        .customArguments = ui->customCommandTextEdit->toPlainText(),
-        .inputMetadata = metadata.has_value() ? metadata : optional<Metadata>(),
-        .minVideoBitrateKbps = settings->get("Main/dMinBitrateVideoKbps").toDouble(),
-        .minAudioBitrateKbps = settings->get("Main/dMinBitrateAudioKbps").toDouble(),
-        .maxAudioBitrateKbps = settings->get("Main/dMaxBitrateAudioKbps").toDouble(),
-    });
+    EncoderOptions options = std::get<EncoderOptions>(maybeOptions);
+    encoder.Encode(options);
 }
 
 void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
@@ -260,9 +240,7 @@ void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
                                            QString::number(qRound(audioBitrateKbps))));
 }
 
-void MainWindow::HandleSuccess(const MediaEncoder::Options& options,
-                               const MediaEncoder::ComputedOptions& computed,
-                               QFile& output)
+void MainWindow::HandleSuccess(const EncoderOptions& options, const MediaEncoder::ComputedOptions& computed, QFile& output)
 {
     SetProgressShown(true, 100);
 
@@ -273,7 +251,7 @@ void MainWindow::HandleSuccess(const MediaEncoder::Options& options,
 
     if (options.videoCodec.has_value()) {
         summary += tr("Using video codec %1 at %2 with container %3.\n")
-                       .arg(options.videoCodec->displayName, videoBitrate, options.container->displayName);
+                       .arg(options.videoCodec->displayName, videoBitrate, options.container.displayName);
     }
     if (options.audioCodec.has_value()) {
         summary += tr("Using audio codec %1 at %2kbps.\n")
@@ -382,17 +360,31 @@ void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupp
     SetProgressIndeterminate(false);
     SetProgressShown(false);
 
+    bool commonOnly = ui->commonFormatsOnlyCheckbox->isChecked();
+    static QStringList commonVideoCodecs = settings->get("FormatSelection/sCommonVideoCodecs").toStringList();
+    static QStringList commonAudioCodecs = settings->get("FormatSelection/sCommonAudioCodecs").toStringList();
+    static QStringList commonContainers = settings->get("FormatSelection/sCommonContainers").toStringList();
+
     for (const Codec& codec : formats->videoCodecs) {
+        if (commonOnly && !commonVideoCodecs.contains(codec.libraryName))
+            continue;
+
         ui->videoCodecComboBox->addItem(codec.libraryName, QVariant::fromValue(codec));
         ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, codec.displayName, Qt::ToolTipRole);
     }
 
     for (const Codec& codec : formats->audioCodecs) {
+        if (commonOnly && !commonAudioCodecs.contains(codec.libraryName))
+            continue;
+
         ui->audioCodecComboBox->addItem(codec.libraryName, QVariant::fromValue(codec));
         ui->audioCodecComboBox->setItemData(ui->audioCodecComboBox->count() - 1, codec.displayName, Qt::ToolTipRole);
     }
 
     for (const Container& container : formats->containers) {
+        if (commonOnly && !commonContainers.contains(container.formatName))
+            continue;
+
         ui->containerComboBox->addItem(container.formatName, QVariant::fromValue(container));
         ui->containerComboBox->setItemData(ui->containerComboBox->count() - 1, container.displayName, Qt::ToolTipRole);
     }
@@ -646,4 +638,23 @@ void MainWindow::SetupAdvancedModeAnimation()
         windowSizeAnim->setEndValue(this->minimumSizeHint());
         windowSizeAnim->start();
     });
+}
+
+double MainWindow::getOutputSizeKbps()
+{
+    double sizeKbpsConversionFactor = 0;
+
+    switch (ui->fileSizeUnitComboBox->currentIndex()) {
+    case 0: // KB to kb
+        sizeKbpsConversionFactor = 8;
+        break;
+    case 1: // MB to kb
+        sizeKbpsConversionFactor = 8000;
+        break;
+    case 2: // GB to kb
+        sizeKbpsConversionFactor = 8e+6;
+        break;
+    }
+
+    return ui->fileSizeSpinBox->value() * sizeKbpsConversionFactor;
 }

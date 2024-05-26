@@ -10,7 +10,7 @@ FFmpegFormatSupportLoader::FFmpegFormatSupportLoader()
     : codecsProcess(new QProcess(this))
     , containersProcess(new QProcess(this)) { }
 
-void FFmpegFormatSupportLoader::QuerySupportedFormats()
+void FFmpegFormatSupportLoader::QuerySupportedFormatsAsync()
 {
     if (cachedFormats != nullptr) {
         emit queryCompleted(cachedFormats);

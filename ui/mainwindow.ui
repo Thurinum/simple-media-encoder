@@ -908,6 +908,19 @@
              </spacer>
             </item>
             <item>
+             <widget class="QCheckBox" name="commonFormatsOnlyCheckbox">
+              <property name="toolTip">
+               <string/>
+              </property>
+              <property name="whatsThis">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Whether only a selection of the most common codecs and containers should be displayed in the dropdowns. Uncheck to use all available codecs from FFmpeg, but note that not all combinations are supported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Show common formats only</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QCheckBox" name="warnOnOverwriteCheckBox">
               <property name="whatsThis">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, you will be warned when the compressed output would &lt;span style=&quot; font-weight:700;&quot;&gt;overwrite&lt;/span&gt; a file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>

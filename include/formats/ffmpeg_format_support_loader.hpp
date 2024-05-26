@@ -16,7 +16,7 @@ class FFmpegFormatSupportLoader : public FormatSupportLoader
 public:
     FFmpegFormatSupportLoader();
 
-    void QuerySupportedFormats() override;
+    void QuerySupportedFormatsAsync() override;
 
 private slots:
     void onCodecsQueried();

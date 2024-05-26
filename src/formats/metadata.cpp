@@ -1,4 +1,4 @@
-#include "metadata.hpp"
+#include "formats/metadata.hpp"
 
 #include <QJsonArray>
 #include <QJsonDocument>

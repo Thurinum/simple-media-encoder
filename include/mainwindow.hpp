@@ -52,9 +52,7 @@ protected:
     void closeEvent(QCloseEvent* event) override;
 
     void HandleStart(double videoBitrateKbps, double audioBitrateKbps);
-    void HandleSuccess(const MediaEncoder::Options& options,
-                       const MediaEncoder::ComputedOptions& computed,
-                       QFile& output);
+    void HandleSuccess(const EncoderOptions& options, const MediaEncoder::ComputedOptions& computed, QFile& output);
     void HandleFailure(const QString& shortError, const QString& longError);
     void ShowAbout();
 
@@ -81,6 +79,7 @@ private:
     void ValidateSelectedUrl();
     void ValidateSelectedDir();
     void SetupAdvancedModeAnimation();
+    double getOutputSizeKbps();
 
     Ui::MainWindow* ui;
     Warnings* warnings;

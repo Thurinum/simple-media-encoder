@@ -31,12 +31,9 @@ MediaEncoder::~MediaEncoder()
     delete ffprobe;
 }
 
-void MediaEncoder::Encode(const Options& options)
+void MediaEncoder::Encode(const EncoderOptions& options)
 {
-    if (!validateOptions(options)) {
-        return;
-    }
-
+    // TODO: Inject metadata
     Metadata metadata;
 
     if (!options.inputMetadata.has_value()) {
@@ -68,7 +65,7 @@ void MediaEncoder::Encode(const Options& options)
     StartCompression(options, computed, metadata);
 }
 
-void MediaEncoder::StartCompression(const Options& options, const ComputedOptions& computed, const Metadata& metadata)
+void MediaEncoder::StartCompression(const EncoderOptions& options, const ComputedOptions& computed, const Metadata& metadata)
 {
     emit encodingStarted(computed.videoBitrateKbps.value_or(0), computed.audioBitrateKbps.value_or(0));
 
@@ -82,7 +79,7 @@ void MediaEncoder::StartCompression(const Options& options, const ComputedOption
     QString audioBitrateParam = computed.audioBitrateKbps.has_value()
                                   ? "-b:a " + QString::number(*computed.audioBitrateKbps) + "k"
                                   : "";
-    QString formatParam = QString("-f %1").arg(options.container->formatName);
+    QString formatParam = QString("-f %1").arg(options.container.formatName);
 
     // video filters
     QString aspectRatioFilter;
@@ -136,9 +133,9 @@ void MediaEncoder::StartCompression(const Options& options, const ComputedOption
     if (audioFilters.length() > 0)
         audioFiltersParam = "-filter:a " + audioFilters.join(',');
 
-    auto maybeFileExtension = extensionForContainer(*options.container);
+    auto maybeFileExtension = extensionForContainer(options.container);
     if (std::holds_alternative<Message>(maybeFileExtension)) {
-        emit encodingFailed(std::get<Message>(maybeFileExtension).message); // TODO: Use Message instead
+        emit encodingFailed(std::get<Message>(maybeFileExtension).message);
         return;
     }
     QString fileExtension = std::get<QString>(maybeFileExtension);
@@ -176,7 +173,7 @@ void MediaEncoder::UpdateProgress(double mediaDuration)
     emit encodingProgressUpdate(progressPercent);
 }
 
-void MediaEncoder::EndCompression(const Options& options, const ComputedOptions& computed, QString outputPath, QString command, int exitCode)
+void MediaEncoder::EndCompression(const EncoderOptions& options, const ComputedOptions& computed, QString outputPath, QString command, int exitCode)
 {
     if (exitCode != 0) {
         disconnect(*processUpdateConnection);
@@ -211,7 +208,7 @@ QString MediaEncoder::getAvailableFormats()
     return ffmpeg->readAllStandardOutput();
 }
 
-bool MediaEncoder::computeAudioBitrate(const Options& options, ComputedOptions& computed)
+bool MediaEncoder::computeAudioBitrate(const EncoderOptions& options, ComputedOptions& computed)
 {
     double audioBitrateKbps = qMax(options.minAudioBitrateKbps, options.audioQualityPercent.value_or(1) * options.maxAudioBitrateKbps);
     // TODO: Using the strategy pattern, specialize certain codecs to use different bitrate formulas
@@ -220,7 +217,7 @@ bool MediaEncoder::computeAudioBitrate(const Options& options, ComputedOptions& 
     return true;
 }
 
-double MediaEncoder::computePixelRatio(const Options& options, const Metadata& metadata)
+double MediaEncoder::computePixelRatio(const EncoderOptions& options, const Metadata& metadata)
 {
     double pixelRatio = 1;
     int outputWidth;
@@ -292,7 +289,7 @@ std::variant<QString, Message> MediaEncoder::extensionForContainer(const Contain
     return extensions.first().trimmed();
 }
 
-void MediaEncoder::ComputeVideoBitrate(const Options& options, ComputedOptions& computed, const Metadata& metadata)
+void MediaEncoder::ComputeVideoBitrate(const EncoderOptions& options, ComputedOptions& computed, const Metadata& metadata)
 {
     double audioBitrateKbps = computed.audioBitrateKbps.value_or(0);
 
@@ -316,57 +313,6 @@ QString MediaEncoder::parseOutput()
             ""
         )
         .trimmed();
-}
-
-bool MediaEncoder::validateOptions(const Options& options)
-{
-    QString error;
-
-    if (!options.videoCodec.has_value() && !options.audioCodec.has_value())
-        error = tr("Neither a video nor an audio codec was selected.");
-
-    if (!options.videoCodec.has_value() && !options.container.has_value())
-        error = tr("A container was selected but audio-only encoding was specified.");
-
-    if (options.outputWidth.has_value() && options.outputWidth < 0) {
-        error = tr("Output width must be greater than 0, but was %1")
-                    .arg(QString::number(*options.outputWidth));
-    }
-    if (options.outputHeight.has_value() && options.outputHeight < 0) {
-        error = tr("Output height must be greater than 0, but was %1")
-                    .arg(QString::number(*options.outputHeight));
-    }
-
-    auto aspect = options.aspectRatio;
-    if (aspect.has_value() && aspect->x() <= 0) {
-        error = tr("Invalid horizontal aspect %1").arg(QString::number(aspect->x()));
-    }
-    if (aspect.has_value() && aspect->y() <= 0) {
-        error = tr("Invalid horizontal aspect %1").arg(QString::number(aspect->x()));
-    }
-
-    auto fps = options.fps;
-    if (fps.has_value() && fps.value() < 0) {
-        error = QString("Value for frames per seconds '%1' is out of range.")
-                    .arg(QString::number(*fps));
-    }
-
-    auto speed = options.speed;
-    if (speed.has_value() && speed.value() < 0) {
-        error = QString("Value for speed '%1' is out of range.").arg(QString::number(*fps));
-    }
-
-    if (options.customArguments.has_value()
-        && QRegularExpression("[^ -/a-z0-9]").match(*options.customArguments).hasMatch()) {
-        error = tr("Custom parameters contain invalid characters.");
-    }
-
-    if (!error.isEmpty()) {
-        emit encodingFailed(error, tr("rip bozo"));
-        return false;
-    }
-
-    return true;
 }
 
 std::variant<Metadata, Metadata::Error> MediaEncoder::getMetadata(const QString& path)
