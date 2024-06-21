@@ -201,6 +201,9 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::withCustomArguments(const QS
 
 std::variant<EncoderOptions, QList<QString>> EncoderOptionsBuilder::build()
 {
+    if (!inputMetadata.has_value())
+        errors.append(QObject::tr("No input metadata was specified."));
+
     if (!inputPath.has_value())
         errors.append(QObject::tr("No input path was specified."));
 
@@ -221,7 +224,7 @@ std::variant<EncoderOptions, QList<QString>> EncoderOptionsBuilder::build()
 
     // TODO: Should we use std::move? I have to read on move semantics lol
     return EncoderOptions {
-        .inputMetadata = inputMetadata,
+        .inputMetadata = *inputMetadata,
         .inputPath = *inputPath,
         .outputPath = *outputPath,
         .videoCodec = videoCodec,

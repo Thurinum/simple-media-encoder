@@ -34,6 +34,7 @@ public:
         MediaEncoder& encoder,
         QSharedPointer<Settings> settings,
         QSharedPointer<Serializer> serializer,
+        MetadataLoader& metadata,
         const Notifier& notifier,
         const PlatformInfo& platformInfo,
         FormatSupportLoader& formatSupportLoader,
@@ -45,7 +46,7 @@ protected:
     void CheckForBinaries();
     void SetupMenu();
     void SetupEventCallbacks();
-    void QuerySupportedFormats();
+    void QuerySupportedFormatsAsync();
 
     void LoadState();
     void SaveState();
@@ -71,12 +72,17 @@ private slots:
     void HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupport>, Message> maybeFormats);
 
 private:
-    void ParseMetadata(const QString& path);
+    struct ProgressState {
+        optional<QString> status = optional<QString>();
+        optional<int> progressPercent = optional<int>();
+    };
+
+    void QueryMediaMetadataAsync(const QString& path);
+    void ReceiveMediaMetadata(MetadataResult result);
     QString getOutputPath(QString inputFilePath);
     inline bool isAutoValue(QAbstractSpinBox* spinBox);
-    void SetProgressShown(bool shown, int progressPercent = 0);
-    void SetProgressIndeterminate(bool indeterminate);
-    void ValidateSelectedUrl();
+    void SetProgressShown(ProgressState state);
+    void LoadSelectedUrl();
     void ValidateSelectedDir();
     void SetupAdvancedModeAnimation();
     double getOutputSizeKbps();
@@ -93,6 +99,7 @@ private:
     MediaEncoder& encoder;
     QSharedPointer<Settings> settings;
     QSharedPointer<Serializer> serializer;
+    MetadataLoader& metadataLoader;
     const Notifier& notifier;
     const PlatformInfo& platformInfo;
     FormatSupportLoader& formatSupport;

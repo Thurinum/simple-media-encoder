@@ -5,6 +5,7 @@
 #include "formats/codec.hpp"
 #include "formats/container.hpp"
 #include "formats/metadata.hpp"
+#include "formats/metadata_loader.hpp"
 
 #include <QDir>
 #include <QEventLoop>
@@ -29,7 +30,6 @@ public:
     };
 
     void Encode(const EncoderOptions& options);
-    std::variant<Metadata, Metadata::Error> getMetadata(const QString& path);
     QString getAvailableFormats();
 
 signals:
@@ -37,7 +37,6 @@ signals:
     void encodingSucceeded(const EncoderOptions& options, const ComputedOptions& computed, QFile& output);
     void encodingProgressUpdate(double progressPercent);
     void encodingFailed(QString error, QString errorDetails = "");
-    void metadataComputed();
 
 private:
     const bool IS_WINDOWS = QSysInfo::kernelType() == "winnt";

@@ -11,7 +11,7 @@
 using std::optional;
 
 struct EncoderOptions {
-    const optional<const Metadata> inputMetadata;
+    const Metadata inputMetadata;
     const QString inputPath;
     const QString outputPath;
     const optional<const Codec> videoCodec;

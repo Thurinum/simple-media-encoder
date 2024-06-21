@@ -54,7 +54,6 @@ private:
     double overshootCorrectionPercent = 0.02;
     optional<QString> customArguments;
 
-    EncoderOptions options;
     QList<QString> errors;
 };
 

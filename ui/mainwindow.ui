@@ -1444,7 +1444,7 @@
        <item>
         <widget class="QLabel" name="progressBarLabel">
          <property name="text">
-          <string>Encoding...</string>
+          <string/>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>

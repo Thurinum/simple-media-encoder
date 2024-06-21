@@ -1,7 +1,6 @@
 #include "encoder/encoder.hpp"
 
 #include "formats/metadata.hpp"
-#include "notifier/notifier.hpp"
 
 #include <QEventLoop>
 #include <QFile>
@@ -17,7 +16,6 @@
 
 MediaEncoder::MediaEncoder(QObject* parent)
     : QObject { parent }
-
 {
     ffmpeg->setProcessChannelMode(QProcess::MergedChannels);
     connect(ffmpeg, &QProcess::errorOccurred, [this](QProcess::ProcessError error) {
@@ -33,23 +31,7 @@ MediaEncoder::~MediaEncoder()
 
 void MediaEncoder::Encode(const EncoderOptions& options)
 {
-    // TODO: Inject metadata
-    Metadata metadata;
-
-    if (!options.inputMetadata.has_value()) {
-        std::variant<Metadata, Metadata::Error> result = getMetadata(options.inputPath);
-
-        if (std::holds_alternative<Metadata::Error>(result)) {
-            Metadata::Error error = std::get<Metadata::Error>(result);
-
-            emit encodingFailed(error.summary, error.details);
-            return;
-        }
-
-        metadata = std::get<Metadata>(result);
-    } else {
-        metadata = *options.inputMetadata;
-    }
+    Metadata metadata = options.inputMetadata;
 
     ComputedOptions computed;
 
@@ -313,19 +295,4 @@ QString MediaEncoder::parseOutput()
             ""
         )
         .trimmed();
-}
-
-std::variant<Metadata, Metadata::Error> MediaEncoder::getMetadata(const QString& path)
-{
-    ffprobe->startCommand(
-        QString(R"(ffprobe%1 -v error -print_format json -show_format -show_streams "%2")")
-            .arg(IS_WINDOWS ? ".exe" : "", path)
-    );
-    ffprobe->waitForFinished();
-
-    QByteArray data = ffprobe->readAll();
-    Metadata::Builder builder;
-
-    emit metadataComputed();
-    return builder.fromJson(data);
 }

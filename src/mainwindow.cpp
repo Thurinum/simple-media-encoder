@@ -24,20 +24,13 @@
 
 using std::optional;
 
-MainWindow::MainWindow(
-    MediaEncoder& encoder,
-    QSharedPointer<Settings> settings,
-    QSharedPointer<Serializer> serializer,
-    const Notifier& notifier,
-    const PlatformInfo& platformInfo,
-    FormatSupportLoader& formatSupportLoader,
-    QWidget* parent
-)
+MainWindow::MainWindow(MediaEncoder& encoder, QSharedPointer<Settings> settings, QSharedPointer<Serializer> serializer, MetadataLoader& metadata, const Notifier& notifier, const PlatformInfo& platformInfo, FormatSupportLoader& formatSupportLoader, QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , encoder(encoder)
     , settings(std::move(settings))
     , serializer(std::move(serializer))
+    , metadataLoader(metadata)
     , notifier(notifier)
     , platformInfo(platformInfo)
     , formatSupport(formatSupportLoader)
@@ -56,7 +49,7 @@ MainWindow::MainWindow(
     SetupMenu();
     SetupEventCallbacks();
 
-    QuerySupportedFormats();
+    QuerySupportedFormatsAsync();
 }
 
 MainWindow::~MainWindow()
@@ -94,19 +87,14 @@ void MainWindow::SetupEventCallbacks()
     connect(&encoder, &MediaEncoder::encodingSucceeded, this, &MainWindow::HandleSuccess);
     connect(&encoder, &MediaEncoder::encodingFailed, this, &MainWindow::HandleFailure);
     connect(&encoder, &MediaEncoder::encodingProgressUpdate, this, [this](int progress) {
-        SetProgressShown(true, progress);
-    });
-    connect(&encoder, &MediaEncoder::metadataComputed, this, [this]() {
-        SetProgressShown(false);
-        ui->progressBar->setRange(0, 100);
-        ui->progressBarLabel->setText(tr("Compressing..."));
+        SetProgressShown({ .status = tr("Compressing..."),
+                           .progressPercent = progress });
     });
 }
 
-void MainWindow::QuerySupportedFormats()
+void MainWindow::QuerySupportedFormatsAsync()
 {
-    SetProgressIndeterminate(true);
-    SetProgressShown(true);
+    SetProgressShown({ .status = tr("Querying supported formats...") });
     formatSupport.QuerySupportedFormatsAsync();
 }
 
@@ -119,7 +107,7 @@ void MainWindow::LoadState()
     SetControlsState(ui->audioVideoButtonGroup->checkedButton());
 
     serializer->deserialize(ui->outputFileNameLineEdit);
-    ValidateSelectedUrl();
+    LoadSelectedUrl();
 
     serializer->deserialize(ui->outputFolderLineEdit);
     ValidateSelectedDir();
@@ -233,7 +221,8 @@ void MainWindow::StartEncoding()
 
 void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
 {
-    SetProgressShown(true);
+    SetProgressShown({ .status = tr("Compressing..."),
+                       .progressPercent = 0 });
 
     ui->progressBarLabel->setText(QString(tr("Video bitrate: %1 kbps | Audio bitrate: %2 kbps"))
                                       .arg(QString::number(qRound(videoBitrateKbps)),
@@ -242,7 +231,8 @@ void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
 
 void MainWindow::HandleSuccess(const EncoderOptions& options, const MediaEncoder::ComputedOptions& computed, QFile& output)
 {
-    SetProgressShown(true, 100);
+    SetProgressShown({ .status = tr("Compression complete"),
+                       .progressPercent = 100 });
 
     QString summary;
     QString videoBitrate = computed.videoBitrateKbps.has_value()
@@ -265,7 +255,7 @@ void MainWindow::HandleSuccess(const EncoderOptions& options, const MediaEncoder
 
     notifier.Notify(Severity::Info, tr("Compressed successfully"), summary);
 
-    SetProgressShown(false);
+    SetProgressShown({});
 
     QFileInfo fileInfo(output);
     QString command = platformInfo.isWindows() ? "explorer.exe" : "xdg-open";
@@ -299,7 +289,7 @@ void MainWindow::HandleSuccess(const EncoderOptions& options, const MediaEncoder
 void MainWindow::HandleFailure(const QString& shortError, const QString& longError)
 {
     notifier.Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
-    SetProgressShown(false);
+    SetProgressShown({});
 }
 
 void MainWindow::CheckAspectRatioConflict()
@@ -357,8 +347,7 @@ void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupp
     }
 
     QSharedPointer<FormatSupport> formats = std::get<QSharedPointer<FormatSupport>>(maybeFormats);
-    SetProgressIndeterminate(false);
-    SetProgressShown(false);
+    SetProgressShown({});
 
     bool commonOnly = ui->commonFormatsOnlyCheckbox->isChecked();
     static QStringList commonVideoCodecs = settings->get("FormatSelection/sCommonVideoCodecs").toStringList();
@@ -390,6 +379,7 @@ void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupp
     }
 
     LoadState();
+    LoadSelectedUrl();
 }
 
 void MainWindow::ShowAbout()
@@ -407,7 +397,7 @@ void MainWindow::ShowAbout()
     notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), msg);
 }
 
-void MainWindow::SetProgressShown(bool shown, int progressPercent)
+void MainWindow::SetProgressShown(ProgressState state)
 {
     auto* valueAnimation = new QPropertyAnimation(ui->progressBar, "value");
     valueAnimation->setDuration(settings->get("Main/iProgressBarAnimDurationMs").toInt());
@@ -417,36 +407,35 @@ void MainWindow::SetProgressShown(bool shown, int progressPercent)
     valueAnimation->setDuration(settings->get("Main/iProgressWidgetAnimDurationMs").toInt());
     valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
 
-    if (shown && ui->progressWidget->maximumHeight() == 0) {
+    if (state.status.has_value() && ui->progressWidget->maximumHeight() == 0) {
         ui->centralWidget->setEnabled(false);
-        ui->startCompressionButton->setText(tr("Encoding..."));
+
+        QString taskName = *state.status;
+        if (ui->startCompressionButton->text() != taskName)
+            ui->startCompressionButton->setText(taskName);
+
         ui->progressWidgetTopSpacer->changeSize(0, 10);
         heightAnimation->setStartValue(0);
         heightAnimation->setEndValue(500);
-        heightAnimation->start();
-    }
-
-    if (!shown) {
+    } else if (!state.status) {
         ui->centralWidget->setEnabled(true);
         ui->startCompressionButton->setText(tr("Start encoding"));
         ui->progressWidgetTopSpacer->changeSize(0, 0);
         heightAnimation->setStartValue(ui->progressWidget->height());
         heightAnimation->setEndValue(0);
-        heightAnimation->start();
     }
 
-    valueAnimation->setStartValue(ui->progressBar->value());
-    valueAnimation->setEndValue(progressPercent);
-    valueAnimation->start();
-}
+    heightAnimation->start();
 
-void MainWindow::SetProgressIndeterminate(bool indeterminate)
-{
-    if (indeterminate) {
+    if (!state.progressPercent.has_value()) {
         ui->progressBar->setRange(0, 0);
-    } else {
-        ui->progressBar->setRange(0, 100);
+        return;
     }
+
+    ui->progressBar->setRange(0, 100);
+    valueAnimation->setStartValue(ui->progressBar->value());
+    valueAnimation->setEndValue(*state.progressPercent);
+    valueAnimation->start();
 }
 
 void MainWindow::SetAdvancedMode(bool enabled)
@@ -532,11 +521,7 @@ void MainWindow::OpenInputFile()
     QString path = fileUrl.toLocalFile();
     ui->inputFileLineEdit->setText(path);
 
-    ui->progressBar->setRange(0, 0);
-    ui->progressBarLabel->setText(tr("Parsing metadata..."));
-    SetProgressShown(true);
-
-    ParseMetadata(path);
+    QueryMediaMetadataAsync(path);
 
     if (ui->autoFillCheckBox->isChecked()) {
         ui->widthSpinBox->setValue(metadata->width);
@@ -553,14 +538,23 @@ void MainWindow::OpenInputFile()
     }
 }
 
-void MainWindow::ParseMetadata(const QString& path)
+void MainWindow::QueryMediaMetadataAsync(const QString& path)
 {
-    std::variant<Metadata, Metadata::Error> result = encoder.getMetadata(path);
+    SetProgressShown({ .status = tr("Parsing metadata...") });
 
-    if (std::holds_alternative<Metadata::Error>(result)) {
-        Metadata::Error error = std::get<Metadata::Error>(result);
+    connect(&metadataLoader, &MetadataLoader::loadAsyncComplete, this, &MainWindow::ReceiveMediaMetadata, Qt::UniqueConnection);
 
-        notifier.Notify(Severity::Error, tr("Failed to parse media metadata"), error.summary, error.details);
+    metadataLoader.loadAsync(path);
+}
+
+void MainWindow::ReceiveMediaMetadata(MetadataResult result)
+{
+    SetProgressShown({});
+
+    if (std::holds_alternative<Message>(result)) {
+        Message error = std::get<Message>(result);
+
+        notifier.Notify(error);
         ui->inputFileLineEdit->clear();
         return;
     }
@@ -597,12 +591,12 @@ bool MainWindow::isAutoValue(QAbstractSpinBox* spinBox)
     return spinBox->text() == spinBox->specialValueText();
 }
 
-void MainWindow::ValidateSelectedUrl()
+void MainWindow::LoadSelectedUrl()
 {
     const QString selectedUrl = ui->inputFileLineEdit->text();
     bool isValidInput = QFile::exists(selectedUrl);
     if (isValidInput)
-        ParseMetadata(selectedUrl);
+        QueryMediaMetadataAsync(selectedUrl);
     else
         ui->inputFileLineEdit->clear();
 }

@@ -15,8 +15,9 @@ int main(int argc, char* argv[])
     app.setApplicationName("Efficient Media Encoder");
     app.setStyle("Fusion");
 
-    MediaEncoder* encoder = new MediaEncoder(&app);
     const PlatformInfo platformInfo;
+    MetadataLoader metadataLoader(platformInfo);
+    MediaEncoder encoder(&app);
     const MessageBoxNotifier notifier;
 
     auto maybeSettings = SettingsFactory::createIniSettings("config.ini", "config_default.ini");
@@ -33,7 +34,7 @@ int main(int argc, char* argv[])
     const QSharedPointer<Serializer> serializer(new Serializer(settings));
 
     FFmpegFormatSupportLoader formats;
-    MainWindow w(*encoder, settings, serializer, notifier, platformInfo, formats);
+    MainWindow w(encoder, settings, serializer, metadataLoader, notifier, platformInfo, formats);
     w.setWindowIcon(QIcon("appicon.ico"));
     w.show();
 
