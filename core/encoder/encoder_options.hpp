@@ -4,9 +4,9 @@
 #include <QString>
 #include <optional>
 
-#include "formats/codec.hpp"
-#include "formats/container.hpp"
-#include "formats/metadata.hpp"
+#include "core/formats/container.hpp"
+#include "core/formats/codec.hpp"
+#include "core/formats/metadata.hpp"
 
 using std::optional;
 

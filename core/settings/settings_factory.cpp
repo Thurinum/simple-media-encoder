@@ -1,7 +1,7 @@
-#include "settings/settings_factory.hpp"
+#include "settings_factory.hpp"
 
-#include "notifier/notifier.hpp"
-#include "settings/ini_settings.hpp"
+#include "core/notifier/notifier.hpp"
+#include "ini_settings.hpp"
 
 #include <QDir>
 #include <QFile>

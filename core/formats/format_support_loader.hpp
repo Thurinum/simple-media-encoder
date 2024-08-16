@@ -4,7 +4,7 @@
 #include <QObject>
 
 #include "format_support.hpp"
-#include "notifier/notifier.hpp"
+#include "core/notifier/notifier.hpp"
 
 class FormatSupportLoader : public QObject
 {

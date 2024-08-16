@@ -1,11 +1,11 @@
 #ifndef MEDIAENCODER_H
 #define MEDIAENCODER_H
 
-#include "encoder/encoder_options.hpp"
-#include "formats/codec.hpp"
-#include "formats/container.hpp"
-#include "formats/metadata.hpp"
-#include "formats/metadata_loader.hpp"
+#include "encoder_options.hpp"
+#include "core/formats/codec.hpp"
+#include "core/formats/container.hpp"
+#include "core/formats/metadata.hpp"
+#include "core/formats/metadata_loader.hpp"
 
 #include <QDir>
 #include <QEventLoop>

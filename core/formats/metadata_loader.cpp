@@ -1,6 +1,6 @@
-#include "formats/metadata_loader.hpp"
-#include "formats/metadata.hpp"
-#include "notifier/message.hpp"
+#include "metadata_loader.hpp"
+#include "metadata.hpp"
+#include "core/notifier/message.hpp"
 
 #include <QJsonArray>
 #include <QJsonDocument>

@@ -7,9 +7,9 @@
 #include <QProcess>
 #include <variant>
 
-#include "formats/metadata.hpp"
-#include "notifier/message.hpp"
-#include "utils/platform_info.hpp"
+#include "metadata.hpp"
+#include "core/notifier/message.hpp"
+#include "core/utils/platform_info.hpp"
 
 typedef std::variant<Metadata, Message> MetadataResult;
 

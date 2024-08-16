@@ -1,7 +1,7 @@
 #ifndef MESSAGE_BOX_NOTIFIER_H
 #define MESSAGE_BOX_NOTIFIER_H
 
-#include "notifier/notifier.hpp"
+#include "notifier.hpp"
 
 class MessageBoxNotifier : public Notifier
 {

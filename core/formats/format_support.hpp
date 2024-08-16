@@ -1,8 +1,8 @@
 #ifndef FORMAT_SUPPORT_H
 #define FORMAT_SUPPORT_H
 
-#include "formats/codec.hpp"
-#include "formats/container.hpp"
+#include "codec.hpp"
+#include "container.hpp"
 
 struct FormatSupport {
     const QList<Codec> videoCodecs;

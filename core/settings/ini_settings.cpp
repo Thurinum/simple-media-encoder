@@ -1,5 +1,5 @@
-#include "settings/ini_settings.hpp"
-#include "notifier/notifier.hpp"
+#include "ini_settings.hpp"
+#include "core/notifier/notifier.hpp"
 
 #include <QDir>
 #include <QFile>

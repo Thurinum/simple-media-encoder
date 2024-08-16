@@ -1,4 +1,4 @@
-#include "settings/serializer.hpp"
+#include "serializer.hpp"
 
 #include <QAbstractButton>
 

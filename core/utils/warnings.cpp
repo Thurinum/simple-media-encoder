@@ -1,4 +1,4 @@
-#include "utils/warnings.hpp"
+#include "warnings.hpp"
 
 Warnings::Warnings(QWidget* widget)
     : m_tooltipWidget { widget }

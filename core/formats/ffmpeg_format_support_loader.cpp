@@ -1,6 +1,6 @@
-#include "formats/ffmpeg_format_support_loader.hpp"
-#include "formats/codec.hpp"
-#include "notifier/notifier.hpp"
+#include "ffmpeg_format_support_loader.hpp"
+#include "codec.hpp"
+#include "core/notifier/notifier.hpp"
 
 #include <QProcess>
 #include <QRegularExpression>

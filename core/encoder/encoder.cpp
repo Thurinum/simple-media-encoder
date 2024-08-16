@@ -1,18 +1,13 @@
-#include "encoder/encoder.hpp"
+#include "encoder.hpp"
 
-#include "formats/metadata.hpp"
-
-#include <QEventLoop>
 #include <QFile>
-#include <QJsonArray>
 #include <QJsonDocument>
-#include <QJsonObject>
-#include <QJsonValue>
 #include <QRegularExpression>
 #include <QStringBuilder>
 #include <QTime>
-#include <QUrl>
 #include <QVariant>
+
+#include "core/formats/metadata.hpp"
 
 MediaEncoder::MediaEncoder(QObject* parent)
     : QObject { parent }

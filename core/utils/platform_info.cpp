@@ -1,4 +1,4 @@
-#include "utils/platform_info.hpp"
+#include "platform_info.hpp"
 
 #include <QOffscreenSurface>
 #include <QOpenGLFunctions>

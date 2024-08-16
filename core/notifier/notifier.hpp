@@ -3,7 +3,7 @@
 
 #include <QMessageBox>
 
-#include "notifier/message.hpp"
+#include "message.hpp"
 
 class Notifier
 {
