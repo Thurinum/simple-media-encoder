@@ -9,8 +9,7 @@
 
 #include "core/formats/metadata.hpp"
 
-MediaEncoder::MediaEncoder(QObject* parent)
-    : QObject { parent }
+MediaEncoder::MediaEncoder()
 {
     ffmpeg->setProcessChannelMode(QProcess::MergedChannels);
     connect(ffmpeg, &QProcess::errorOccurred, [this](QProcess::ProcessError error) {

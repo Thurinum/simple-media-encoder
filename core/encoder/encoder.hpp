@@ -21,7 +21,7 @@ class MediaEncoder : public QObject {
     Q_OBJECT
 
 public:
-    explicit MediaEncoder(QObject* parent);
+    explicit MediaEncoder();
     ~MediaEncoder() override;
 
     struct ComputedOptions {
