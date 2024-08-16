@@ -9,16 +9,11 @@
 #include "utils/platform_info.hpp"
 #include "utils/warnings.hpp"
 
-#include <QComboBox>
-#include <QGraphicsBlurEffect>
-#include <QLabel>
 #include <QMainWindow>
 #include <QMessageBox>
-#include <QPointer>
 #include <QPropertyAnimation>
 #include <QSettings>
 #include <QSpinBox>
-#include <QUrl>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -32,14 +27,13 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow(
         MediaEncoder& encoder,
-        QSharedPointer<Settings> settings,
-        QSharedPointer<Serializer> serializer,
+        std::shared_ptr<Settings> settings,
+        std::shared_ptr<Serializer> serializer,
         MetadataLoader& metadata,
-        const Notifier& notifier,
-        const PlatformInfo& platformInfo,
-        FormatSupportLoader& formatSupportLoader,
-        QWidget* parent = nullptr
-    );
+        Notifier& notifier,
+        PlatformInfo& platformInfo,
+        FormatSupportLoader& formatSupportLoader
+        );
     ~MainWindow() override;
 
 protected:
@@ -97,11 +91,11 @@ private:
     QPropertyAnimation* windowSizeAnim;
 
     MediaEncoder& encoder;
-    QSharedPointer<Settings> settings;
-    QSharedPointer<Serializer> serializer;
+    std::shared_ptr<Settings> settings;
+    std::shared_ptr<Serializer> serializer;
     MetadataLoader& metadataLoader;
-    const Notifier& notifier;
-    const PlatformInfo& platformInfo;
+    Notifier& notifier;
+    PlatformInfo& platformInfo;
     FormatSupportLoader& formatSupport;
 };
 

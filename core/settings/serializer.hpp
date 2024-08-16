@@ -33,7 +33,7 @@ concept Checkable = requires(T t) {
 class Serializer
 {
 public:
-    Serializer(QSharedPointer<Settings> dataSource)
+    Serializer(std::shared_ptr<Settings> dataSource)
         : dataSource(dataSource) {};
 
     template <ValueWidget W>
@@ -59,7 +59,7 @@ private:
     void serializeBase(QObject* object, const QVariant& value);
     QVariant deserializeBase(QObject* object);
 
-    QSharedPointer<Settings> dataSource;
+    std::shared_ptr<Settings> dataSource;
 };
 
 #endif

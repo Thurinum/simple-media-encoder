@@ -11,7 +11,7 @@ class Message;
 class SettingsFactory
 {
 public:
-    static std::variant<QSharedPointer<Settings>, Message> createIniSettings(const QString& fileName, const QString& defaultFileName);
+    static std::variant<std::shared_ptr<Settings>, Message> createIniSettings(const QString& fileName, const QString& defaultFileName);
 };
 
 #endif

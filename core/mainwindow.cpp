@@ -24,9 +24,8 @@
 
 using std::optional;
 
-MainWindow::MainWindow(MediaEncoder& encoder, QSharedPointer<Settings> settings, QSharedPointer<Serializer> serializer, MetadataLoader& metadata, const Notifier& notifier, const PlatformInfo& platformInfo, FormatSupportLoader& formatSupportLoader, QWidget* parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+MainWindow::MainWindow(MediaEncoder& encoder, std::shared_ptr<Settings> settings, std::shared_ptr<Serializer> serializer, MetadataLoader& metadata, Notifier& notifier, PlatformInfo& platformInfo, FormatSupportLoader& formatSupportLoader)
+    : ui(new Ui::MainWindow)
     , encoder(encoder)
     , settings(std::move(settings))
     , serializer(std::move(serializer))

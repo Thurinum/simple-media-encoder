@@ -2,10 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 project(MediaEncoder VERSION 1.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wextra -fconcepts-diagnostics-depth=5")
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/ui)
+set(BOOST_DI_CFG_DIAGNOSTICS_LEVEL 2)
 add_definitions(-DQT_DISABLE_DEPRECATED_UP_TO=0x060700)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)

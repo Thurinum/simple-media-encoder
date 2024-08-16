@@ -5,20 +5,22 @@
 #include "settings/serializer.hpp"
 #include "settings/settings_factory.hpp"
 #include "utils/platform_info.hpp"
+#include "thirdparty/boost-di/di.hpp"
+
+namespace di = boost::di;
 
 #include <QApplication>
-#include <QStyleFactory>
 
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
-    app.setApplicationName("Efficient Media Encoder");
+    app.setApplicationName("Simple Media Converter");
     app.setStyle("Fusion");
 
-    const PlatformInfo platformInfo;
+    PlatformInfo platformInfo;
     MetadataLoader metadataLoader(platformInfo);
     MediaEncoder encoder(&app);
-    const MessageBoxNotifier notifier;
+    MessageBoxNotifier notifier;
 
     auto maybeSettings = SettingsFactory::createIniSettings("config.ini", "config_default.ini");
     if (std::holds_alternative<Message>(maybeSettings)) {
@@ -26,17 +28,28 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    const QSharedPointer<Settings> settings = std::get<QSharedPointer<Settings>>(maybeSettings);
+    const std::shared_ptr<Settings> settings = std::get<std::shared_ptr<Settings>>(maybeSettings);
     QObject::connect(settings.get(), &Settings::problemOccured, [notifier](const Message& problem) {
         notifier.Notify(problem);
     });
 
-    const QSharedPointer<Serializer> serializer(new Serializer(settings));
+    const auto serializer = std::make_shared<Serializer>(settings);
 
     FFmpegFormatSupportLoader formats;
-    MainWindow w(encoder, settings, serializer, metadataLoader, notifier, platformInfo, formats);
-    w.setWindowIcon(QIcon("appicon.ico"));
-    w.show();
+
+    const auto injector = make_injector(
+        di::bind<MediaEncoder>.to(encoder),
+        di::bind<Settings>.to(settings),
+        di::bind<Serializer>.to(serializer),
+        di::bind<MetadataLoader>.to(metadataLoader),
+        di::bind<Notifier>.to(notifier),
+        di::bind<PlatformInfo>.to(platformInfo),
+        di::bind<FormatSupportLoader>.to(formats)
+    );
+
+    auto w = injector.create<std::shared_ptr<MainWindow>>();
+    w->setWindowIcon(QIcon("appicon.ico"));
+    w->show();
 
     return app.exec();
 }

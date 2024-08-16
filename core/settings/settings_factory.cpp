@@ -8,7 +8,7 @@
 #include <QSettings>
 #include <variant>
 
-std::variant<QSharedPointer<Settings>, Message> SettingsFactory::createIniSettings(const QString& fileName, const QString& defaultFileName)
+std::variant<std::shared_ptr<Settings>, Message> SettingsFactory::createIniSettings(const QString& fileName, const QString& defaultFileName)
 {
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QDir::current().absolutePath());
 
@@ -23,5 +23,5 @@ std::variant<QSharedPointer<Settings>, Message> SettingsFactory::createIniSettin
     if (!QFile::exists(fileName))
         QFile::copy(defaultFileName, fileName);
 
-    return QSharedPointer<Settings>(new IniSettings(fileName, defaultFileName));
+    return std::make_shared<IniSettings>(fileName, defaultFileName);
 }
