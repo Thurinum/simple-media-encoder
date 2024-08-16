@@ -2,43 +2,35 @@
 
 #include <QAbstractButton>
 
-void Serializer::serialize(QComboBox* widget)
-{
+void Serializer::serialize(const QComboBox* widget) const {
     serializeBase(widget, widget->currentText());
 }
 
-void Serializer::serialize(QPlainTextEdit* widget)
-{
+void Serializer::serialize(const QPlainTextEdit* widget) const {
     serializeBase(widget, widget->toPlainText());
 }
 
-void Serializer::serialize(QLineEdit* widget)
-{
+void Serializer::serialize(const QLineEdit* widget) const {
     serializeBase(widget, widget->text());
 }
 
-void Serializer::serialize(QButtonGroup* widget)
-{
+void Serializer::serialize(const QButtonGroup* widget) const {
     serializeBase(widget, widget->checkedId());
 }
 
-void Serializer::deserialize(QComboBox* widget)
-{
+void Serializer::deserialize(QComboBox* widget) const {
     widget->setCurrentText(deserializeBase(widget).toString());
 }
 
-void Serializer::deserialize(QPlainTextEdit* widget)
-{
+void Serializer::deserialize(QPlainTextEdit* widget) const {
     widget->setPlainText(deserializeBase(widget).toString());
 }
 
-void Serializer::deserialize(QLineEdit* widget)
-{
+void Serializer::deserialize(QLineEdit* widget) const {
     widget->setText(deserializeBase(widget).toString());
 }
 
-void Serializer::deserialize(QButtonGroup* widget)
-{
+void Serializer::deserialize(const QButtonGroup* widget) const {
     QAbstractButton* checkedButton = widget->button(deserializeBase(widget).toInt());
 
     if (!checkedButton)
@@ -47,21 +39,19 @@ void Serializer::deserialize(QButtonGroup* widget)
     checkedButton->setChecked(true);
 }
 
-QString Serializer::key(QObject* object)
+QString Serializer::key(const QObject* object)
 {
     return QString("LastDesired/%1").arg(object->objectName());
 }
 
-void Serializer::serializeBase(QObject* object, const QVariant& value)
-{
+void Serializer::serializeBase(const QObject* object, const QVariant& value) const {
     if (!dataSource)
         return;
 
     dataSource->Set(key(object), value);
 }
 
-QVariant Serializer::deserializeBase(QObject* object)
-{
+QVariant Serializer::deserializeBase(const QObject* object) const {
     if (!dataSource)
         return {};
 
