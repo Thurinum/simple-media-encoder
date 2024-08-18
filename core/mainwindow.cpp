@@ -152,13 +152,15 @@ void MainWindow::LoadState()
     serializer->deserialize(ui->outputFolderLineEdit, settings, key);
     ValidateSelectedDir();
 
+    serializer->deserialize(ui->commonFormatsOnlyCheckbox, settings, "Preferences");
+    UpdateCodecsList(ui->commonFormatsOnlyCheckbox->isChecked());
+
     LoadPresetNames();
 
     const QList<QObject*> widgets = {
         ui->autoFillCheckBox,
         ui->closeOnSuccessCheckBox,
         ui->codecSelectionGroupBox,
-        ui->commonFormatsOnlyCheckbox,
         ui->deleteOnSuccessCheckBox,
         ui->inputFileLineEdit,
         ui->openExplorerOnSuccessCheckBox,
@@ -373,7 +375,7 @@ void MainWindow::UpdateAudioQualityLabel(int value)
 
 void MainWindow::SetAllowPresetSelection(bool allowed) { ui->qualityPresetComboBox->setEnabled(!allowed); }
 
-void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupport>, Message> maybeFormats)
+void MainWindow::HandleFormatsQueryResult(const std::variant<QSharedPointer<FormatSupport>, Message>& maybeFormats)
 {
     if (std::holds_alternative<Message>(maybeFormats))
     {
@@ -381,43 +383,52 @@ void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupp
         return;
     }
 
-    QSharedPointer<FormatSupport> formats = std::get<QSharedPointer<FormatSupport>>(maybeFormats);
+    const auto formats = std::get<QSharedPointer<FormatSupport>>(maybeFormats);
+    formatSupportCache = formats;
     SetProgressShown({});
 
-    bool commonOnly = ui->commonFormatsOnlyCheckbox->isChecked();
+    LoadState();
+    LoadSelectedUrl();
+}
+void MainWindow::UpdateCodecsList(const bool commonOnly) const
+{
     static QStringList commonVideoCodecs = settings->get("FormatSelection/sCommonVideoCodecs").toStringList();
     static QStringList commonAudioCodecs = settings->get("FormatSelection/sCommonAudioCodecs").toStringList();
     static QStringList commonContainers = settings->get("FormatSelection/sCommonContainers").toStringList();
 
-    for (const Codec& codec : formats->videoCodecs)
+    ui->videoCodecComboBox->clear();
+    ui->audioCodecComboBox->clear();
+    ui->containerComboBox->clear();
+
+    for (const Codec& videoCodec : formatSupportCache->videoCodecs)
     {
-        if (commonOnly && !commonVideoCodecs.contains(codec.libraryName))
+        QString name = videoCodec.libraryName;
+        if (commonOnly && !commonVideoCodecs.contains(name))
             continue;
 
-        ui->videoCodecComboBox->addItem(codec.libraryName, QVariant::fromValue(codec));
-        ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, codec.displayName, Qt::ToolTipRole);
+        ui->videoCodecComboBox->addItem(name);
+        ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, videoCodec.displayName, Qt::ToolTipRole);
     }
 
-    for (const Codec& codec : formats->audioCodecs)
+    for (const Codec& audioCodec : formatSupportCache->audioCodecs)
     {
-        if (commonOnly && !commonAudioCodecs.contains(codec.libraryName))
+        QString name = audioCodec.libraryName;
+        if (commonOnly && !commonAudioCodecs.contains(name))
             continue;
 
-        ui->audioCodecComboBox->addItem(codec.libraryName, QVariant::fromValue(codec));
-        ui->audioCodecComboBox->setItemData(ui->audioCodecComboBox->count() - 1, codec.displayName, Qt::ToolTipRole);
+        ui->audioCodecComboBox->addItem(name);
+        ui->audioCodecComboBox->setItemData(ui->audioCodecComboBox->count() - 1, audioCodec.displayName, Qt::ToolTipRole);
     }
 
-    for (const Container& container : formats->containers)
+    for (const Container& container : formatSupportCache->containers)
     {
-        if (commonOnly && !commonContainers.contains(container.formatName))
+        QString name = container.formatName;
+        if (commonOnly && !commonContainers.contains(name))
             continue;
 
-        ui->containerComboBox->addItem(container.formatName, QVariant::fromValue(container));
+        ui->containerComboBox->addItem(name);
         ui->containerComboBox->setItemData(ui->containerComboBox->count() - 1, container.displayName, Qt::ToolTipRole);
     }
-
-    LoadState();
-    LoadSelectedUrl();
 }
 
 void MainWindow::ShowAbout()

@@ -73,7 +73,8 @@ private slots:
     void CheckSpeedConflict();
     void UpdateAudioQualityLabel(int value);
     void SetAllowPresetSelection(bool allowed);
-    void HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupport>, Message> maybeFormats);
+    void HandleFormatsQueryResult(const std::variant<QSharedPointer<FormatSupport>, Message>& maybeFormats);
+    void UpdateCodecsList(bool commonOnly) const;
 
 private:
     struct ProgressState
@@ -113,4 +114,6 @@ private:
     Notifier& notifier;
     PlatformInfo& platformInfo;
     FormatSupportLoader& formatSupport;
+
+    QSharedPointer<FormatSupport> formatSupportCache;
 };

@@ -1755,6 +1755,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>commonFormatsOnlyCheckbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>UpdateCodecsList(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>617</x>
+     <y>444</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>910</x>
+     <y>478</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>SetAdvancedMode(bool)</slot>
@@ -1769,6 +1785,7 @@
   <slot>ShowMetadata()</slot>
   <slot>OpenInputFile()</slot>
   <slot>LoadPreset(int)</slot>
+  <slot>UpdateCodecsList(bool)</slot>
  </slots>
  <buttongroups>
   <buttongroup name="audioVideoButtonGroup"/>
