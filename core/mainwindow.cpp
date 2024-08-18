@@ -42,6 +42,8 @@ MainWindow::MainWindow(
     this->resize(this->QWidget::minimumSizeHint());
     this->warnings = new Warnings(ui->warningTooltipButton);
 
+    ui->mainHeading->setText(QApplication::applicationName());
+
     ui->audioVideoButtonGroup->setId(ui->radVideoAudio, 0);
     ui->audioVideoButtonGroup->setId(ui->radVideoOnly, 1);
     ui->audioVideoButtonGroup->setId(ui->radAudioOnly, 2);

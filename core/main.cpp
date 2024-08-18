@@ -13,7 +13,7 @@ namespace di = boost::di;
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
-    app.setApplicationName("Simple Media Converter");
+    app.setApplicationName("Simple Media Encoder");
     app.setStyle("Fusion");
 
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QDir::current().absolutePath());
