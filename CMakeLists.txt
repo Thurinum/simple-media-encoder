@@ -42,8 +42,6 @@ set(SOURCES
         core/settings/serializer.hpp
         core/settings/serializer.cpp
         core/settings/settings.hpp
-        core/settings/settings_factory.hpp
-        core/settings/settings_factory.cpp
         core/utils/platform_info.hpp
         core/utils/platform_info.cpp
         core/utils/warnings.hpp
@@ -64,7 +62,7 @@ qt_add_executable(${PROJECT_NAME} ${SOURCES} ${RESOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Widgets boost-di)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
-    WIN32_EXECUTABLE ON
-    MACOSX_BUNDLE ON
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+        WIN32_EXECUTABLE ON
+        MACOSX_BUNDLE ON
 )

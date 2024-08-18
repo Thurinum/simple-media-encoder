@@ -1,17 +1,9 @@
 #include <QClipboard>
-#include <QCloseEvent>
-#include <QDir>
-#include <QFile>
 #include <QFileDialog>
 #include <QGraphicsDropShadowEffect>
 #include <QMenu>
 #include <QMimeData>
-#include <QMimeDatabase>
 #include <QMovie>
-#include <QPixmap>
-#include <QProcess>
-#include <QPropertyAnimation>
-#include <QSequentialAnimationGroup>
 #include <QThread>
 #include <QTimer>
 #include <QWhatsThis>
@@ -24,10 +16,20 @@
 
 using std::optional;
 
-MainWindow::MainWindow(MediaEncoder& encoder, std::shared_ptr<Settings> settings, std::shared_ptr<Serializer> serializer, MetadataLoader& metadata, Notifier& notifier, PlatformInfo& platformInfo, FormatSupportLoader& formatSupportLoader)
+MainWindow::MainWindow(
+    MediaEncoder& encoder,
+    std ::shared_ptr<Settings> settings,
+    std::shared_ptr<Settings> presetsSettings,
+    std::shared_ptr<Serializer> serializer,
+    MetadataLoader& metadata,
+    Notifier& notifier,
+    PlatformInfo& platformInfo,
+    FormatSupportLoader& formatSupportLoader
+)
     : ui(new Ui::MainWindow)
     , encoder(encoder)
     , settings(std::move(settings))
+    , presetsSettings(std::move(presetsSettings))
     , serializer(std::move(serializer))
     , metadataLoader(metadata)
     , notifier(notifier)
@@ -37,12 +39,45 @@ MainWindow::MainWindow(MediaEncoder& encoder, std::shared_ptr<Settings> settings
     CheckForBinaries();
 
     ui->setupUi(this);
-    this->resize(this->minimumSizeHint());
+    this->resize(this->QWidget::minimumSizeHint());
     this->warnings = new Warnings(ui->warningTooltipButton);
 
     ui->audioVideoButtonGroup->setId(ui->radVideoAudio, 0);
     ui->audioVideoButtonGroup->setId(ui->radVideoOnly, 1);
     ui->audioVideoButtonGroup->setId(ui->radAudioOnly, 2);
+
+    preferenceWidgets = new QList<QObject*> {
+        ui->advancedModeCheckBox,
+        ui->audioVideoButtonGroup,
+        ui->outputFileNameLineEdit,
+        ui->outputFolderLineEdit,
+        ui->autoFillCheckBox,
+        ui->closeOnSuccessCheckBox,
+        ui->codecSelectionGroupBox,
+        ui->commonFormatsOnlyCheckbox,
+        ui->deleteOnSuccessCheckBox,
+        ui->inputFileLineEdit,
+        ui->openExplorerOnSuccessCheckBox,
+        ui->outputFileNameSuffixCheckBox,
+        ui->playOnSuccessCheckBox,
+        ui->warnOnOverwriteCheckBox
+    };
+
+    presetWidgets = new QList<QObject*> {
+        ui->aspectRatioSpinBoxH,
+        ui->aspectRatioSpinBoxV,
+        ui->audioCodecComboBox,
+        ui->audioQualitySlider,
+        ui->containerComboBox,
+        ui->customCommandTextEdit,
+        ui->fileSizeSpinBox,
+        ui->fileSizeUnitComboBox,
+        ui->fpsSpinBox,
+        ui->heightSpinBox,
+        ui->speedSpinBox,
+        ui->videoCodecComboBox,
+        ui->widthSpinBox
+    };
 
     SetupAdvancedModeAnimation();
     SetupMenu();
@@ -59,10 +94,14 @@ MainWindow::~MainWindow()
 
 void MainWindow::CheckForBinaries()
 {
-    if (platformInfo.isWindows() && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe"))) {
-        notifier.Notify(Severity::Critical, tr("Could not find ffmpeg binaries"), tr("If compiling from source, this is not a bug. Please download ffmpeg.exe and ffprobe.exe and "
-                                                                                     "place them into the binaries directory. Otherwise, there is an error with the release; please "
-                                                                                     "report this as a bug."));
+    if (platformInfo.isWindows() && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe")))
+    {
+        notifier.Notify(
+            Severity::Critical, tr("Could not find ffmpeg binaries"),
+            tr("If compiling from source, this is not a bug. Please download ffmpeg.exe and ffprobe.exe and "
+               "place them into the binaries directory. Otherwise, there is an error with the release; please "
+               "report this as a bug.")
+        );
     }
 }
 
@@ -85,10 +124,8 @@ void MainWindow::SetupEventCallbacks()
     connect(&encoder, &MediaEncoder::encodingStarted, this, &MainWindow::HandleStart);
     connect(&encoder, &MediaEncoder::encodingSucceeded, this, &MainWindow::HandleSuccess);
     connect(&encoder, &MediaEncoder::encodingFailed, this, &MainWindow::HandleFailure);
-    connect(&encoder, &MediaEncoder::encodingProgressUpdate, this, [this](int progress) {
-        SetProgressShown({ .status = tr("Compressing..."),
-                           .progressPercent = progress });
-    });
+    connect(&encoder, &MediaEncoder::encodingProgressUpdate, this, [this](int progress)
+            { SetProgressShown({ .status = tr("Compressing..."), .progressPercent = progress }); });
 }
 
 void MainWindow::QuerySupportedFormatsAsync()
@@ -99,72 +136,48 @@ void MainWindow::QuerySupportedFormatsAsync()
 
 void MainWindow::LoadState()
 {
-    serializer->deserialize(ui->advancedModeCheckBox);
+    const QString key = "Preferences";
+
+    serializer->deserialize(ui->advancedModeCheckBox, settings, key);
     SetAdvancedMode(ui->advancedModeCheckBox->isChecked());
 
-    serializer->deserialize(ui->audioVideoButtonGroup);
+    serializer->deserialize(ui->audioVideoButtonGroup, settings, key);
     SetControlsState(ui->audioVideoButtonGroup->checkedButton());
 
-    serializer->deserialize(ui->outputFileNameLineEdit);
+    serializer->deserialize(ui->outputFileNameLineEdit, settings, key);
     LoadSelectedUrl();
 
-    serializer->deserialize(ui->outputFolderLineEdit);
+    serializer->deserialize(ui->outputFolderLineEdit, settings, key);
     ValidateSelectedDir();
 
-    serializer->deserialize(ui->aspectRatioSpinBoxH);
-    serializer->deserialize(ui->aspectRatioSpinBoxV);
-    serializer->deserialize(ui->audioCodecComboBox);
-    serializer->deserialize(ui->audioQualitySlider);
-    serializer->deserialize(ui->autoFillCheckBox);
-    serializer->deserialize(ui->closeOnSuccessCheckBox);
-    serializer->deserialize(ui->codecSelectionGroupBox);
-    serializer->deserialize(ui->commonFormatsOnlyCheckbox);
-    serializer->deserialize(ui->containerComboBox);
-    serializer->deserialize(ui->customCommandTextEdit);
-    serializer->deserialize(ui->deleteOnSuccessCheckBox);
-    serializer->deserialize(ui->fileSizeSpinBox);
-    serializer->deserialize(ui->fileSizeUnitComboBox);
-    serializer->deserialize(ui->fpsSpinBox);
-    serializer->deserialize(ui->heightSpinBox);
-    serializer->deserialize(ui->inputFileLineEdit);
-    serializer->deserialize(ui->openExplorerOnSuccessCheckBox);
-    serializer->deserialize(ui->outputFileNameSuffixCheckBox);
-    serializer->deserialize(ui->playOnSuccessCheckBox);
-    serializer->deserialize(ui->speedSpinBox);
-    serializer->deserialize(ui->videoCodecComboBox);
-    serializer->deserialize(ui->warnOnOverwriteCheckBox);
-    serializer->deserialize(ui->widthSpinBox);
+    LoadPresetNames();
+
+    const QList<QObject*> widgets = {
+        ui->autoFillCheckBox,
+        ui->closeOnSuccessCheckBox,
+        ui->codecSelectionGroupBox,
+        ui->commonFormatsOnlyCheckbox,
+        ui->deleteOnSuccessCheckBox,
+        ui->inputFileLineEdit,
+        ui->openExplorerOnSuccessCheckBox,
+        ui->outputFileNameSuffixCheckBox,
+        ui->playOnSuccessCheckBox,
+        ui->warnOnOverwriteCheckBox,
+    };
+
+    serializer->deserializeMany(widgets, settings, key);
+    serializer->deserializeMany(*presetWidgets, settings, "PreviousSettings");
 }
 
-void MainWindow::SaveState()
+void MainWindow::LoadPresetNames() const
 {
-    serializer->serialize(ui->advancedModeCheckBox);
-    serializer->serialize(ui->aspectRatioSpinBoxH);
-    serializer->serialize(ui->aspectRatioSpinBoxV);
-    serializer->serialize(ui->audioCodecComboBox);
-    serializer->serialize(ui->audioQualitySlider);
-    serializer->serialize(ui->audioVideoButtonGroup);
-    serializer->serialize(ui->autoFillCheckBox);
-    serializer->serialize(ui->closeOnSuccessCheckBox);
-    serializer->serialize(ui->codecSelectionGroupBox);
-    serializer->serialize(ui->commonFormatsOnlyCheckbox);
-    serializer->serialize(ui->containerComboBox);
-    serializer->serialize(ui->customCommandTextEdit);
-    serializer->serialize(ui->deleteOnSuccessCheckBox);
-    serializer->serialize(ui->fileSizeSpinBox);
-    serializer->serialize(ui->fileSizeUnitComboBox);
-    serializer->serialize(ui->fpsSpinBox);
-    serializer->serialize(ui->heightSpinBox);
-    serializer->serialize(ui->inputFileLineEdit);
-    serializer->serialize(ui->openExplorerOnSuccessCheckBox);
-    serializer->serialize(ui->outputFileNameLineEdit);
-    serializer->serialize(ui->outputFileNameSuffixCheckBox);
-    serializer->serialize(ui->outputFolderLineEdit);
-    serializer->serialize(ui->playOnSuccessCheckBox);
-    serializer->serialize(ui->speedSpinBox);
-    serializer->serialize(ui->videoCodecComboBox);
-    serializer->serialize(ui->warnOnOverwriteCheckBox);
-    serializer->serialize(ui->widthSpinBox);
+    ui->qualityPresetComboBox->addItems(presetsSettings->groups());
+}
+
+void MainWindow::SaveState() const
+{
+    serializer->serializeMany(*preferenceWidgets, settings, "Preferences");
+    serializer->serializeMany(*presetWidgets, settings, "PreviousSettings");
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -181,7 +194,8 @@ void MainWindow::StartEncoding()
     QString outputPath = getOutputPath(inputPath);
     // FIXME: emit fileExists() signal
     // if (QFile::exists(outputPath + "." + container->formatName) && ui->warnOnOverwriteCheckBox->isChecked()
-    //     && QMessageBox::question(this, "Overwrite?", "Output at path '" + outputPath + "' already exists. Overwrite it?")
+    //     && QMessageBox::question(this, "Overwrite?", "Output at path '" + outputPath + "' already exists. Overwrite
+    //     it?")
     //            == QMessageBox::No) {
     //     notifier.Notify(Severity::Info, "Operation canceled", "Compression aborted.");
     //     return;
@@ -190,8 +204,7 @@ void MainWindow::StartEncoding()
     if (metadata.has_value())
         builder.useMetadata(*metadata);
 
-    builder
-        .inputFrom(inputPath)
+    builder.inputFrom(inputPath)
         .outputTo(outputPath)
         .withVideoCodec(ui->videoCodecComboBox->currentData().value<Codec>())
         .withAudioCodec(ui->audioCodecComboBox->currentData().value<Codec>())
@@ -209,7 +222,8 @@ void MainWindow::StartEncoding()
         .withMaxAudioBitrate(settings->get("Main/dMaxBitrateAudioKbps").toDouble());
 
     auto maybeOptions = builder.build();
-    if (std::holds_alternative<QList<QString>>(maybeOptions)) {
+    if (std::holds_alternative<QList<QString>>(maybeOptions))
+    {
         notifier.Notify(Severity::Error, "Invalid encoding options", std::get<QList<QString>>(maybeOptions).join("\n"));
         return;
     }
@@ -220,33 +234,36 @@ void MainWindow::StartEncoding()
 
 void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
 {
-    SetProgressShown({ .status = tr("Compressing..."),
-                       .progressPercent = 0 });
+    SetProgressShown({ .status = tr("Compressing..."), .progressPercent = 0 });
 
-    ui->progressBarLabel->setText(QString(tr("Video bitrate: %1 kbps | Audio bitrate: %2 kbps"))
-                                      .arg(QString::number(qRound(videoBitrateKbps)),
-                                           QString::number(qRound(audioBitrateKbps))));
+    ui->progressBarLabel->setText(
+        QString(tr("Video bitrate: %1 kbps | Audio bitrate: %2 kbps"))
+            .arg(QString::number(qRound(videoBitrateKbps)), QString::number(qRound(audioBitrateKbps)))
+    );
 }
 
-void MainWindow::HandleSuccess(const EncoderOptions& options, const MediaEncoder::ComputedOptions& computed, QFile& output)
+void MainWindow::HandleSuccess(
+    const EncoderOptions& options, const MediaEncoder::ComputedOptions& computed, QFile& output
+)
 {
-    SetProgressShown({ .status = tr("Compression complete"),
-                       .progressPercent = 100 });
+    SetProgressShown({ .status = tr("Compression complete"), .progressPercent = 100 });
 
     QString summary;
-    QString videoBitrate = computed.videoBitrateKbps.has_value()
-        ? QString::number(*computed.videoBitrateKbps) + "kbps"
-        : "auto-set bitrate";
+    QString videoBitrate = computed.videoBitrateKbps.has_value() ? QString::number(*computed.videoBitrateKbps) + "kbps"
+                                                                 : "auto-set bitrate";
 
-    if (options.videoCodec.has_value()) {
+    if (options.videoCodec.has_value())
+    {
         summary += tr("Using video codec %1 at %2 with container %3.\n")
                        .arg(options.videoCodec->displayName, videoBitrate, options.container.displayName);
     }
-    if (options.audioCodec.has_value()) {
+    if (options.audioCodec.has_value())
+    {
         summary += tr("Using audio codec %1 at %2kbps.\n")
                        .arg(options.audioCodec->displayName, QString::number(*computed.audioBitrateKbps));
     }
-    if (options.sizeKbps.has_value()) {
+    if (options.sizeKbps.has_value())
+    {
         summary += tr("Requested size was %1 kb.\nActual "
                       "compression achieved is %2 kb.")
                        .arg(QString::number(*options.sizeKbps), QString::number(output.size() / 125.0));
@@ -259,28 +276,37 @@ void MainWindow::HandleSuccess(const EncoderOptions& options, const MediaEncoder
     QFileInfo fileInfo(output);
     QString command = platformInfo.isWindows() ? "explorer.exe" : "xdg-open";
 
-    if (ui->deleteOnSuccessCheckBox->isChecked()) {
+    if (ui->deleteOnSuccessCheckBox->isChecked())
+    {
         QFile input(options.inputPath);
         input.open(QIODevice::WriteOnly);
 
-        if (!(input.remove())) {
-            notifier.Notify(Severity::Error, tr("Failed to remove input file"), output.errorString() + "\n\n" + options.inputPath);
-        } else {
+        if (!(input.remove()))
+        {
+            notifier.Notify(
+                Severity::Error, tr("Failed to remove input file"), output.errorString() + "\n\n" + options.inputPath
+            );
+        }
+        else
+        {
             ui->inputFileLineEdit->clear();
         }
 
         input.close();
     }
 
-    if (ui->openExplorerOnSuccessCheckBox->isChecked()) {
+    if (ui->openExplorerOnSuccessCheckBox->isChecked())
+    {
         QProcess::execute(QString(R"(%1 "%2")").arg(command, fileInfo.dir().path()));
     }
 
-    if (ui->playOnSuccessCheckBox->isChecked()) {
+    if (ui->playOnSuccessCheckBox->isChecked())
+    {
         QProcess::execute(QString(R"(%1 "%2")").arg(command, fileInfo.absoluteFilePath()));
     }
 
-    if (ui->closeOnSuccessCheckBox->isChecked()) {
+    if (ui->closeOnSuccessCheckBox->isChecked())
+    {
         QApplication::exit(0);
     }
 }
@@ -296,10 +322,15 @@ void MainWindow::CheckAspectRatioConflict()
     bool hasCustomScale = ui->aspectRatioSpinBoxH->value() != 0 || ui->aspectRatioSpinBoxV->value() != 0;
     bool hasCustomAspect = ui->widthSpinBox->value() != 0 || ui->heightSpinBox->value() != 0;
 
-    if (hasCustomScale && hasCustomAspect) {
-        warnings->Add("aspectRatioConflict", tr("A custom aspect ratio has been set. It will take priority over the "
-                                                "one defined by custom scaling."));
-    } else {
+    if (hasCustomScale && hasCustomAspect)
+    {
+        warnings->Add(
+            "aspectRatioConflict", tr("A custom aspect ratio has been set. It will take priority over the "
+                                      "one defined by custom scaling.")
+        );
+    }
+    else
+    {
         warnings->Remove("aspectRatioConflict");
     }
 }
@@ -309,11 +340,16 @@ void MainWindow::CheckSpeedConflict()
     bool hasSpeed = ui->speedSpinBox->value() != 0;
     bool hasFps = ui->fpsSpinBox->value() != 0;
 
-    if (hasSpeed && hasFps) {
-        warnings->Add("speedConflict", tr("A custom speed was set alongside a custom fps; this may cause "
-                                          "strange behavior. Note that fps is automatically compensated when "
-                                          "changing the speed."));
-    } else {
+    if (hasSpeed && hasFps)
+    {
+        warnings->Add(
+            "speedConflict", tr("A custom speed was set alongside a custom fps; this may cause "
+                                "strange behavior. Note that fps is automatically compensated when "
+                                "changing the speed.")
+        );
+    }
+    else
+    {
         warnings->Remove("speedConflict");
     }
 }
@@ -333,14 +369,12 @@ void MainWindow::UpdateAudioQualityLabel(int value)
     ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
 }
 
-void MainWindow::SetAllowPresetSelection(bool allowed)
-{
-    ui->qualityPresetComboBox->setEnabled(!allowed);
-}
+void MainWindow::SetAllowPresetSelection(bool allowed) { ui->qualityPresetComboBox->setEnabled(!allowed); }
 
 void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupport>, Message> maybeFormats)
 {
-    if (std::holds_alternative<Message>(maybeFormats)) {
+    if (std::holds_alternative<Message>(maybeFormats))
+    {
         notifier.Notify(std::get<Message>(maybeFormats));
         return;
     }
@@ -353,7 +387,8 @@ void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupp
     static QStringList commonAudioCodecs = settings->get("FormatSelection/sCommonAudioCodecs").toStringList();
     static QStringList commonContainers = settings->get("FormatSelection/sCommonContainers").toStringList();
 
-    for (const Codec& codec : formats->videoCodecs) {
+    for (const Codec& codec : formats->videoCodecs)
+    {
         if (commonOnly && !commonVideoCodecs.contains(codec.libraryName))
             continue;
 
@@ -361,7 +396,8 @@ void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupp
         ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, codec.displayName, Qt::ToolTipRole);
     }
 
-    for (const Codec& codec : formats->audioCodecs) {
+    for (const Codec& codec : formats->audioCodecs)
+    {
         if (commonOnly && !commonAudioCodecs.contains(codec.libraryName))
             continue;
 
@@ -369,7 +405,8 @@ void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupp
         ui->audioCodecComboBox->setItemData(ui->audioCodecComboBox->count() - 1, codec.displayName, Qt::ToolTipRole);
     }
 
-    for (const Container& container : formats->containers) {
+    for (const Container& container : formats->containers)
+    {
         if (commonOnly && !commonContainers.contains(container.formatName))
             continue;
 
@@ -383,15 +420,22 @@ void MainWindow::HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupp
 
 void MainWindow::ShowAbout()
 {
-    static const QString msg = "\r\n<h4>Acknowledgements</h4>\r\n"
+    static const QString msg
+        = "\r\n<h4>Acknowledgements</h4>\r\n"
 
-                               "A convenient graphical frontend for <i>ffmpeg</i>, the media encoding and decoding suite.<br /><br />\r\n"
-                               "On Linux, uses system <a href=https://ffmpeg.org/ffprobe.html>ffprobe</a> and <a href=https://ffmpeg.org>ffmpeg</a>.<br />\r\n"
-                               "On Windows, uses pre-compiled binaries of <i>ffprobe.exe</i> and <i>ffmpeg.exe</i> from <a href=https://github.com/GyanD/codexffmpeg/releases/>gyan.dev</a>.<br /><br />\r\nBuilt with <a href=https://www.qt.io>Qt</a>, the complete toolkit for cross-platform application development, under GPLv3 licensing. See About Qt.<br /><br />\r\n"
-                               "For more information, visit our <a href=https://github.com/Thurinum/free-video-compressor>GitHub repository</a>.\r\n"
+          "A convenient graphical frontend for <i>ffmpeg</i>, the media encoding and decoding suite.<br /><br />\r\n"
+          "On Linux, uses system <a href=https://ffmpeg.org/ffprobe.html>ffprobe</a> and <a "
+          "href=https://ffmpeg.org>ffmpeg</a>.<br />\r\n"
+          "On Windows, uses pre-compiled binaries of <i>ffprobe.exe</i> and <i>ffmpeg.exe</i> from <a "
+          "href=https://github.com/GyanD/codexffmpeg/releases/>gyan.dev</a>.<br /><br />\r\nBuilt with <a "
+          "href=https://www.qt.io>Qt</a>, the complete toolkit for cross-platform application development, under GPLv3 "
+          "licensing. See About Qt.<br /><br />\r\n"
+          "For more information, visit our <a href=https://github.com/Thurinum/free-video-compressor>GitHub "
+          "repository</a>.\r\n"
 
-                               "<h4>Credits</h4>\r\n"
-                               "Special thanks to Theodore L'Heureux for his helpful advice on refactoring and beta-testing of the product.\r\n";
+          "<h4>Credits</h4>\r\n"
+          "Special thanks to Theodore L'Heureux for his helpful advice on refactoring and beta-testing of the "
+          "product.\r\n";
 
     notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), msg);
 }
@@ -406,7 +450,8 @@ void MainWindow::SetProgressShown(ProgressState state)
     valueAnimation->setDuration(settings->get("Main/iProgressWidgetAnimDurationMs").toInt());
     valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
 
-    if (state.status.has_value() && ui->progressWidget->maximumHeight() == 0) {
+    if (state.status.has_value() && ui->progressWidget->maximumHeight() == 0)
+    {
         ui->centralWidget->setEnabled(false);
 
         QString taskName = *state.status;
@@ -416,7 +461,9 @@ void MainWindow::SetProgressShown(ProgressState state)
         ui->progressWidgetTopSpacer->changeSize(0, 10);
         heightAnimation->setStartValue(0);
         heightAnimation->setEndValue(500);
-    } else if (!state.status) {
+    }
+    else if (!state.status)
+    {
         ui->centralWidget->setEnabled(true);
         ui->startCompressionButton->setText(tr("Start encoding"));
         ui->progressWidgetTopSpacer->changeSize(0, 0);
@@ -426,7 +473,8 @@ void MainWindow::SetProgressShown(ProgressState state)
 
     heightAnimation->start();
 
-    if (!state.progressPercent.has_value()) {
+    if (!state.progressPercent.has_value())
+    {
         ui->progressBar->setRange(0, 0);
         return;
     }
@@ -439,12 +487,15 @@ void MainWindow::SetProgressShown(ProgressState state)
 
 void MainWindow::SetAdvancedMode(bool enabled)
 {
-    if (enabled) {
+    if (enabled)
+    {
         sectionWidthAnim->setStartValue(0);
         sectionWidthAnim->setEndValue(1000);
         sectionHeightAnim->setStartValue(0);
         sectionHeightAnim->setEndValue(1000);
-    } else {
+    }
+    else
+    {
         sectionWidthAnim->setStartValue(ui->advancedSection->width());
         sectionWidthAnim->setEndValue(0);
         sectionHeightAnim->setStartValue(ui->advancedSection->width());
@@ -457,7 +508,8 @@ void MainWindow::SetAdvancedMode(bool enabled)
 
 void MainWindow::SetControlsState(QAbstractButton* button)
 {
-    if (button == ui->radVideoAudio) {
+    if (button == ui->radVideoAudio)
+    {
         ui->widthSpinBox->setEnabled(true);
         ui->heightSpinBox->setEnabled(true);
         ui->speedSpinBox->setEnabled(true);
@@ -468,7 +520,9 @@ void MainWindow::SetControlsState(QAbstractButton* button)
         ui->aspectRatioSpinBoxH->setEnabled(true);
         ui->aspectRatioSpinBoxV->setEnabled(true);
         ui->fpsSpinBox->setEnabled(true);
-    } else if (button == ui->radVideoOnly) {
+    }
+    else if (button == ui->radVideoOnly)
+    {
         ui->widthSpinBox->setEnabled(true);
         ui->heightSpinBox->setEnabled(true);
         ui->speedSpinBox->setEnabled(true);
@@ -479,7 +533,9 @@ void MainWindow::SetControlsState(QAbstractButton* button)
         ui->aspectRatioSpinBoxH->setEnabled(true);
         ui->aspectRatioSpinBoxV->setEnabled(true);
         ui->fpsSpinBox->setEnabled(true);
-    } else if (button == ui->radAudioOnly) {
+    }
+    else if (button == ui->radAudioOnly)
+    {
         ui->widthSpinBox->setEnabled(false);
         ui->heightSpinBox->setEnabled(false);
         ui->speedSpinBox->setEnabled(false);
@@ -495,22 +551,30 @@ void MainWindow::SetControlsState(QAbstractButton* button)
 
 void MainWindow::ShowMetadata()
 {
-    if (!metadata.has_value()) {
+    if (!metadata.has_value())
+    {
         notifier.Notify(Severity::Info, tr("No file selected"), tr("Please select a file to continue."));
         return;
     }
 
-    notifier.Notify(Severity::Info, tr("Metadata"), tr("Video codec: %1\nAudio codec: %2\nContainer: %3\nAudio bitrate: %4 kbps\n\n "
-                                                       "(complete data to be implemented in a future update)")
-                                                        .arg(metadata->videoCodec, metadata->audioCodec, "N/A", QString::number(metadata->audioBitrateKbps)));
+    notifier.Notify(
+        Severity::Info, tr("Metadata"),
+        tr("Video codec: %1\nAudio codec: %2\nContainer: %3\nAudio bitrate: %4 kbps\n\n "
+           "(complete data to be implemented in a future update)")
+            .arg(metadata->videoCodec, metadata->audioCodec, "N/A", QString::number(metadata->audioBitrateKbps))
+    );
 }
 
-void MainWindow::SelectPresetCodecs()
+void MainWindow::LoadPreset(const int index) const
 {
-    if (ui->codecSelectionGroupBox->isChecked())
+    if (index < 0)
         return;
 
-    // TODO: Reimplement now broken presets
+    const QString presetName = ui->qualityPresetComboBox->itemText(index);
+    if (!presetsSettings->groups().contains(presetName))
+        return;
+
+    serializer->deserializeMany(*presetWidgets, presetsSettings, presetName);
 }
 
 void MainWindow::OpenInputFile()
@@ -522,7 +586,8 @@ void MainWindow::OpenInputFile()
 
     QueryMediaMetadataAsync(path);
 
-    if (ui->autoFillCheckBox->isChecked()) {
+    if (ui->autoFillCheckBox->isChecked())
+    {
         ui->widthSpinBox->setValue(metadata->width);
         ui->heightSpinBox->setValue(metadata->height);
         ui->speedSpinBox->setValue(1);
@@ -541,7 +606,10 @@ void MainWindow::QueryMediaMetadataAsync(const QString& path)
 {
     SetProgressShown({ .status = tr("Parsing metadata...") });
 
-    connect(&metadataLoader, &MetadataLoader::loadAsyncComplete, this, &MainWindow::ReceiveMediaMetadata, Qt::UniqueConnection);
+    connect(
+        &metadataLoader, &MetadataLoader::loadAsyncComplete, this, &MainWindow::ReceiveMediaMetadata,
+        Qt::UniqueConnection
+    );
 
     metadataLoader.loadAsync(path);
 }
@@ -550,7 +618,8 @@ void MainWindow::ReceiveMediaMetadata(MetadataResult result)
 {
     SetProgressShown({});
 
-    if (std::holds_alternative<Message>(result)) {
+    if (std::holds_alternative<Message>(result))
+    {
         Message error = std::get<Message>(result);
 
         notifier.Notify(error);
@@ -571,24 +640,26 @@ QString MainWindow::getOutputPath(QString inputFilePath)
     QDir resolvedFolder = folder.isEmpty() ? inputFile.dir() : QDir(folder);
     QString resolvedFileName;
 
-    if (fileNameOrSuffix.isEmpty()) {
+    if (fileNameOrSuffix.isEmpty())
+    {
         resolvedFileName = inputFile.baseName();
-    } else if (hasSuffix) {
+    }
+    else if (hasSuffix)
+    {
         if (!fileNameOrSuffix[0].isLetterOrNumber())
             fileNameOrSuffix.remove(0, 1);
 
         resolvedFileName = inputFile.baseName() + "_" + fileNameOrSuffix;
-    } else {
+    }
+    else
+    {
         resolvedFileName = fileNameOrSuffix;
     }
 
     return resolvedFolder.filePath(resolvedFileName);
 }
 
-bool MainWindow::isAutoValue(QAbstractSpinBox* spinBox)
-{
-    return spinBox->text() == spinBox->specialValueText();
-}
+bool MainWindow::isAutoValue(QAbstractSpinBox* spinBox) { return spinBox->text() == spinBox->specialValueText(); }
 
 void MainWindow::LoadSelectedUrl()
 {
@@ -626,18 +697,19 @@ void MainWindow::SetupAdvancedModeAnimation()
     windowSizeAnim->setDuration(duration);
     windowSizeAnim->setEasingCurve(QEasingCurve::InOutQuad);
 
-    connect(sectionWidthAnim, &QPropertyAnimation::finished, windowSizeAnim, [this]() {
+    connect(sectionWidthAnim, &QPropertyAnimation::finished, windowSizeAnim, [this]()
+            {
         windowSizeAnim->setStartValue(this->size());
         windowSizeAnim->setEndValue(this->minimumSizeHint());
-        windowSizeAnim->start();
-    });
+        windowSizeAnim->start(); });
 }
 
 double MainWindow::getOutputSizeKbps()
 {
     double sizeKbpsConversionFactor = 0;
 
-    switch (ui->fileSizeUnitComboBox->currentIndex()) {
+    switch (ui->fileSizeUnitComboBox->currentIndex())
+    {
     case 0: // KB to kb
         sizeKbpsConversionFactor = 8;
         break;

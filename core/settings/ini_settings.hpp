@@ -1,30 +1,25 @@
-#ifndef INISETTINGS_H
-#define INISETTINGS_H
+#pragma once
 
 #include "settings.hpp"
 
-#include <QObject>
 #include <QPointer>
 
 class QSettings;
 class QString;
 
-class IniSettings : public Settings
+class IniSettings final : public Settings
 {
-    Q_OBJECT
-
 public:
-    IniSettings(const QString& fileName, const QString& defaultFileName);
+    explicit IniSettings(const QString& fileName, const QString& defaultFileName = "");
 
-    QVariant get(const QString& key) override;
+    [[nodiscard]] QVariant get(const QString& key) const override;
     void Set(const QString& key, const QVariant& value) override;
 
-    QStringList keysInGroup(const QString& group) const override;
-    QString fileName() const override;
+    [[nodiscard]] QStringList groups() const override;
+    [[nodiscard]] QStringList keysInGroup(const QString& group) const override;
+    [[nodiscard]] QString fileName() const override;
 
 private:
     QPointer<QSettings> settings;
     QPointer<QSettings> defaultSettings;
 };
-
-#endif // INISETTINGS_H

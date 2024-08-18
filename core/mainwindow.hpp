@@ -1,5 +1,4 @@
-#ifndef MAINWINDOW_HPP
-#define MAINWINDOW_HPP
+#pragma once
 
 #include "encoder/encoder.hpp"
 #include "formats/format_support_loader.hpp"
@@ -14,26 +13,36 @@
 #include <QPropertyAnimation>
 #include <QSettings>
 #include <QSpinBox>
+#include <di.hpp>
 
 QT_BEGIN_NAMESPACE
-namespace Ui {
+namespace Ui
+{
 class MainWindow;
 }
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow {
+using namespace std::string_literals;
+
+inline auto di_settings = [] {};
+inline auto di_presets = [] {};
+
+class MainWindow : public QMainWindow
+{
     Q_OBJECT
 
 public:
-    MainWindow(
+    BOOST_DI_INJECT(
+        MainWindow,
         MediaEncoder& encoder,
-        std::shared_ptr<Settings> settings,
+        (named = di_settings) std::shared_ptr<Settings> settings,
+        (named = di_presets) std::shared_ptr<Settings> presetsSettings,
         std::shared_ptr<Serializer> serializer,
         MetadataLoader& metadata,
         Notifier& notifier,
         PlatformInfo& platformInfo,
         FormatSupportLoader& formatSupportLoader
-        );
+    );
     ~MainWindow() override;
 
 protected:
@@ -43,7 +52,8 @@ protected:
     void QuerySupportedFormatsAsync();
 
     void LoadState();
-    void SaveState();
+    void LoadPresetNames() const;
+    void SaveState() const;
     void closeEvent(QCloseEvent* event) override;
 
     void HandleStart(double videoBitrateKbps, double audioBitrateKbps);
@@ -57,7 +67,7 @@ private slots:
     void OpenInputFile();
     void SelectOutputDirectory();
     void ShowMetadata();
-    void SelectPresetCodecs();
+    void LoadPreset(int index) const;
     void SetControlsState(QAbstractButton* button);
     void CheckAspectRatioConflict();
     void CheckSpeedConflict();
@@ -66,7 +76,8 @@ private slots:
     void HandleFormatsQueryResult(std::variant<QSharedPointer<FormatSupport>, Message> maybeFormats);
 
 private:
-    struct ProgressState {
+    struct ProgressState
+    {
         optional<QString> status = optional<QString>();
         optional<int> progressPercent = optional<int>();
     };
@@ -86,17 +97,20 @@ private:
 
     optional<Metadata> metadata;
 
+    // todo: unique ptr
+    const QList<QObject*>* preferenceWidgets;
+    const QList<QObject*>* presetWidgets;
+
     QPropertyAnimation* sectionWidthAnim;
     QPropertyAnimation* sectionHeightAnim;
     QPropertyAnimation* windowSizeAnim;
 
     MediaEncoder& encoder;
     std::shared_ptr<Settings> settings;
+    std::shared_ptr<Settings> presetsSettings;
     std::shared_ptr<Serializer> serializer;
     MetadataLoader& metadataLoader;
     Notifier& notifier;
     PlatformInfo& platformInfo;
     FormatSupportLoader& formatSupport;
 };
-
-#endif // MAINWINDOW_HPP

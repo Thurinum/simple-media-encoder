@@ -2,30 +2,13 @@
 #include "formats/ffmpeg_format_support_loader.hpp"
 #include "mainwindow.hpp"
 #include "notifier/message_box_notifier.hpp"
+#include "settings/ini_settings.hpp"
 #include "settings/serializer.hpp"
-#include "settings/settings_factory.hpp"
 #include "thirdparty/boost-di/di.hpp"
 
 namespace di = boost::di;
 
 #include <QApplication>
-
-bool createSettings(std::shared_ptr<Settings>& settings) {
-    MessageBoxNotifier notifier;
-
-    const auto maybeSettings = SettingsFactory::createIniSettings("config.ini", "config_default.ini");
-    if (std::holds_alternative<Message>(maybeSettings)) {
-        notifier.Notify(std::get<Message>(maybeSettings));
-        return false;
-    }
-
-    settings = std::get<std::shared_ptr<Settings>>(maybeSettings);
-    auto settingsConnection = QObject::connect(settings.get(), &Settings::problemOccured, [notifier](const Message& problem) {
-        notifier.Notify(problem);
-    });
-
-    return true;
-}
 
 int main(int argc, char* argv[])
 {
@@ -33,14 +16,14 @@ int main(int argc, char* argv[])
     app.setApplicationName("Simple Media Converter");
     app.setStyle("Fusion");
 
-    std::shared_ptr<Settings> settings;
-    if (!createSettings(settings))
-        return EXIT_FAILURE;
+    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QDir::current().absolutePath());
 
     const auto injector = make_injector(
-        di::bind<Settings>.to(settings),
-        di::bind<Notifier>.to<MessageBoxNotifier>(),
-        di::bind<FormatSupportLoader>.to<FFmpegFormatSupportLoader>()
+        di::bind<Settings>.named(di_settings).to([]
+                                                 { return std::make_shared<IniSettings>("config.ini", "config_default.ini"); }),
+        di::bind<Settings>.named(di_presets).to([]
+                                                { return std::make_shared<IniSettings>("presets.ini"); }),
+        di::bind<Notifier>.to<MessageBoxNotifier>(), di::bind<FormatSupportLoader>.to<FFmpegFormatSupportLoader>()
     );
 
     const auto w = injector.create<std::shared_ptr<MainWindow>>();

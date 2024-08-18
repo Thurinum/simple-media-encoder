@@ -1,25 +1,14 @@
-#ifndef SETTINGS_H
-#define SETTINGS_H
+#pragma once
 
-#include <QObject>
+#include <QVariant>
 
-class Message;
+struct Settings {
+    virtual ~Settings() = default;
 
-class Settings : public QObject
-{
-    Q_OBJECT
-
-public:
-    virtual QVariant get(const QString& key) = 0;
+    [[nodiscard]] virtual QVariant get(const QString& key) const = 0;
     virtual void Set(const QString& key, const QVariant& value) = 0;
 
-    virtual QStringList keysInGroup(const QString& group) const = 0;
-    virtual QString fileName() const = 0;
-
-signals:
-    void problemOccured(const Message& problem);
+    [[nodiscard]] virtual QStringList groups() const = 0;
+    [[nodiscard]] virtual QStringList keysInGroup(const QString& group) const = 0;
+    [[nodiscard]] virtual QString fileName() const = 0;
 };
-
-Q_DECLARE_INTERFACE(Settings, "Settings")
-
-#endif
