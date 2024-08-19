@@ -36,7 +36,7 @@ MainWindow::MainWindow(
     , platformInfo(platformInfo)
     , formatSupport(formatSupportLoader)
 {
-    CheckForBinaries();
+    CheckForFFmpeg();
 
     ui->setupUi(this);
     this->resize(this->QWidget::minimumSizeHint());
@@ -98,17 +98,22 @@ MainWindow::~MainWindow()
     delete warnings;
 }
 
-void MainWindow::CheckForBinaries()
+void MainWindow::CheckForFFmpeg() const
 {
-    if (platformInfo.isWindows() && (!QFile::exists("ffmpeg.exe") || !QFile::exists("ffprobe.exe")))
-    {
-        notifier.Notify(
-            Severity::Critical, tr("Could not find ffmpeg binaries"),
-            tr("If compiling from source, this is not a bug. Please download ffmpeg.exe and ffprobe.exe and "
-               "place them into the binaries directory. Otherwise, there is an error with the release; please "
-               "report this as a bug.")
-        );
-    }
+    const QString ffmpeg = platformInfo.isWindows() ? "ffmpeg.exe" : "ffmpeg";
+    const QString ffprobe = platformInfo.isWindows() ? "ffprobe.exe" : "ffprobe";
+
+    const int ffmpegReturnCode = QProcess::execute(ffmpeg, QStringList() << "-version");
+    const int ffprobeReturnCode = QProcess::execute(ffprobe, QStringList() << "-version");
+
+    if (ffmpegReturnCode == 0 && ffprobeReturnCode == 0)
+        return;
+
+    notifier.Notify(
+        Critical, tr("Could not locate FFmpeg"),
+        tr("No valid install of FFmpeg was located. Please make sure FFmpeg and FFprobe are in your PATH, or directly "
+           "in the application directory.")
+    );
 }
 
 void MainWindow::SetupMenu()
@@ -473,6 +478,7 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
             continue;
 
         ui->videoCodecComboBox->addItem(name);
+        ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, QVariant::fromValue(videoCodec));
         ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, videoCodec.displayName, Qt::ToolTipRole);
     }
 
@@ -483,6 +489,7 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
             continue;
 
         ui->audioCodecComboBox->addItem(name);
+        ui->audioCodecComboBox->setItemData(ui->audioCodecComboBox->count() - 1, QVariant::fromValue(audioCodec));
         ui->audioCodecComboBox->setItemData(ui->audioCodecComboBox->count() - 1, audioCodec.displayName, Qt::ToolTipRole);
     }
 
@@ -493,11 +500,12 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
             continue;
 
         ui->containerComboBox->addItem(name);
+        ui->containerComboBox->setItemData(ui->containerComboBox->count() - 1, QVariant::fromValue(container));
         ui->containerComboBox->setItemData(ui->containerComboBox->count() - 1, container.displayName, Qt::ToolTipRole);
     }
 }
 
-void MainWindow::ShowAbout()
+void MainWindow::ShowAbout() const
 {
     static const QString msg
         = "\r\n<h4>Acknowledgements</h4>\r\n"

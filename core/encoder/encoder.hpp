@@ -1,11 +1,11 @@
 #ifndef MEDIAENCODER_H
 #define MEDIAENCODER_H
 
-#include "encoder_options.hpp"
 #include "core/formats/codec.hpp"
 #include "core/formats/container.hpp"
 #include "core/formats/metadata.hpp"
 #include "core/formats/metadata_loader.hpp"
+#include "encoder_options.hpp"
 
 #include <QDir>
 #include <QEventLoop>
@@ -17,14 +17,16 @@
 struct Message;
 using std::optional;
 
-class MediaEncoder : public QObject {
+class MediaEncoder : public QObject
+{
     Q_OBJECT
 
 public:
     explicit MediaEncoder();
     ~MediaEncoder() override;
 
-    struct ComputedOptions {
+    struct ComputedOptions
+    {
         optional<double> videoBitrateKbps;
         optional<double> audioBitrateKbps;
     };
@@ -51,10 +53,13 @@ private:
     bool computeAudioBitrate(const EncoderOptions& options, ComputedOptions& computed);
     double computePixelRatio(const EncoderOptions& options, const Metadata& metadata);
 
-    std::variant<QString, Message> extensionForContainer(const Container& container);
+    std::variant<QString, Message> extensionForContainer(const Container& container) const;
 
     QString output = "";
     QString parseOutput();
+
+    // TODO: Use service
+    QString exeSuffix = IS_WINDOWS ? ".exe" : "";
 
     QEventLoop eventLoop;
     QProcess* ffprobe = new QProcess();

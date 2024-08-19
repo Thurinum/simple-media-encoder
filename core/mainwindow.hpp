@@ -47,7 +47,7 @@ public:
     ~MainWindow() override;
 
 protected:
-    void CheckForBinaries();
+    void CheckForFFmpeg() const;
     void SetupMenu();
     void SetupEventCallbacks();
     void QuerySupportedFormatsAsync();
@@ -65,7 +65,7 @@ protected:
     void HandleStart(double videoBitrateKbps, double audioBitrateKbps);
     void HandleSuccess(const EncoderOptions& options, const MediaEncoder::ComputedOptions& computed, QFile& output);
     void HandleFailure(const QString& shortError, const QString& longError);
-    void ShowAbout();
+    void ShowAbout() const;
 
 private slots:
     void StartEncoding();
