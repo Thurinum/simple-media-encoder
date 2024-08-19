@@ -1,8 +1,8 @@
 #include <QClipboard>
 #include <QFileDialog>
-#include <QGraphicsDropShadowEffect>
 #include <QMenu>
 #include <QMimeData>
+#include <QMimeDatabase>
 #include <QMovie>
 #include <QThread>
 #include <QTimer>
@@ -41,6 +41,10 @@ MainWindow::MainWindow(
     ui->setupUi(this);
     this->resize(this->QWidget::minimumSizeHint());
     this->warnings = new Warnings(ui->warningTooltipButton);
+
+    overlay->setGeometry(this->rect());
+    overlay->hide();
+    overlay->raise();
 
     ui->mainHeading->setText(QApplication::applicationName());
 
@@ -182,6 +186,68 @@ void MainWindow::SaveState() const
 {
     serializer->serializeMany(*preferenceWidgets, settings, "Preferences");
     serializer->serializeMany(*presetWidgets, settings, "PreviousSettings");
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent* event)
+{
+    if (!event->mimeData()->hasUrls())
+    {
+        event->ignore();
+        return;
+    }
+
+    const QMimeDatabase database;
+    const QUrl url = event->mimeData()->urls().first();
+    const QMimeType mimeType = database.mimeTypeForFile(url.toLocalFile());
+
+    isValidMimeForDrop = mimeType.name().startsWith("image/")
+                      || mimeType.name().startsWith("video/")
+                      || mimeType.name().startsWith("audio/");
+    if (isValidMimeForDrop)
+    {
+        overlay->setBackgroundColor(QColor(0, 0, 0, 128));
+        overlay->setText("Drop to select file");
+    }
+    else
+    {
+        overlay->setBackgroundColor(QColor(128, 0, 0, 128));
+        overlay->setText("Invalid media file");
+    }
+
+    if (!isDragging)
+    {
+        overlay->showWithFade();
+        isDragging = true;
+    }
+
+    event->accept();
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{
+    if (!event->mimeData()->hasUrls())
+        return;
+
+    if (isValidMimeForDrop)
+    {
+        const QUrl url = event->mimeData()->urls().first();
+        LoadInputFile(url);
+    }
+
+    overlay->hideWithFade();
+    isDragging = false;
+}
+
+void MainWindow::dragLeaveEvent(QDragLeaveEvent* event)
+{
+    overlay->hideWithFade();
+    isDragging = false;
+}
+
+void MainWindow::resizeEvent(QResizeEvent* event)
+{
+    overlay->setGeometry(this->rect());
+    QMainWindow::resizeEvent(event);
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -592,27 +658,8 @@ void MainWindow::LoadPreset(const int index) const
 
 void MainWindow::OpenInputFile()
 {
-    QUrl fileUrl = QFileDialog::getOpenFileUrl(this, tr("Select file to compress"), QDir::currentPath(), "*");
-
-    QString path = fileUrl.toLocalFile();
-    ui->inputFileLineEdit->setText(path);
-
-    QueryMediaMetadataAsync(path);
-
-    if (ui->autoFillCheckBox->isChecked())
-    {
-        ui->widthSpinBox->setValue(metadata->width);
-        ui->heightSpinBox->setValue(metadata->height);
-        ui->speedSpinBox->setValue(1);
-        ui->fileSizeSpinBox->setValue(metadata->sizeKbps);
-        ui->fileSizeUnitComboBox->setCurrentIndex(0);
-        ui->aspectRatioSpinBoxH->setValue(metadata->aspectRatioX);
-        ui->aspectRatioSpinBoxV->setValue(metadata->aspectRatioY);
-        ui->fpsSpinBox->setValue(metadata->frameRate);
-
-        int qualityPercent = metadata->audioBitrateKbps * 100 / 256;
-        ui->audioQualitySlider->setValue(qualityPercent);
-    }
+    const QUrl fileUrl = QFileDialog::getOpenFileUrl(this, tr("Select file to compress"), QDir::currentPath(), "*");
+    LoadInputFile(fileUrl);
 }
 
 void MainWindow::QueryMediaMetadataAsync(const QString& path)
@@ -683,8 +730,30 @@ void MainWindow::LoadSelectedUrl()
     else
         ui->inputFileLineEdit->clear();
 }
+void MainWindow::LoadInputFile(const QUrl& url)
+{
+    const QString path = url.toLocalFile();
+    ui->inputFileLineEdit->setText(path);
 
-void MainWindow::ValidateSelectedDir()
+    QueryMediaMetadataAsync(path);
+
+    if (ui->autoFillCheckBox->isChecked())
+    {
+        ui->widthSpinBox->setValue(metadata->width);
+        ui->heightSpinBox->setValue(metadata->height);
+        ui->speedSpinBox->setValue(1);
+        ui->fileSizeSpinBox->setValue(metadata->sizeKbps);
+        ui->fileSizeUnitComboBox->setCurrentIndex(0);
+        ui->aspectRatioSpinBoxH->setValue(metadata->aspectRatioX);
+        ui->aspectRatioSpinBoxV->setValue(metadata->aspectRatioY);
+        ui->fpsSpinBox->setValue(metadata->frameRate);
+
+        const int qualityPercent = metadata->audioBitrateKbps * 100 / 256;
+        ui->audioQualitySlider->setValue(qualityPercent);
+    }
+}
+
+void MainWindow::ValidateSelectedDir() const
 {
     const QString selectedDir = ui->outputFolderLineEdit->text();
     bool isValidOutput = QDir(selectedDir).exists();

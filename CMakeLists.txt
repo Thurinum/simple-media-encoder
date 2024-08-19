@@ -46,6 +46,8 @@ set(SOURCES
         core/utils/platform_info.cpp
         core/utils/warnings.hpp
         core/utils/warnings.cpp
+        ui/overlay_widget.cpp
+        ui/overlay_widget.hpp
 )
 
 set(RESOURCES

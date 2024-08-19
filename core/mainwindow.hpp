@@ -5,6 +5,7 @@
 #include "notifier/notifier.hpp"
 #include "settings/serializer.hpp"
 #include "settings/settings.hpp"
+#include "ui/overlay_widget.hpp"
 #include "utils/platform_info.hpp"
 #include "utils/warnings.hpp"
 
@@ -54,6 +55,11 @@ protected:
     void LoadState();
     void LoadPresetNames() const;
     void SaveState() const;
+
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
+    void dragLeaveEvent(QDragLeaveEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
     void closeEvent(QCloseEvent* event) override;
 
     void HandleStart(double videoBitrateKbps, double audioBitrateKbps);
@@ -89,11 +95,13 @@ private:
     inline bool isAutoValue(QAbstractSpinBox* spinBox);
     void SetProgressShown(ProgressState state);
     void LoadSelectedUrl();
-    void ValidateSelectedDir();
+    void LoadInputFile(const QUrl& url);
+    void ValidateSelectedDir() const;
     void SetupAdvancedModeAnimation();
     double getOutputSizeKbps();
 
     Ui::MainWindow* ui;
+    OverlayWidget* overlay = new OverlayWidget(this);
     Warnings* warnings;
 
     optional<Metadata> metadata;
@@ -114,6 +122,9 @@ private:
     Notifier& notifier;
     PlatformInfo& platformInfo;
     FormatSupportLoader& formatSupport;
+
+    bool isDragging = false;
+    bool isValidMimeForDrop = false;
 
     QSharedPointer<FormatSupport> formatSupportCache;
 };
