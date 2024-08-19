@@ -1,5 +1,19 @@
+# Build system per-user config
 *.pro.user
+CMakeLists.txt.user
+
+# Build artifacts
+cmake-build-debug/
 build/
 .qtc_clangd/
+
+# Binaries
 *.dll
 *.exe
+
+# Generated custom configuration
+bin/config.ini
+
+# IDE configuration files
+.vscode/
+.idea/

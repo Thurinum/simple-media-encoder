@@ -1,0 +1,9 @@
+BasedOnStyle: WebKit
+---
+Language: Cpp
+AlignAfterOpenBracket: BlockIndent
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+BreakBeforeBraces: Allman
+AlignOperands: AlignAfterOperator
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
