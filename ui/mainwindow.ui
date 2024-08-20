@@ -1774,6 +1774,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>videoCodecComboBox</sender>
+   <signal>activated(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SelectVideoCodec(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>535</x>
+     <y>121</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>910</x>
+     <y>396</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>audioCodecComboBox</sender>
+   <signal>activated(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SelectAudioCodec(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>712</x>
+     <y>123</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>917</x>
+     <y>352</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>SetAdvancedMode(bool)</slot>
@@ -1789,6 +1821,9 @@
   <slot>OpenInputFile()</slot>
   <slot>LoadPreset(int)</slot>
   <slot>UpdateCodecsList(bool)</slot>
+  <slot>SelectVideoCodec(int)</slot>
+  <slot>SelectAudioCodec(int)</slot>
+  <slot>SelectContainer(int)</slot>
  </slots>
  <buttongroups>
   <buttongroup name="audioVideoButtonGroup"/>

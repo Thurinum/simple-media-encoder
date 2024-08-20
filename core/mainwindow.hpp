@@ -46,6 +46,13 @@ public:
     );
     ~MainWindow() override;
 
+    enum ControlsState
+    {
+        VideoAudio,
+        VideoOnly,
+        AudioOnly
+    };
+
 protected:
     void CheckForFFmpeg() const;
     void SetupMenu();
@@ -67,6 +74,7 @@ protected:
     void HandleFailure(const QString& shortError, const QString& longError);
     void ShowAbout() const;
 
+    // NOTE: const parameters are NOT supported by Qt slots setup from the designer!
 private slots:
     void StartEncoding();
     void SetAdvancedMode(bool enabled);
@@ -74,7 +82,10 @@ private slots:
     void SelectOutputDirectory();
     void ShowMetadata();
     void LoadPreset(int index) const;
-    void SetControlsState(QAbstractButton* button);
+    void SelectVideoCodec(int index) const;
+    void SelectAudioCodec(int index) const;
+    void SetControlsState(QAbstractButton* button) const;
+    void SetControlsState() const;
     void CheckAspectRatioConflict();
     void CheckSpeedConflict();
     void UpdateAudioQualityLabel(int value);
@@ -106,9 +117,11 @@ private:
 
     optional<Metadata> metadata;
 
-    // todo: unique ptr
-    const QList<QObject*>* preferenceWidgets;
-    const QList<QObject*>* presetWidgets;
+    std::unique_ptr<const QList<QObject*>> preferenceWidgets;
+    std::unique_ptr<const QList<QObject*>> presetWidgets;
+
+    std::unique_ptr<const QList<QWidget*>> videoControls;
+    std::unique_ptr<const QList<QWidget*>> audioControls;
 
     QPropertyAnimation* sectionWidthAnim;
     QPropertyAnimation* sectionHeightAnim;

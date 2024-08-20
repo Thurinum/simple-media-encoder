@@ -52,7 +52,7 @@ MainWindow::MainWindow(
     ui->audioVideoButtonGroup->setId(ui->radVideoOnly, 1);
     ui->audioVideoButtonGroup->setId(ui->radAudioOnly, 2);
 
-    preferenceWidgets = new QList<QObject*> {
+    preferenceWidgets = std::make_unique<const QList<QObject*>>(QList<QObject*> {
         ui->advancedModeCheckBox,
         ui->audioVideoButtonGroup,
         ui->outputFileNameLineEdit,
@@ -66,10 +66,10 @@ MainWindow::MainWindow(
         ui->openExplorerOnSuccessCheckBox,
         ui->outputFileNameSuffixCheckBox,
         ui->playOnSuccessCheckBox,
-        ui->warnOnOverwriteCheckBox
-    };
+        ui->warnOnOverwriteCheckBox,
+    });
 
-    presetWidgets = new QList<QObject*> {
+    presetWidgets = std::make_unique<const QList<QObject*>>(QList<QObject*> {
         ui->aspectRatioSpinBoxH,
         ui->aspectRatioSpinBoxV,
         ui->audioCodecComboBox,
@@ -82,8 +82,23 @@ MainWindow::MainWindow(
         ui->heightSpinBox,
         ui->speedSpinBox,
         ui->videoCodecComboBox,
-        ui->widthSpinBox
-    };
+        ui->widthSpinBox,
+    });
+
+    videoControls = std::make_unique<const QList<QWidget*>>(QList<QWidget*> {
+        ui->videoCodecComboBox,
+        ui->widthSpinBox,
+        ui->heightSpinBox,
+        ui->aspectRatioSpinBoxH,
+        ui->aspectRatioSpinBoxV,
+        ui->fpsSpinBox,
+        ui->speedSpinBox,
+    });
+
+    audioControls = std::make_unique<const QList<QWidget*>>(QList<QWidget*> {
+        ui->audioCodecComboBox,
+        ui->audioQualitySlider,
+    });
 
     SetupAdvancedModeAnimation();
     SetupMenu();
@@ -461,6 +476,7 @@ void MainWindow::HandleFormatsQueryResult(const std::variant<QSharedPointer<Form
     LoadState();
     LoadSelectedUrl();
 }
+
 void MainWindow::UpdateCodecsList(const bool commonOnly) const
 {
     static QStringList commonVideoCodecs = settings->get("FormatSelection/sCommonVideoCodecs").toStringList();
@@ -471,6 +487,7 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
     ui->audioCodecComboBox->clear();
     ui->containerComboBox->clear();
 
+    ui->videoCodecComboBox->addItem("Passthrough");
     for (const Codec& videoCodec : formatSupportCache->videoCodecs)
     {
         QString name = videoCodec.libraryName;
@@ -482,6 +499,7 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
         ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, videoCodec.displayName, Qt::ToolTipRole);
     }
 
+    ui->audioCodecComboBox->addItem("Passthrough");
     for (const Codec& audioCodec : formatSupportCache->audioCodecs)
     {
         QString name = audioCodec.libraryName;
@@ -493,6 +511,7 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
         ui->audioCodecComboBox->setItemData(ui->audioCodecComboBox->count() - 1, audioCodec.displayName, Qt::ToolTipRole);
     }
 
+    ui->containerComboBox->addItem("Same as input");
     for (const Container& container : formatSupportCache->containers)
     {
         QString name = container.formatName;
@@ -593,47 +612,26 @@ void MainWindow::SetAdvancedMode(bool enabled)
     sectionHeightAnim->start();
 }
 
-void MainWindow::SetControlsState(QAbstractButton* button)
+void MainWindow::SetControlsState([[maybe_unused]] QAbstractButton* button) const
 {
-    if (button == ui->radVideoAudio)
-    {
-        ui->widthSpinBox->setEnabled(true);
-        ui->heightSpinBox->setEnabled(true);
-        ui->speedSpinBox->setEnabled(true);
-        ui->videoCodecComboBox->setEnabled(true);
-        ui->audioCodecComboBox->setEnabled(true);
-        ui->containerComboBox->setEnabled(true);
-        ui->audioQualitySlider->setEnabled(true);
-        ui->aspectRatioSpinBoxH->setEnabled(true);
-        ui->aspectRatioSpinBoxV->setEnabled(true);
-        ui->fpsSpinBox->setEnabled(true);
-    }
-    else if (button == ui->radVideoOnly)
-    {
-        ui->widthSpinBox->setEnabled(true);
-        ui->heightSpinBox->setEnabled(true);
-        ui->speedSpinBox->setEnabled(true);
-        ui->videoCodecComboBox->setEnabled(true);
-        ui->audioCodecComboBox->setEnabled(false);
-        ui->containerComboBox->setEnabled(true);
-        ui->audioQualitySlider->setEnabled(false);
-        ui->aspectRatioSpinBoxH->setEnabled(true);
-        ui->aspectRatioSpinBoxV->setEnabled(true);
-        ui->fpsSpinBox->setEnabled(true);
-    }
-    else if (button == ui->radAudioOnly)
-    {
-        ui->widthSpinBox->setEnabled(false);
-        ui->heightSpinBox->setEnabled(false);
-        ui->speedSpinBox->setEnabled(false);
-        ui->videoCodecComboBox->setEnabled(false);
-        ui->audioCodecComboBox->setEnabled(true);
-        ui->containerComboBox->setEnabled(false);
-        ui->audioQualitySlider->setEnabled(true);
-        ui->aspectRatioSpinBoxH->setEnabled(false);
-        ui->aspectRatioSpinBoxV->setEnabled(false);
-        ui->fpsSpinBox->setEnabled(false);
-    }
+    SetControlsState();
+}
+
+void MainWindow::SetControlsState() const
+{
+    const auto state = static_cast<ControlsState>(ui->audioVideoButtonGroup->checkedId());
+    const bool isVideoAudio = state == VideoAudio;
+    const bool isVideoOnly = state == VideoOnly;
+    const bool isAudioOnly = state == AudioOnly;
+
+    const bool isVideoPassthrough = ui->videoCodecComboBox->currentIndex() == 0;
+    const bool isAudioPassthrough = ui->audioCodecComboBox->currentIndex() == 0;
+
+    for (QWidget* control : *videoControls)
+        control->setEnabled((isVideoAudio || isVideoOnly) && (!isVideoPassthrough || control == ui->videoCodecComboBox));
+
+    for (QWidget* control : *audioControls)
+        control->setEnabled((isVideoAudio || isAudioOnly) && (!isAudioPassthrough || control == ui->audioCodecComboBox));
 }
 
 void MainWindow::ShowMetadata()
@@ -662,6 +660,24 @@ void MainWindow::LoadPreset(const int index) const
         return;
 
     serializer->deserializeMany(*presetWidgets, presetsSettings, presetName);
+}
+
+void MainWindow::SelectVideoCodec(const int index) const
+{
+    SetControlsState(ui->audioVideoButtonGroup->checkedButton());
+}
+
+void MainWindow::SelectAudioCodec(const int index) const
+{
+    const bool isPassthrough = index == 0;
+
+    for (QWidget* control : *audioControls)
+    {
+        if (control == ui->audioCodecComboBox)
+            continue;
+
+        control->setEnabled(!isPassthrough);
+    }
 }
 
 void MainWindow::OpenInputFile()
