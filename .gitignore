@@ -3,7 +3,7 @@
 CMakeLists.txt.user
 
 # Build artifacts
-cmake-build-debug/
+cmake-build-*/
 build/
 .qtc_clangd/
 
