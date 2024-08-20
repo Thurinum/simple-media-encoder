@@ -280,8 +280,9 @@ void MainWindow::StartEncoding()
 {
     EncoderOptionsBuilder builder;
 
-    QString inputPath = ui->inputFileLineEdit->text();
-    QString outputPath = getOutputPath(inputPath);
+    const QString inputPath = ui->inputFileLineEdit->text();
+    const QString outputPath = getOutputPath(inputPath);
+
     // FIXME: emit fileExists() signal
     // if (QFile::exists(outputPath + "." + container->formatName) && ui->warnOnOverwriteCheckBox->isChecked()
     //     && QMessageBox::question(this, "Overwrite?", "Output at path '" + outputPath + "' already exists. Overwrite
@@ -294,10 +295,18 @@ void MainWindow::StartEncoding()
     if (metadata.has_value())
         builder.useMetadata(*metadata);
 
+    const auto streamType = static_cast<StreamType>(ui->audioVideoButtonGroup->checkedId());
+    const bool hasVideo = streamType == VideoAudio || streamType == VideoOnly;
+    const bool hasAudio = streamType == VideoAudio || streamType == AudioOnly;
+
+    if (hasVideo)
+        builder.withVideoCodec(ui->videoCodecComboBox->currentData().value<Codec>());
+
+    if (hasAudio)
+        builder.withAudioCodec(ui->audioCodecComboBox->currentData().value<Codec>());
+
     builder.inputFrom(inputPath)
         .outputTo(outputPath)
-        .withVideoCodec(ui->videoCodecComboBox->currentData().value<Codec>())
-        .withAudioCodec(ui->audioCodecComboBox->currentData().value<Codec>())
         .withContainer(ui->containerComboBox->currentData().value<Container>())
         .withTargetOutputSize(getOutputSizeKbps())
         .withAudioQuality(ui->audioQualitySlider->value() / 100.0)
@@ -311,14 +320,14 @@ void MainWindow::StartEncoding()
         .withMinAudioBitrate(settings->get("Main/dMinBitrateAudioKbps").toDouble())
         .withMaxAudioBitrate(settings->get("Main/dMaxBitrateAudioKbps").toDouble());
 
-    auto maybeOptions = builder.build();
+    const auto maybeOptions = builder.build();
     if (std::holds_alternative<QList<QString>>(maybeOptions))
     {
         notifier.Notify(Severity::Error, "Invalid encoding options", std::get<QList<QString>>(maybeOptions).join("\n"));
         return;
     }
 
-    EncoderOptions options = std::get<EncoderOptions>(maybeOptions);
+    const EncoderOptions options = std::get<EncoderOptions>(maybeOptions);
     encoder.Encode(options);
 }
 
@@ -487,7 +496,11 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
     ui->audioCodecComboBox->clear();
     ui->containerComboBox->clear();
 
-    ui->videoCodecComboBox->addItem("Passthrough");
+    // passing “copy” as codec name will make ffmpeg use the same codec as the input file
+    static Codec passthroughCodec = { .displayName = "Passthrough", .libraryName = "copy", .isAudioCodec = false };
+    ui->videoCodecComboBox->addItem(passthroughCodec.displayName);
+    ui->videoCodecComboBox->setItemData(0, QVariant::fromValue(passthroughCodec));
+
     for (const Codec& videoCodec : formatSupportCache->videoCodecs)
     {
         QString name = videoCodec.libraryName;
@@ -499,7 +512,9 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
         ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, videoCodec.displayName, Qt::ToolTipRole);
     }
 
-    ui->audioCodecComboBox->addItem("Passthrough");
+    static Codec passthroughAudioCodec = { .displayName = "Passthrough", .libraryName = "copy", .isAudioCodec = true };
+    ui->audioCodecComboBox->addItem(passthroughAudioCodec.displayName);
+    ui->audioCodecComboBox->setItemData(0, QVariant::fromValue(passthroughAudioCodec));
     for (const Codec& audioCodec : formatSupportCache->audioCodecs)
     {
         QString name = audioCodec.libraryName;
@@ -511,7 +526,6 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
         ui->audioCodecComboBox->setItemData(ui->audioCodecComboBox->count() - 1, audioCodec.displayName, Qt::ToolTipRole);
     }
 
-    ui->containerComboBox->addItem("Same as input");
     for (const Container& container : formatSupportCache->containers)
     {
         QString name = container.formatName;
@@ -619,7 +633,7 @@ void MainWindow::SetControlsState([[maybe_unused]] QAbstractButton* button) cons
 
 void MainWindow::SetControlsState() const
 {
-    const auto state = static_cast<ControlsState>(ui->audioVideoButtonGroup->checkedId());
+    const auto state = static_cast<StreamType>(ui->audioVideoButtonGroup->checkedId());
     const bool isVideoAudio = state == VideoAudio;
     const bool isVideoOnly = state == VideoOnly;
     const bool isAudioOnly = state == AudioOnly;

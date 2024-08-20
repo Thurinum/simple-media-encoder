@@ -1,6 +1,6 @@
 #include "metadata_loader.hpp"
-#include "metadata.hpp"
 #include "core/notifier/message.hpp"
+#include "metadata.hpp"
 
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -12,7 +12,8 @@ MetadataResult MetadataLoader::parse(QByteArray data)
 {
     QJsonDocument document = QJsonDocument::fromJson(data);
 
-    if (document.isNull()) {
+    if (document.isNull())
+    {
         return Message(
             Severity::Error,
             QObject::tr(
@@ -27,21 +28,27 @@ MetadataResult MetadataLoader::parse(QByteArray data)
 
     // we only support 1 stream of each type at the moment
     format = root.value("format").toObject();
+    bool isAudio = false;
 
-    for (QJsonValueRef streamRef : streams) {
+    for (QJsonValueRef streamRef : streams)
+    {
         QJsonObject stream = streamRef.toObject();
-        QJsonValue  type   = stream.value("codec_type");
+        QJsonValue type = stream.value("codec_type");
 
-        if (type == "video" && video.isEmpty()) {
+        if (type == "video" && video.isEmpty())
+        {
             video = stream;
         }
 
-        if (type == "audio" && audio.isEmpty()) {
+        if (type == "audio" && audio.isEmpty())
+        {
             audio = stream;
+            isAudio = true;
         }
     }
 
-    if (format.isEmpty() || (video.isEmpty() && audio.isEmpty())) {
+    if (format.isEmpty() || (video.isEmpty() && audio.isEmpty()))
+    {
         return Message(
             Severity::Error,
             QObject::tr("Media metadata is incomplete."),
@@ -61,13 +68,14 @@ MetadataResult MetadataLoader::parse(QByteArray data)
         .durationSeconds = value(errors, format, "duration", true).toDouble(),
         .aspectRatioX = aspectRatio.first,
         .aspectRatioY = aspectRatio.second,
-        .frameRate = getFrameRate(errors),
+        .frameRate = isAudio ? 0 : getFrameRate(errors),
         .videoCodec = value(errors, video, "codec_name", true).toString(),
         .audioCodec = value(errors, audio, "codec_name", true).toString(),
         .container = "" // TODO: Find a reliable way to query format type
     };
 
-    if (!errors.isEmpty()) {
+    if (!errors.isEmpty())
+    {
         return Message(
             Severity::Error,
             "Missing metadata fields",
@@ -81,7 +89,8 @@ MetadataResult MetadataLoader::parse(QByteArray data)
 
 void MetadataLoader::handleResult()
 {
-    if (ffprobe.exitCode() != 0) {
+    if (ffprobe.exitCode() != 0)
+    {
         emit Message(
             Severity::Error,
             tr("Could not retrieve media metadata."),
@@ -97,7 +106,9 @@ void MetadataLoader::handleResult()
 }
 
 MetadataLoader::MetadataLoader(const PlatformInfo& platformInfo)
-    : platform(platformInfo) { }
+    : platform(platformInfo)
+{
+}
 
 void MetadataLoader::loadAsync(const QString& path)
 {
@@ -109,7 +120,8 @@ void MetadataLoader::loadAsync(const QString& path)
             .arg(platform.isWindows() ? ".exe" : "", path)
     );
 
-    if (!ffprobe.waitForStarted()) {
+    if (!ffprobe.waitForStarted())
+    {
         emit Message(
             Severity::Error,
             tr("Could not retrieve media metadata."),
@@ -126,24 +138,27 @@ double MetadataLoader::getFrameRate(QList<QString>& errors)
 {
     QVariant frameRateData = value(errors, video, "r_frame_rate");
 
-    if (frameRateData.isNull()) {
+    if (frameRateData.isNull())
+    {
         QVariant nbrFramesData = value(errors, video, "nb_frames");
         QVariant durationData = value(errors, format, "duration");
 
-        if (nbrFramesData.isNull() || durationData.isNull()) {
+        if (nbrFramesData.isNull() || durationData.isNull())
+        {
             NotFound(errors, "frame rate");
             return -1;
         }
 
         double nbrFrames = nbrFramesData.toDouble();
-        double duration  = durationData.toDouble();
+        double duration = durationData.toDouble();
 
         return nbrFrames / duration;
     }
 
     QStringList frameRateRatio = frameRateData.toString().split("/");
 
-    if (frameRateRatio.size() != 2) {
+    if (frameRateRatio.size() != 2)
+    {
         NotFound(errors, "frame rate");
         return -1;
     }
@@ -155,17 +170,19 @@ std::pair<double, double> MetadataLoader::getAspectRatio(QList<QString>& errors)
 {
     QVariant aspectRatioData = value(errors, video, "display_aspect_ratio");
 
-    if (aspectRatioData.isNull()) {
+    if (aspectRatioData.isNull())
+    {
         double width = value(errors, video, "width").toDouble();
         double height = value(errors, video, "height").toDouble();
-        double ratio  = width / height;
+        double ratio = width / height;
 
         return { ratio, 1 };
     }
 
     QStringList aspectRatio = aspectRatioData.toString().split(":");
 
-    if (aspectRatio.size() != 2) {
+    if (aspectRatio.size() != 2)
+    {
         NotFound(errors, "aspect ratio");
         return {};
     }

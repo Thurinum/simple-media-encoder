@@ -46,7 +46,7 @@ public:
     );
     ~MainWindow() override;
 
-    enum ControlsState
+    enum StreamType
     {
         VideoAudio,
         VideoOnly,
