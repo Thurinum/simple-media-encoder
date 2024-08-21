@@ -1,38 +1,26 @@
 # Simple Media Encoder
-Re-encode and compress your media files quickly and efficiently with this convenient tool. Uses FFmpeg and Qt Widgets under GPL v3.
+Compress and convert your media files in a breeze with this convenient tool! Perfect for sending to Discord or Messenger, or reducing the size of music to listen on the go. Uses FFmpeg and Qt Widgets under GPL v3.
 
 <div>
   <img height=400 src=https://github.com/user-attachments/assets/f5400a8e-f3cd-4516-baa7-a4a289e37528 /> <img height=400 src=https://github.com/user-attachments/assets/a05aefc7-1132-4c93-a08d-a3c338066ca6 />  
 </div>  
 <br/>
-The default interface allows anyone to quickly re-encode media files.
 
+The default interface allows anyone to quickly re-encode media files.  
 The so-called "expert" interface gives advanced users a bit more control over the exported result.
 
-## News
-An update that will bring this app to release status is planned this February! Expected features are:
-- Enhanced compatibility, reducing the amount of edge-cases with incompatible files
-- Smart selection of optimal encoding parameters for the most popular codecs
-- Widened range of codecs displayed to all those available on the system
-- Better bitrate calculation when compressing to reach a target size
-- Numerous bug fixes and major code quality improvements!
-
 ## Compatibility
-- Windows 10, Windows 11, and Linux. Earlier versions of Windows are not supported.
-- Should work on Mac too. Let me know if you encounter issues!
-- **Tested on** Windows 11 and Arch Linux.
+- Tested on Windows 11, Windows 10, and Linux. Earlier versions of Windows are not supported.
+- Should work on Mac as well. Let me know if you encounter issues! More testing is underway.
 
 ## Features
-
 With this tool, one may:
 
 - Re-encode **any file type** supported by FFmpeg;
 - Choose whether to export **video, audio, or both**;
 - Quickly select a **quality preset**, or manually tune **your settings**;
 - Choose **audio bitrate**;
-- **Re-scale video** with automatic aspect ratio adjustment;
-- Manually adjust **aspect ratio**;
-- Specify a **target file size** for easy compression of large files;
+- **Re-scale video** with automatic aspect ratio adjustment, or manually adjust the **aspect ratio**;
 - Change the **video and audio speed** or manually set a video framerate;
 - Specify **custom FFmpeg arguments** for advanced use.
 
@@ -56,7 +44,7 @@ Conveniently, all these parameters are **saved** when the tool is closed.
 
 ### Binaries
 
-A [binary release](https://github.com/Thurinum/simple-media-encoder/releases) is available for Windows! Although still in beta, it should be quite usable.
+A [binary release](https://github.com/Thurinum/simple-media-encoder/releases) is available for Windows!
 
 ### Source
 
@@ -107,11 +95,12 @@ Once everything is installed:
 ## Special thanks to
 
 Theodore l'Heureux (for his consulting and beta-testing)
+William Boulanger (for his advice and knowledge on audio theory)
 
 ## Found an issue?
 
 This is a beta, and the tool may face difficulties opening certain files.  
-Should you encounter such a problematic file, feel free to send it over alongside a Github issue; it will help finding the problem.
+Should you encounter such a problematic file, feel free to file a Github issue; it will help finding the problem.
 Any bug reports are also greatly appreciated!
 
 Thanks for reading through this and cheers!
