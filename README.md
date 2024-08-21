@@ -2,7 +2,8 @@
 Compress and convert your media files in a breeze with this convenient tool! Perfect for sending to Discord or Messenger, or reducing the size of music to listen on the go. Uses FFmpeg and Qt Widgets under GPL v3.
 
 <div>
-  <img height=400 src=https://github.com/user-attachments/assets/f5400a8e-f3cd-4516-baa7-a4a289e37528 /> <img height=400 src=https://github.com/user-attachments/assets/a05aefc7-1132-4c93-a08d-a3c338066ca6 />  
+  <img width=300 src=https://github.com/user-attachments/assets/f5400a8e-f3cd-4516-baa7-a4a289e37528 />
+  <img width=520 src=https://github.com/user-attachments/assets/a05aefc7-1132-4c93-a08d-a3c338066ca6 />  
 </div>  
 <br/>
 
