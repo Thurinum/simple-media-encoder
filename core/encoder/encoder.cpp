@@ -46,90 +46,22 @@ void MediaEncoder::StartCompression(const EncoderOptions& options, const Compute
 {
     emit encodingStarted(computed.videoBitrateKbps.value_or(0), computed.audioBitrateKbps.value_or(0));
 
-    QString videoCodecParam = options.videoCodec.has_value() ? "-c:v " + options.videoCodec->libraryName
-                                                             : "-vn";
-    QString audioCodecParam = options.audioCodec.has_value() ? "-c:a " + options.audioCodec->libraryName
-                                                             : "-an";
-    QString videoBitrateParam = options.sizeKbps.has_value()
-                                  ? "-b:v " + QString::number(*computed.videoBitrateKbps) + "k"
-                                  : "";
-    QString audioBitrateParam = computed.audioBitrateKbps.has_value()
-                                  ? "-b:a " + QString::number(*computed.audioBitrateKbps) + "k"
-                                  : "";
-    QString formatParam = QString("-f %1").arg(options.container.formatName);
+    QString baseParams = BuildBaseParams(options, computed);
+    QString videoFiltersParams = BuildVideoFilterParams(options, computed);
+    QString audioFiltersParams = BuildAudioFilterParams(options, computed);
 
-    // video filters
-    QString aspectRatioFilter;
-    QString scaleFilter;
-    QString speedFilter;
-    QString fpsFilter;
-    double fps = *options.fps;
-
-    if (options.outputWidth.has_value() && options.outputHeight.has_value())
-    {
-        scaleFilter = QString("scale=%1:%2")
-                          .arg(QString::number(*options.outputWidth), QString::number(*options.outputHeight));
-        aspectRatioFilter = "setsar=1/1";
-    }
-    else if (options.outputWidth.has_value())
-    {
-        scaleFilter = QString("scale=%1:-2").arg(QString::number(*options.outputWidth));
-    }
-    else if (options.outputHeight.has_value())
-    {
-        scaleFilter = QString("scale=-1:%1").arg(QString::number(*options.outputHeight));
-    }
-
-    if (options.aspectRatio.has_value())
-    {
-        aspectRatioFilter = QString("setsar=%1/%2")
-                                .arg(QString::number(options.aspectRatio->y()), QString::number(options.aspectRatio->x()));
-    }
-
-    if (options.speed.has_value())
-    {
-        speedFilter = QString("setpts=%1*PTS").arg(QString::number(1.0 / *options.speed));
-        fps *= *options.speed;
-    }
-
-    if (options.fps.has_value())
-    {
-        fpsFilter = "fps=" + QString::number(fps);
-    }
-
-    QString videoFiltersParam;
-    QStringList videoFilters = QStringList { scaleFilter, aspectRatioFilter, speedFilter, fpsFilter };
-    videoFilters.removeAll({});
-
-    if (!videoFilters.empty())
-        videoFiltersParam = "-filter:v " + videoFilters.join(',');
-
-    // audio filters
-    QString audioSpeedFilter;
-
-    if (options.speed.has_value())
-    {
-        audioSpeedFilter = "atempo=" + QString::number(*options.speed);
-    }
-
-    QString audioFiltersParam;
-    QStringList audioFilters = QStringList { audioSpeedFilter };
-    audioFilters.removeAll({});
-
-    if (!audioFilters.empty())
-        audioFiltersParam = "-filter:a " + audioFilters.join(',');
-
-    auto maybeFileExtension = extensionForContainer(options.container);
+    const auto maybeFileExtension = extensionForContainer(options.container);
     if (std::holds_alternative<Message>(maybeFileExtension))
     {
         emit encodingFailed(std::get<Message>(maybeFileExtension).message);
         return;
     }
-    QString fileExtension = std::get<QString>(maybeFileExtension);
+
+    const QString fileExtension = std::get<QString>(maybeFileExtension);
     QString outputPath = options.outputPath + "." + fileExtension;
 
-    QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 %7 %8 %9 %10 "%11" -y)")
-                          .arg(exeSuffix, options.inputPath, videoCodecParam, audioCodecParam, videoBitrateParam, audioBitrateParam, videoFiltersParam, audioFiltersParam, *options.customArguments, formatParam, outputPath);
+    const QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 "%7" -y)")
+                                .arg(exeSuffix, options.inputPath, baseParams, videoFiltersParams, audioFiltersParams, *options.customArguments, outputPath);
 
     *processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [metadata, this]()
                                        { UpdateProgress(metadata.durationSeconds); });
@@ -187,15 +119,99 @@ void MediaEncoder::EndCompression(const EncoderOptions& options, const ComputedO
     emit encodingSucceeded(options, computed, media);
     output.clear();
 }
+QString MediaEncoder::BuildBaseParams(const EncoderOptions& options, const ComputedOptions& computed) const
+{
+    const QString videoCodecParam = options.videoCodec.has_value() ? "-c:v " + options.videoCodec->libraryName : "-vn";
+    const QString audioCodecParam = options.audioCodec.has_value() ? "-c:a " + options.audioCodec->libraryName : "-an";
+    const QString videoBitrateParam = options.sizeKbps.has_value() ? "-b:v " + QString::number(*computed.videoBitrateKbps) + "k" : "";
+    const QString audioBitrateParam = computed.audioBitrateKbps.has_value() ? "-b:a " + QString::number(*computed.audioBitrateKbps) + "k" : "";
+    const QString audioChannelsParam = options.audioChannelsCount.has_value() ? "-ac " + QString::number(*options.audioChannelsCount) : "";
+    const QString formatParam = QString("-f %1").arg(options.container.formatName);
 
-QString MediaEncoder::getAvailableFormats()
+    QStringList params {
+        videoCodecParam,
+        audioCodecParam,
+        videoBitrateParam,
+        audioBitrateParam,
+        audioChannelsParam,
+        formatParam
+    };
+    params.removeAll({});
+
+    return params.join(" ");
+}
+QString MediaEncoder::BuildVideoFilterParams(const EncoderOptions& options, const ComputedOptions& computed) const
+{
+    QString aspectRatioFilter;
+    QString scaleFilter;
+    if (options.outputWidth.has_value() && options.outputHeight.has_value())
+    {
+        scaleFilter = QString("scale=%1:%2")
+                          .arg(QString::number(*options.outputWidth), QString::number(*options.outputHeight));
+        aspectRatioFilter = "setsar=1/1";
+    }
+    else if (options.outputWidth.has_value())
+    {
+        scaleFilter = QString("scale=%1:-2").arg(QString::number(*options.outputWidth));
+    }
+    else if (options.outputHeight.has_value())
+    {
+        scaleFilter = QString("scale=-1:%1").arg(QString::number(*options.outputHeight));
+    }
+
+    if (options.aspectRatio.has_value())
+    {
+        aspectRatioFilter = QString("setsar=%1/%2")
+                                .arg(QString::number(options.aspectRatio->y()), QString::number(options.aspectRatio->x()));
+    }
+
+    QString speedFilter;
+    double fps = *options.fps;
+    if (options.speed.has_value())
+    {
+        speedFilter = QString("setpts=%1*PTS").arg(QString::number(1.0 / *options.speed));
+        fps *= *options.speed;
+    }
+
+    QString fpsFilter;
+    if (options.fps.has_value())
+    {
+        fpsFilter = "fps=" + QString::number(fps);
+    }
+
+    QStringList videoFilters {
+        scaleFilter,
+        aspectRatioFilter,
+        speedFilter,
+        fpsFilter
+    };
+    videoFilters.removeAll({});
+
+    return videoFilters.empty() ? "" : "-filter:v " + videoFilters.join(',');
+}
+
+QString MediaEncoder::BuildAudioFilterParams(const EncoderOptions& options, const ComputedOptions& computed) const
+{
+    QString audioSpeedFilter;
+    if (options.speed.has_value())
+    {
+        audioSpeedFilter = "atempo=" + QString::number(*options.speed);
+    }
+
+    QStringList audioFilters { audioSpeedFilter };
+    audioFilters.removeAll({});
+
+    return audioFilters.empty() ? "" : "-filter:a " + audioFilters.join(',');
+}
+
+QString MediaEncoder::getAvailableFormats() const
 {
     ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(exeSuffix));
     ffmpeg->waitForFinished();
     return ffmpeg->readAllStandardOutput();
 }
 
-bool MediaEncoder::computeAudioBitrate(const EncoderOptions& options, ComputedOptions& computed)
+bool MediaEncoder::computeAudioBitrate(const EncoderOptions& options, ComputedOptions& computed) const
 {
     double audioBitrateKbps = qMax(options.minAudioBitrateKbps, options.audioQualityPercent.value_or(1) * options.maxAudioBitrateKbps);
     // TODO: Using the strategy pattern, specialize certain codecs to use different bitrate formulas

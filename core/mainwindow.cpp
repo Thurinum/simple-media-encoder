@@ -59,7 +59,6 @@ MainWindow::MainWindow(
         ui->outputFolderLineEdit,
         ui->autoFillCheckBox,
         ui->closeOnSuccessCheckBox,
-        ui->codecSelectionGroupBox,
         ui->commonFormatsOnlyCheckbox,
         ui->deleteOnSuccessCheckBox,
         ui->inputFileLineEdit,
@@ -83,6 +82,7 @@ MainWindow::MainWindow(
         ui->speedSpinBox,
         ui->videoCodecComboBox,
         ui->widthSpinBox,
+        ui->audioChannelCountSpinbox,
     });
 
     videoControls = std::make_unique<const QList<QWidget*>>(QList<QWidget*> {
@@ -184,7 +184,6 @@ void MainWindow::LoadState()
     const QList<QObject*> widgets = {
         ui->autoFillCheckBox,
         ui->closeOnSuccessCheckBox,
-        ui->codecSelectionGroupBox,
         ui->deleteOnSuccessCheckBox,
         ui->inputFileLineEdit,
         ui->openExplorerOnSuccessCheckBox,
@@ -310,6 +309,7 @@ void MainWindow::StartEncoding()
         .withContainer(ui->containerComboBox->currentData().value<Container>())
         .withTargetOutputSize(getOutputSizeKbps())
         .withAudioQuality(ui->audioQualitySlider->value() / 100.0)
+        .withAudioChannelsCount(ui->audioChannelCountSpinbox->value())
         .withOutputWidth(ui->widthSpinBox->value())
         .withOutputHeight(ui->heightSpinBox->value())
         .withAspectRatio(QPoint(ui->aspectRatioSpinBoxH->value(), ui->aspectRatioSpinBoxV->value()))
