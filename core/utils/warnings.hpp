@@ -14,7 +14,7 @@ public:
     void Remove(const QString& key);
 
 private:
-    void UpdateWidget();
+    void UpdateWidget() const;
 
     QWidget* m_tooltipWidget;
     QHash<QString, QString> m_warnings;

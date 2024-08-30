@@ -666,6 +666,7 @@ void MainWindow::LoadPreset(const int index) const
         return;
 
     serializer->deserializeMany(*presetWidgets, presetsSettings, presetName);
+    SetControlsState();
 }
 
 void MainWindow::SelectVideoCodec(const int index) const

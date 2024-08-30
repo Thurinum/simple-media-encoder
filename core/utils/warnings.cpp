@@ -17,9 +17,12 @@ void Warnings::Remove(const QString& key)
     UpdateWidget();
 }
 
-void Warnings::UpdateWidget()
+void Warnings::UpdateWidget() const
 {
-    bool hasWarnings = !m_warnings.isEmpty();
+    if (!m_tooltipWidget)
+        return;
+
+    const bool hasWarnings = !m_warnings.isEmpty();
 
     m_tooltipWidget->setVisible(hasWarnings);
     m_tooltipWidget->setToolTip(hasWarnings ? m_warnings.values().join("\n") : "");
