@@ -23,12 +23,10 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
-using namespace std::string_literals;
-
 inline auto di_settings = [] {};
 inline auto di_presets = [] {};
 
-class MainWindow : public QMainWindow
+class MainWindow final : public QMainWindow
 {
     Q_OBJECT
 
@@ -45,6 +43,13 @@ public:
         FormatSupportLoader& formatSupportLoader
     );
     ~MainWindow() override;
+
+    enum StreamType
+    {
+        VideoAudio,
+        VideoOnly,
+        AudioOnly
+    };
 
 protected:
     void CheckForFFmpeg() const;
@@ -67,6 +72,7 @@ protected:
     void HandleFailure(const QString& shortError, const QString& longError);
     void ShowAbout() const;
 
+    // NOTE: const parameters are NOT supported by Qt slots setup from the designer!
 private slots:
     void StartEncoding();
     void SetAdvancedMode(bool enabled);
@@ -74,7 +80,10 @@ private slots:
     void SelectOutputDirectory();
     void ShowMetadata();
     void LoadPreset(int index) const;
-    void SetControlsState(QAbstractButton* button);
+    void SelectVideoCodec(int index) const;
+    void SelectAudioCodec(int index) const;
+    void SetControlsState(QAbstractButton* button) const;
+    void SetControlsState() const;
     void CheckAspectRatioConflict();
     void CheckSpeedConflict();
     void UpdateAudioQualityLabel(int value);
@@ -93,26 +102,32 @@ private:
     void ReceiveMediaMetadata(MetadataResult result);
     QString getOutputPath(QString inputFilePath);
     inline bool isAutoValue(QAbstractSpinBox* spinBox);
-    void SetProgressShown(ProgressState state);
+    void SetProgressShown(const ProgressState& state) const;
     void LoadSelectedUrl();
     void LoadInputFile(const QUrl& url);
     void ValidateSelectedDir() const;
-    void SetupAdvancedModeAnimation();
-    double getOutputSizeKbps();
+    void SetupAnimations();
+    double getOutputSizeKbps() const;
 
     Ui::MainWindow* ui;
-    OverlayWidget* overlay = new OverlayWidget(this);
-    Warnings* warnings;
+    QScopedPointer<OverlayWidget> overlay;
+    QScopedPointer<Warnings> warnings;
 
     optional<Metadata> metadata;
 
-    // todo: unique ptr
-    const QList<QObject*>* preferenceWidgets;
-    const QList<QObject*>* presetWidgets;
+    std::unique_ptr<const QList<QObject*>> preferenceWidgets;
+    std::unique_ptr<const QList<QObject*>> presetWidgets;
 
-    QPropertyAnimation* sectionWidthAnim;
-    QPropertyAnimation* sectionHeightAnim;
-    QPropertyAnimation* windowSizeAnim;
+    std::unique_ptr<const QList<QWidget*>> videoControls;
+    std::unique_ptr<const QList<QWidget*>> audioControls;
+
+    std::unique_ptr<QPropertyAnimation> sectionWidthAnim;
+    std::unique_ptr<QPropertyAnimation> sectionHeightAnim;
+    std::unique_ptr<QPropertyAnimation> windowSizeAnim;
+    std::unique_ptr<QPropertyAnimation> progressBarValueAnim;
+    std::unique_ptr<QPropertyAnimation> progressBarHeightAnim;
+
+    QScopedPointer<QMenu> menu;
 
     MediaEncoder& encoder;
     std::shared_ptr<Settings> settings;

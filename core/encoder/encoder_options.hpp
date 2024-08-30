@@ -4,13 +4,14 @@
 #include <QString>
 #include <optional>
 
-#include "core/formats/container.hpp"
 #include "core/formats/codec.hpp"
+#include "core/formats/container.hpp"
 #include "core/formats/metadata.hpp"
 
 using std::optional;
 
-struct EncoderOptions {
+struct EncoderOptions
+{
     const Metadata inputMetadata;
     const QString inputPath;
     const QString outputPath;
@@ -19,6 +20,7 @@ struct EncoderOptions {
     const Container container;
     const optional<const double> sizeKbps;
     const optional<const double> audioQualityPercent;
+    const optional<const int> audioChannelsCount;
     const optional<const int> outputWidth;
     const optional<const int> outputHeight;
     const optional<const QPoint> aspectRatio;

@@ -1,10 +1,10 @@
 #ifndef ENCODER_OPTIONS_BUILDER_H
 #define ENCODER_OPTIONS_BUILDER_H
 
-#include "encoder_options.hpp"
 #include "core/formats/codec.hpp"
 #include "core/formats/container.hpp"
 #include "core/formats/metadata.hpp"
+#include "encoder_options.hpp"
 
 using std::optional;
 
@@ -21,6 +21,7 @@ public:
     self& withContainer(const Container& container);
     self& withTargetOutputSize(double sizeKbps);
     self& withAudioQuality(double audioQualityPercent);
+    self& withAudioChannelsCount(int audioChannelsCount);
     self& withOutputWidth(int outputWidth);
     self& withOutputHeight(int outputHeight);
     self& withAspectRatio(const QPoint& aspectRatio);
@@ -43,6 +44,7 @@ private:
     optional<Container> container;
     optional<double> sizeKbps;
     optional<double> audioQualityPercent;
+    optional<int> audioChannelsCount;
     optional<int> outputWidth;
     optional<int> outputHeight;
     optional<QPoint> aspectRatio;

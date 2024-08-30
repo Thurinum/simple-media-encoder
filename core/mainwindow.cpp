@@ -7,6 +7,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QWhatsThis>
+#include <utility>
 
 #include "encoder/encoder_options_builder.hpp"
 #include "mainwindow.hpp"
@@ -18,7 +19,7 @@ using std::optional;
 
 MainWindow::MainWindow(
     MediaEncoder& encoder,
-    std ::shared_ptr<Settings> settings,
+    std::shared_ptr<Settings> settings,
     std::shared_ptr<Settings> presetsSettings,
     std::shared_ptr<Serializer> serializer,
     MetadataLoader& metadata,
@@ -27,8 +28,11 @@ MainWindow::MainWindow(
     FormatSupportLoader& formatSupportLoader
 )
     : ui(new Ui::MainWindow)
+    , overlay(new OverlayWidget(this))
+    , warnings(new Warnings(ui->warningTooltipButton))
+    , menu(new QMenu(this))
     , encoder(encoder)
-    , settings(std::move(settings))
+    , settings(settings)
     , presetsSettings(std::move(presetsSettings))
     , serializer(std::move(serializer))
     , metadataLoader(metadata)
@@ -40,7 +44,6 @@ MainWindow::MainWindow(
 
     ui->setupUi(this);
     this->resize(this->QWidget::minimumSizeHint());
-    this->warnings = new Warnings(ui->warningTooltipButton);
 
     overlay->setGeometry(this->rect());
     overlay->hide();
@@ -52,24 +55,23 @@ MainWindow::MainWindow(
     ui->audioVideoButtonGroup->setId(ui->radVideoOnly, 1);
     ui->audioVideoButtonGroup->setId(ui->radAudioOnly, 2);
 
-    preferenceWidgets = new QList<QObject*> {
+    preferenceWidgets = std::make_unique<const QList<QObject*>>(QList<QObject*> {
         ui->advancedModeCheckBox,
         ui->audioVideoButtonGroup,
         ui->outputFileNameLineEdit,
         ui->outputFolderLineEdit,
         ui->autoFillCheckBox,
         ui->closeOnSuccessCheckBox,
-        ui->codecSelectionGroupBox,
         ui->commonFormatsOnlyCheckbox,
         ui->deleteOnSuccessCheckBox,
         ui->inputFileLineEdit,
         ui->openExplorerOnSuccessCheckBox,
         ui->outputFileNameSuffixCheckBox,
         ui->playOnSuccessCheckBox,
-        ui->warnOnOverwriteCheckBox
-    };
+        ui->warnOnOverwriteCheckBox,
+    });
 
-    presetWidgets = new QList<QObject*> {
+    presetWidgets = std::make_unique<const QList<QObject*>>(QList<QObject*> {
         ui->aspectRatioSpinBoxH,
         ui->aspectRatioSpinBoxV,
         ui->audioCodecComboBox,
@@ -82,10 +84,26 @@ MainWindow::MainWindow(
         ui->heightSpinBox,
         ui->speedSpinBox,
         ui->videoCodecComboBox,
-        ui->widthSpinBox
-    };
+        ui->widthSpinBox,
+        ui->audioChannelCountSpinbox,
+    });
 
-    SetupAdvancedModeAnimation();
+    videoControls = std::make_unique<const QList<QWidget*>>(QList<QWidget*> {
+        ui->videoCodecComboBox,
+        ui->widthSpinBox,
+        ui->heightSpinBox,
+        ui->aspectRatioSpinBoxH,
+        ui->aspectRatioSpinBoxV,
+        ui->fpsSpinBox,
+        ui->speedSpinBox,
+    });
+
+    audioControls = std::make_unique<const QList<QWidget*>>(QList<QWidget*> {
+        ui->audioCodecComboBox,
+        ui->audioQualitySlider,
+    });
+
+    SetupAnimations();
     SetupMenu();
     SetupEventCallbacks();
 
@@ -95,7 +113,6 @@ MainWindow::MainWindow(
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete warnings;
 }
 
 void MainWindow::CheckForFFmpeg() const
@@ -118,14 +135,12 @@ void MainWindow::CheckForFFmpeg() const
 
 void MainWindow::SetupMenu()
 {
-    QMenu* menu = new QMenu(this);
-
     menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
     menu->addSeparator();
     menu->addAction(tr("About"), this, &MainWindow::ShowAbout);
     menu->addAction(tr("About Qt"), &QApplication::aboutQt);
 
-    ui->infoMenuToolButton->setMenu(menu);
+    ui->infoMenuToolButton->setMenu(menu.get());
 }
 
 void MainWindow::SetupEventCallbacks()
@@ -169,7 +184,6 @@ void MainWindow::LoadState()
     const QList<QObject*> widgets = {
         ui->autoFillCheckBox,
         ui->closeOnSuccessCheckBox,
-        ui->codecSelectionGroupBox,
         ui->deleteOnSuccessCheckBox,
         ui->inputFileLineEdit,
         ui->openExplorerOnSuccessCheckBox,
@@ -265,8 +279,9 @@ void MainWindow::StartEncoding()
 {
     EncoderOptionsBuilder builder;
 
-    QString inputPath = ui->inputFileLineEdit->text();
-    QString outputPath = getOutputPath(inputPath);
+    const QString inputPath = ui->inputFileLineEdit->text();
+    const QString outputPath = getOutputPath(inputPath);
+
     // FIXME: emit fileExists() signal
     // if (QFile::exists(outputPath + "." + container->formatName) && ui->warnOnOverwriteCheckBox->isChecked()
     //     && QMessageBox::question(this, "Overwrite?", "Output at path '" + outputPath + "' already exists. Overwrite
@@ -279,13 +294,22 @@ void MainWindow::StartEncoding()
     if (metadata.has_value())
         builder.useMetadata(*metadata);
 
+    const auto streamType = static_cast<StreamType>(ui->audioVideoButtonGroup->checkedId());
+    const bool hasVideo = streamType == VideoAudio || streamType == VideoOnly;
+    const bool hasAudio = streamType == VideoAudio || streamType == AudioOnly;
+
+    if (hasVideo)
+        builder.withVideoCodec(ui->videoCodecComboBox->currentData().value<Codec>());
+
+    if (hasAudio)
+        builder.withAudioCodec(ui->audioCodecComboBox->currentData().value<Codec>());
+
     builder.inputFrom(inputPath)
         .outputTo(outputPath)
-        .withVideoCodec(ui->videoCodecComboBox->currentData().value<Codec>())
-        .withAudioCodec(ui->audioCodecComboBox->currentData().value<Codec>())
         .withContainer(ui->containerComboBox->currentData().value<Container>())
         .withTargetOutputSize(getOutputSizeKbps())
         .withAudioQuality(ui->audioQualitySlider->value() / 100.0)
+        .withAudioChannelsCount(ui->audioChannelCountSpinbox->value())
         .withOutputWidth(ui->widthSpinBox->value())
         .withOutputHeight(ui->heightSpinBox->value())
         .withAspectRatio(QPoint(ui->aspectRatioSpinBoxH->value(), ui->aspectRatioSpinBoxV->value()))
@@ -296,14 +320,14 @@ void MainWindow::StartEncoding()
         .withMinAudioBitrate(settings->get("Main/dMinBitrateAudioKbps").toDouble())
         .withMaxAudioBitrate(settings->get("Main/dMaxBitrateAudioKbps").toDouble());
 
-    auto maybeOptions = builder.build();
+    const auto maybeOptions = builder.build();
     if (std::holds_alternative<QList<QString>>(maybeOptions))
     {
         notifier.Notify(Severity::Error, "Invalid encoding options", std::get<QList<QString>>(maybeOptions).join("\n"));
         return;
     }
 
-    EncoderOptions options = std::get<EncoderOptions>(maybeOptions);
+    const EncoderOptions options = std::get<EncoderOptions>(maybeOptions);
     encoder.Encode(options);
 }
 
@@ -461,6 +485,7 @@ void MainWindow::HandleFormatsQueryResult(const std::variant<QSharedPointer<Form
     LoadState();
     LoadSelectedUrl();
 }
+
 void MainWindow::UpdateCodecsList(const bool commonOnly) const
 {
     static QStringList commonVideoCodecs = settings->get("FormatSelection/sCommonVideoCodecs").toStringList();
@@ -470,6 +495,11 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
     ui->videoCodecComboBox->clear();
     ui->audioCodecComboBox->clear();
     ui->containerComboBox->clear();
+
+    // passing “copy” as codec name will make ffmpeg use the same codec as the input file
+    static Codec passthroughCodec = { .displayName = "Passthrough", .libraryName = "copy", .isAudioCodec = false };
+    ui->videoCodecComboBox->addItem(passthroughCodec.displayName);
+    ui->videoCodecComboBox->setItemData(0, QVariant::fromValue(passthroughCodec));
 
     for (const Codec& videoCodec : formatSupportCache->videoCodecs)
     {
@@ -482,6 +512,9 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
         ui->videoCodecComboBox->setItemData(ui->videoCodecComboBox->count() - 1, videoCodec.displayName, Qt::ToolTipRole);
     }
 
+    static Codec passthroughAudioCodec = { .displayName = "Passthrough", .libraryName = "copy", .isAudioCodec = true };
+    ui->audioCodecComboBox->addItem(passthroughAudioCodec.displayName);
+    ui->audioCodecComboBox->setItemData(0, QVariant::fromValue(passthroughAudioCodec));
     for (const Codec& audioCodec : formatSupportCache->audioCodecs)
     {
         QString name = audioCodec.libraryName;
@@ -527,38 +560,30 @@ void MainWindow::ShowAbout() const
     notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), msg);
 }
 
-void MainWindow::SetProgressShown(ProgressState state)
+void MainWindow::SetProgressShown(const ProgressState& state) const
 {
-    auto* valueAnimation = new QPropertyAnimation(ui->progressBar, "value");
-    valueAnimation->setDuration(settings->get("Main/iProgressBarAnimDurationMs").toInt());
-    valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
-
-    auto* heightAnimation = new QPropertyAnimation(ui->progressWidget, "maximumHeight");
-    valueAnimation->setDuration(settings->get("Main/iProgressWidgetAnimDurationMs").toInt());
-    valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
-
     if (state.status.has_value() && ui->progressWidget->maximumHeight() == 0)
     {
         ui->centralWidget->setEnabled(false);
 
-        QString taskName = *state.status;
+        const QString taskName = *state.status;
         if (ui->startCompressionButton->text() != taskName)
             ui->startCompressionButton->setText(taskName);
 
         ui->progressWidgetTopSpacer->changeSize(0, 10);
-        heightAnimation->setStartValue(0);
-        heightAnimation->setEndValue(500);
+        progressBarHeightAnim->setStartValue(0);
+        progressBarHeightAnim->setEndValue(500);
+        progressBarHeightAnim->start();
     }
     else if (!state.status)
     {
         ui->centralWidget->setEnabled(true);
         ui->startCompressionButton->setText(tr("Start encoding"));
         ui->progressWidgetTopSpacer->changeSize(0, 0);
-        heightAnimation->setStartValue(ui->progressWidget->height());
-        heightAnimation->setEndValue(0);
+        progressBarHeightAnim->setStartValue(ui->progressWidget->height());
+        progressBarHeightAnim->setEndValue(0);
+        progressBarHeightAnim->start();
     }
-
-    heightAnimation->start();
 
     if (!state.progressPercent.has_value())
     {
@@ -567,9 +592,9 @@ void MainWindow::SetProgressShown(ProgressState state)
     }
 
     ui->progressBar->setRange(0, 100);
-    valueAnimation->setStartValue(ui->progressBar->value());
-    valueAnimation->setEndValue(*state.progressPercent);
-    valueAnimation->start();
+    progressBarValueAnim->setStartValue(ui->progressBar->value());
+    progressBarValueAnim->setEndValue(*state.progressPercent);
+    progressBarValueAnim->start();
 }
 
 void MainWindow::SetAdvancedMode(bool enabled)
@@ -593,47 +618,26 @@ void MainWindow::SetAdvancedMode(bool enabled)
     sectionHeightAnim->start();
 }
 
-void MainWindow::SetControlsState(QAbstractButton* button)
+void MainWindow::SetControlsState([[maybe_unused]] QAbstractButton* button) const
 {
-    if (button == ui->radVideoAudio)
-    {
-        ui->widthSpinBox->setEnabled(true);
-        ui->heightSpinBox->setEnabled(true);
-        ui->speedSpinBox->setEnabled(true);
-        ui->videoCodecComboBox->setEnabled(true);
-        ui->audioCodecComboBox->setEnabled(true);
-        ui->containerComboBox->setEnabled(true);
-        ui->audioQualitySlider->setEnabled(true);
-        ui->aspectRatioSpinBoxH->setEnabled(true);
-        ui->aspectRatioSpinBoxV->setEnabled(true);
-        ui->fpsSpinBox->setEnabled(true);
-    }
-    else if (button == ui->radVideoOnly)
-    {
-        ui->widthSpinBox->setEnabled(true);
-        ui->heightSpinBox->setEnabled(true);
-        ui->speedSpinBox->setEnabled(true);
-        ui->videoCodecComboBox->setEnabled(true);
-        ui->audioCodecComboBox->setEnabled(false);
-        ui->containerComboBox->setEnabled(true);
-        ui->audioQualitySlider->setEnabled(false);
-        ui->aspectRatioSpinBoxH->setEnabled(true);
-        ui->aspectRatioSpinBoxV->setEnabled(true);
-        ui->fpsSpinBox->setEnabled(true);
-    }
-    else if (button == ui->radAudioOnly)
-    {
-        ui->widthSpinBox->setEnabled(false);
-        ui->heightSpinBox->setEnabled(false);
-        ui->speedSpinBox->setEnabled(false);
-        ui->videoCodecComboBox->setEnabled(false);
-        ui->audioCodecComboBox->setEnabled(true);
-        ui->containerComboBox->setEnabled(false);
-        ui->audioQualitySlider->setEnabled(true);
-        ui->aspectRatioSpinBoxH->setEnabled(false);
-        ui->aspectRatioSpinBoxV->setEnabled(false);
-        ui->fpsSpinBox->setEnabled(false);
-    }
+    SetControlsState();
+}
+
+void MainWindow::SetControlsState() const
+{
+    const auto state = static_cast<StreamType>(ui->audioVideoButtonGroup->checkedId());
+    const bool isVideoAudio = state == VideoAudio;
+    const bool isVideoOnly = state == VideoOnly;
+    const bool isAudioOnly = state == AudioOnly;
+
+    const bool isVideoPassthrough = ui->videoCodecComboBox->currentIndex() == 0;
+    const bool isAudioPassthrough = ui->audioCodecComboBox->currentIndex() == 0;
+
+    for (QWidget* control : *videoControls)
+        control->setEnabled((isVideoAudio || isVideoOnly) && (!isVideoPassthrough || control == ui->videoCodecComboBox));
+
+    for (QWidget* control : *audioControls)
+        control->setEnabled((isVideoAudio || isAudioOnly) && (!isAudioPassthrough || control == ui->audioCodecComboBox));
 }
 
 void MainWindow::ShowMetadata()
@@ -662,6 +666,24 @@ void MainWindow::LoadPreset(const int index) const
         return;
 
     serializer->deserializeMany(*presetWidgets, presetsSettings, presetName);
+}
+
+void MainWindow::SelectVideoCodec(const int index) const
+{
+    SetControlsState(ui->audioVideoButtonGroup->checkedButton());
+}
+
+void MainWindow::SelectAudioCodec(const int index) const
+{
+    const bool isPassthrough = index == 0;
+
+    for (QWidget* control : *audioControls)
+    {
+        if (control == ui->audioCodecComboBox)
+            continue;
+
+        control->setEnabled(!isPassthrough);
+    }
 }
 
 void MainWindow::OpenInputFile()
@@ -771,30 +793,48 @@ void MainWindow::ValidateSelectedDir() const
     ui->warningTooltipButton->setVisible(false);
 }
 
-void MainWindow::SetupAdvancedModeAnimation()
+void MainWindow::SetupAnimations()
 {
+    progressBarValueAnim = std::make_unique<QPropertyAnimation>();
+    progressBarValueAnim->setTargetObject(ui->progressBar);
+    progressBarValueAnim->setPropertyName("value");
+    progressBarValueAnim->setDuration(settings->get("Main/iProgressBarAnimDurationMs").toInt());
+    progressBarValueAnim->setEasingCurve(QEasingCurve::OutQuad);
+
+    progressBarHeightAnim = std::make_unique<QPropertyAnimation>();
+    progressBarHeightAnim->setTargetObject(ui->progressWidget);
+    progressBarHeightAnim->setPropertyName("maximumHeight");
+    progressBarHeightAnim->setDuration(settings->get("Main/iProgressWidgetAnimDurationMs").toInt());
+    progressBarHeightAnim->setEasingCurve(QEasingCurve::InOutQuad);
+
     const int duration = settings->get("Main/iSectionAnimDurationMs").toInt();
 
-    sectionWidthAnim = new QPropertyAnimation(ui->advancedSection, "maximumWidth", this);
+    sectionWidthAnim = std::make_unique<QPropertyAnimation>();
+    sectionWidthAnim->setTargetObject(ui->advancedSection);
+    sectionWidthAnim->setPropertyName("maximumWidth");
     sectionWidthAnim->setDuration(duration);
     sectionWidthAnim->setEasingCurve(QEasingCurve::InOutQuad);
 
-    sectionHeightAnim = new QPropertyAnimation(ui->advancedSection, "maximumHeight", this);
+    sectionHeightAnim = std::make_unique<QPropertyAnimation>();
+    sectionHeightAnim->setTargetObject(ui->advancedSection);
+    sectionHeightAnim->setPropertyName("maximumHeight");
     sectionHeightAnim->setDuration(duration);
     sectionHeightAnim->setEasingCurve(QEasingCurve::InOutQuad);
 
-    windowSizeAnim = new QPropertyAnimation(this, "size");
+    windowSizeAnim = std::make_unique<QPropertyAnimation>();
+    windowSizeAnim->setTargetObject(this);
+    windowSizeAnim->setPropertyName("size");
     windowSizeAnim->setDuration(duration);
     windowSizeAnim->setEasingCurve(QEasingCurve::InOutQuad);
 
-    connect(sectionWidthAnim, &QPropertyAnimation::finished, windowSizeAnim, [this]()
+    connect(sectionWidthAnim.get(), &QPropertyAnimation::finished, windowSizeAnim.get(), [this]
             {
         windowSizeAnim->setStartValue(this->size());
         windowSizeAnim->setEndValue(this->minimumSizeHint());
         windowSizeAnim->start(); });
 }
 
-double MainWindow::getOutputSizeKbps()
+double MainWindow::getOutputSizeKbps() const
 {
     double sizeKbpsConversionFactor = 0;
 

@@ -32,7 +32,7 @@ public:
     };
 
     void Encode(const EncoderOptions& options);
-    QString getAvailableFormats();
+    QString getAvailableFormats() const;
 
 signals:
     void encodingStarted(double videoBitrateKbps, double audioBitrateKbps);
@@ -49,8 +49,12 @@ private:
         const EncoderOptions& options, const ComputedOptions& computed, QString outputPath, QString command, int exitCode
     );
 
+    [[nodiscard]] QString BuildBaseParams(const EncoderOptions& options, const ComputedOptions& computed) const;
+    [[nodiscard]] QString BuildVideoFilterParams(const EncoderOptions& options, const ComputedOptions& computed) const;
+    [[nodiscard]] QString BuildAudioFilterParams(const EncoderOptions& options, const ComputedOptions& computed) const;
+
     void ComputeVideoBitrate(const EncoderOptions& options, ComputedOptions& computed, const Metadata& metadata);
-    bool computeAudioBitrate(const EncoderOptions& options, ComputedOptions& computed);
+    bool computeAudioBitrate(const EncoderOptions& options, ComputedOptions& computed) const;
     double computePixelRatio(const EncoderOptions& options, const Metadata& metadata);
 
     std::variant<QString, Message> extensionForContainer(const Container& container) const;

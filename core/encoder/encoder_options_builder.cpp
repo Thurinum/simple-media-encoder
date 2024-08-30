@@ -10,12 +10,14 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::useMetadata(const Metadata& 
 
 EncoderOptionsBuilder::self& EncoderOptionsBuilder::inputFrom(const QString& inputPath)
 {
-    if (inputPath.isEmpty()) {
+    if (inputPath.isEmpty())
+    {
         errors.append(QObject::tr("Input path is empty."));
         return *this;
     }
 
-    if (!QFile::exists(inputPath)) {
+    if (!QFile::exists(inputPath))
+    {
         errors.append(QObject::tr("No file exists at input path '%1'.").arg(inputPath));
         return *this;
     }
@@ -26,7 +28,8 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::inputFrom(const QString& inp
 
 EncoderOptionsBuilder::self& EncoderOptionsBuilder::outputTo(const QString& outputPath)
 {
-    if (outputPath.isEmpty()) {
+    if (outputPath.isEmpty())
+    {
         errors.append(QObject::tr("Output path is empty."));
         return *this;
     }
@@ -55,11 +58,13 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::withContainer(const Containe
 
 EncoderOptionsBuilder::self& EncoderOptionsBuilder::withTargetOutputSize(double sizeKbps)
 {
-    if (sizeKbps == 0) { // auto-mode
+    if (sizeKbps == 0)
+    { // auto-mode
         return *this;
     }
 
-    if (sizeKbps <= 0) {
+    if (sizeKbps <= 0)
+    {
         errors.append(QObject::tr("Target output size must be greater than 0."));
         return *this;
     }
@@ -70,12 +75,27 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::withTargetOutputSize(double 
 
 EncoderOptionsBuilder::self& EncoderOptionsBuilder::withAudioQuality(double audioQualityPercent)
 {
-    if (audioQualityPercent < 0 || audioQualityPercent > 100) {
+    if (audioQualityPercent < 0 || audioQualityPercent > 100)
+    {
         errors.append(QObject::tr("Audio quality must be between 0 and 100."));
         return *this;
     }
 
     this->audioQualityPercent = audioQualityPercent;
+    return *this;
+}
+EncoderOptionsBuilder::self& EncoderOptionsBuilder::withAudioChannelsCount(const int audioChannelsCount)
+{
+    if (audioChannelsCount == 0) // auto-mode
+        return *this;
+
+    if (audioChannelsCount <= 0)
+    {
+        errors.append(QObject::tr("Audio channels count must be greater than 0."));
+        return *this;
+    }
+
+    this->audioChannelsCount = audioChannelsCount;
     return *this;
 }
 
@@ -84,7 +104,8 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::withOutputWidth(int outputWi
     if (outputWidth == 0) // auto-mode
         return *this;
 
-    if (outputWidth <= 0) {
+    if (outputWidth <= 0)
+    {
         errors.append(QObject::tr("Output width must be greater than 0."));
         return *this;
     }
@@ -98,7 +119,8 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::withOutputHeight(int outputH
     if (outputHeight == 0) // auto-mode
         return *this;
 
-    if (outputHeight <= 0) {
+    if (outputHeight <= 0)
+    {
         errors.append(QObject::tr("Output height must be greater than 0."));
         return *this;
     }
@@ -112,12 +134,14 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::withAspectRatio(const QPoint
     if (aspectRatio.x() == 0 || aspectRatio.y() == 0) // auto-mode
         return *this;
 
-    if (aspectRatio.x() < 0 || aspectRatio.y() < 0) {
+    if (aspectRatio.x() < 0 || aspectRatio.y() < 0)
+    {
         errors.append(QObject::tr("Aspect ratio components must be greater than 0."));
         return *this;
     }
 
-    if (aspectRatio.y() == 0) {
+    if (aspectRatio.y() == 0)
+    {
         errors.append(QObject::tr("Aspect ratio denominator must be greater than 0."));
         return *this;
     }
@@ -131,7 +155,8 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::atFps(int fps)
     if (fps == 0) // auto-mode
         return *this;
 
-    if (fps <= 0) {
+    if (fps <= 0)
+    {
         errors.append(QObject::tr("FPS must be greater than 0."));
         return *this;
     }
@@ -145,7 +170,8 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::atSpeed(double speed)
     if (speed == 0) // auto-mode
         return *this;
 
-    if (speed < 0) {
+    if (speed < 0)
+    {
         errors.append(QObject::tr("Speed must not be lower than 0."));
         return *this;
     }
@@ -156,7 +182,8 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::atSpeed(double speed)
 
 EncoderOptionsBuilder::self& EncoderOptionsBuilder::withMinVideoBitrate(double bitrateKbps)
 {
-    if (bitrateKbps <= 0) {
+    if (bitrateKbps <= 0)
+    {
         errors.append(QObject::tr("Minimum video bitrate must be greater than 0."));
         return *this;
     }
@@ -167,7 +194,8 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::withMinVideoBitrate(double b
 
 EncoderOptionsBuilder::self& EncoderOptionsBuilder::withMinAudioBitrate(double bitrateKbps)
 {
-    if (bitrateKbps <= 0) {
+    if (bitrateKbps <= 0)
+    {
         errors.append(QObject::tr("Minimum audio bitrate must be greater than 0."));
         return *this;
     }
@@ -178,7 +206,8 @@ EncoderOptionsBuilder::self& EncoderOptionsBuilder::withMinAudioBitrate(double b
 
 EncoderOptionsBuilder::self& EncoderOptionsBuilder::withMaxAudioBitrate(double bitrateKbps)
 {
-    if (bitrateKbps <= 0) {
+    if (bitrateKbps <= 0)
+    {
         errors.append(QObject::tr("Maximum audio bitrate must be greater than 0."));
         return *this;
     }
@@ -232,6 +261,7 @@ std::variant<EncoderOptions, QList<QString>> EncoderOptionsBuilder::build()
         .container = *container,
         .sizeKbps = sizeKbps,
         .audioQualityPercent = audioQualityPercent,
+        .audioChannelsCount = audioChannelsCount,
         .outputWidth = outputWidth,
         .outputHeight = outputHeight,
         .aspectRatio = aspectRatio,
