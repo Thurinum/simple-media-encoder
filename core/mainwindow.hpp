@@ -23,12 +23,10 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
-using namespace std::string_literals;
-
 inline auto di_settings = [] {};
 inline auto di_presets = [] {};
 
-class MainWindow : public QMainWindow
+class MainWindow final : public QMainWindow
 {
     Q_OBJECT
 
@@ -104,16 +102,16 @@ private:
     void ReceiveMediaMetadata(MetadataResult result);
     QString getOutputPath(QString inputFilePath);
     inline bool isAutoValue(QAbstractSpinBox* spinBox);
-    void SetProgressShown(ProgressState state);
+    void SetProgressShown(const ProgressState& state) const;
     void LoadSelectedUrl();
     void LoadInputFile(const QUrl& url);
     void ValidateSelectedDir() const;
-    void SetupAdvancedModeAnimation();
-    double getOutputSizeKbps();
+    void SetupAnimations();
+    double getOutputSizeKbps() const;
 
     Ui::MainWindow* ui;
-    OverlayWidget* overlay = new OverlayWidget(this);
-    Warnings* warnings;
+    QScopedPointer<OverlayWidget> overlay;
+    QScopedPointer<Warnings> warnings;
 
     optional<Metadata> metadata;
 
@@ -123,9 +121,13 @@ private:
     std::unique_ptr<const QList<QWidget*>> videoControls;
     std::unique_ptr<const QList<QWidget*>> audioControls;
 
-    QPropertyAnimation* sectionWidthAnim;
-    QPropertyAnimation* sectionHeightAnim;
-    QPropertyAnimation* windowSizeAnim;
+    std::unique_ptr<QPropertyAnimation> sectionWidthAnim;
+    std::unique_ptr<QPropertyAnimation> sectionHeightAnim;
+    std::unique_ptr<QPropertyAnimation> windowSizeAnim;
+    std::unique_ptr<QPropertyAnimation> progressBarValueAnim;
+    std::unique_ptr<QPropertyAnimation> progressBarHeightAnim;
+
+    QScopedPointer<QMenu> menu;
 
     MediaEncoder& encoder;
     std::shared_ptr<Settings> settings;

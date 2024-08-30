@@ -7,6 +7,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QWhatsThis>
+#include <utility>
 
 #include "encoder/encoder_options_builder.hpp"
 #include "mainwindow.hpp"
@@ -18,7 +19,7 @@ using std::optional;
 
 MainWindow::MainWindow(
     MediaEncoder& encoder,
-    std ::shared_ptr<Settings> settings,
+    std::shared_ptr<Settings> settings,
     std::shared_ptr<Settings> presetsSettings,
     std::shared_ptr<Serializer> serializer,
     MetadataLoader& metadata,
@@ -27,8 +28,11 @@ MainWindow::MainWindow(
     FormatSupportLoader& formatSupportLoader
 )
     : ui(new Ui::MainWindow)
+    , overlay(new OverlayWidget(this))
+    , warnings(new Warnings(ui->warningTooltipButton))
+    , menu(new QMenu(this))
     , encoder(encoder)
-    , settings(std::move(settings))
+    , settings(settings)
     , presetsSettings(std::move(presetsSettings))
     , serializer(std::move(serializer))
     , metadataLoader(metadata)
@@ -40,7 +44,6 @@ MainWindow::MainWindow(
 
     ui->setupUi(this);
     this->resize(this->QWidget::minimumSizeHint());
-    this->warnings = new Warnings(ui->warningTooltipButton);
 
     overlay->setGeometry(this->rect());
     overlay->hide();
@@ -100,7 +103,7 @@ MainWindow::MainWindow(
         ui->audioQualitySlider,
     });
 
-    SetupAdvancedModeAnimation();
+    SetupAnimations();
     SetupMenu();
     SetupEventCallbacks();
 
@@ -110,7 +113,6 @@ MainWindow::MainWindow(
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete warnings;
 }
 
 void MainWindow::CheckForFFmpeg() const
@@ -133,14 +135,12 @@ void MainWindow::CheckForFFmpeg() const
 
 void MainWindow::SetupMenu()
 {
-    QMenu* menu = new QMenu(this);
-
     menu->addAction(tr("Help"), &QWhatsThis::enterWhatsThisMode);
     menu->addSeparator();
     menu->addAction(tr("About"), this, &MainWindow::ShowAbout);
     menu->addAction(tr("About Qt"), &QApplication::aboutQt);
 
-    ui->infoMenuToolButton->setMenu(menu);
+    ui->infoMenuToolButton->setMenu(menu.get());
 }
 
 void MainWindow::SetupEventCallbacks()
@@ -560,38 +560,30 @@ void MainWindow::ShowAbout() const
     notifier.Notify(Severity::Info, "About " + QApplication::applicationName(), msg);
 }
 
-void MainWindow::SetProgressShown(ProgressState state)
+void MainWindow::SetProgressShown(const ProgressState& state) const
 {
-    auto* valueAnimation = new QPropertyAnimation(ui->progressBar, "value");
-    valueAnimation->setDuration(settings->get("Main/iProgressBarAnimDurationMs").toInt());
-    valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
-
-    auto* heightAnimation = new QPropertyAnimation(ui->progressWidget, "maximumHeight");
-    valueAnimation->setDuration(settings->get("Main/iProgressWidgetAnimDurationMs").toInt());
-    valueAnimation->setEasingCurve(QEasingCurve::InOutQuad);
-
     if (state.status.has_value() && ui->progressWidget->maximumHeight() == 0)
     {
         ui->centralWidget->setEnabled(false);
 
-        QString taskName = *state.status;
+        const QString taskName = *state.status;
         if (ui->startCompressionButton->text() != taskName)
             ui->startCompressionButton->setText(taskName);
 
         ui->progressWidgetTopSpacer->changeSize(0, 10);
-        heightAnimation->setStartValue(0);
-        heightAnimation->setEndValue(500);
+        progressBarHeightAnim->setStartValue(0);
+        progressBarHeightAnim->setEndValue(500);
+        progressBarHeightAnim->start();
     }
     else if (!state.status)
     {
         ui->centralWidget->setEnabled(true);
         ui->startCompressionButton->setText(tr("Start encoding"));
         ui->progressWidgetTopSpacer->changeSize(0, 0);
-        heightAnimation->setStartValue(ui->progressWidget->height());
-        heightAnimation->setEndValue(0);
+        progressBarHeightAnim->setStartValue(ui->progressWidget->height());
+        progressBarHeightAnim->setEndValue(0);
+        progressBarHeightAnim->start();
     }
-
-    heightAnimation->start();
 
     if (!state.progressPercent.has_value())
     {
@@ -600,9 +592,9 @@ void MainWindow::SetProgressShown(ProgressState state)
     }
 
     ui->progressBar->setRange(0, 100);
-    valueAnimation->setStartValue(ui->progressBar->value());
-    valueAnimation->setEndValue(*state.progressPercent);
-    valueAnimation->start();
+    progressBarValueAnim->setStartValue(ui->progressBar->value());
+    progressBarValueAnim->setEndValue(*state.progressPercent);
+    progressBarValueAnim->start();
 }
 
 void MainWindow::SetAdvancedMode(bool enabled)
@@ -801,30 +793,48 @@ void MainWindow::ValidateSelectedDir() const
     ui->warningTooltipButton->setVisible(false);
 }
 
-void MainWindow::SetupAdvancedModeAnimation()
+void MainWindow::SetupAnimations()
 {
+    progressBarValueAnim = std::make_unique<QPropertyAnimation>();
+    progressBarValueAnim->setTargetObject(ui->progressBar);
+    progressBarValueAnim->setPropertyName("value");
+    progressBarValueAnim->setDuration(settings->get("Main/iProgressBarAnimDurationMs").toInt());
+    progressBarValueAnim->setEasingCurve(QEasingCurve::OutQuad);
+
+    progressBarHeightAnim = std::make_unique<QPropertyAnimation>();
+    progressBarHeightAnim->setTargetObject(ui->progressWidget);
+    progressBarHeightAnim->setPropertyName("maximumHeight");
+    progressBarHeightAnim->setDuration(settings->get("Main/iProgressWidgetAnimDurationMs").toInt());
+    progressBarHeightAnim->setEasingCurve(QEasingCurve::InOutQuad);
+
     const int duration = settings->get("Main/iSectionAnimDurationMs").toInt();
 
-    sectionWidthAnim = new QPropertyAnimation(ui->advancedSection, "maximumWidth", this);
+    sectionWidthAnim = std::make_unique<QPropertyAnimation>();
+    sectionWidthAnim->setTargetObject(ui->advancedSection);
+    sectionWidthAnim->setPropertyName("maximumWidth");
     sectionWidthAnim->setDuration(duration);
     sectionWidthAnim->setEasingCurve(QEasingCurve::InOutQuad);
 
-    sectionHeightAnim = new QPropertyAnimation(ui->advancedSection, "maximumHeight", this);
+    sectionHeightAnim = std::make_unique<QPropertyAnimation>();
+    sectionHeightAnim->setTargetObject(ui->advancedSection);
+    sectionHeightAnim->setPropertyName("maximumHeight");
     sectionHeightAnim->setDuration(duration);
     sectionHeightAnim->setEasingCurve(QEasingCurve::InOutQuad);
 
-    windowSizeAnim = new QPropertyAnimation(this, "size");
+    windowSizeAnim = std::make_unique<QPropertyAnimation>();
+    windowSizeAnim->setTargetObject(this);
+    windowSizeAnim->setPropertyName("size");
     windowSizeAnim->setDuration(duration);
     windowSizeAnim->setEasingCurve(QEasingCurve::InOutQuad);
 
-    connect(sectionWidthAnim, &QPropertyAnimation::finished, windowSizeAnim, [this]()
+    connect(sectionWidthAnim.get(), &QPropertyAnimation::finished, windowSizeAnim.get(), [this]
             {
         windowSizeAnim->setStartValue(this->size());
         windowSizeAnim->setEndValue(this->minimumSizeHint());
         windowSizeAnim->start(); });
 }
 
-double MainWindow::getOutputSizeKbps()
+double MainWindow::getOutputSizeKbps() const
 {
     double sizeKbpsConversionFactor = 0;
 

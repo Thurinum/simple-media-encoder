@@ -66,7 +66,7 @@ void MediaEncoder::StartCompression(const EncoderOptions& options, const Compute
     *processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [metadata, this]()
                                        { UpdateProgress(metadata.durationSeconds); });
 
-    *processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](int exitCode)
+    *processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](const int exitCode)
                                          { EndCompression(options, computed, outputPath, command, exitCode); });
 
     ffmpeg->startCommand(command);
