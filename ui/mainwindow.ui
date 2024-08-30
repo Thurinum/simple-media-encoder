@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>891</width>
-    <height>601</height>
+    <height>692</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1533,8 +1533,8 @@
    <slot>SetAdvancedMode(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>862</x>
-     <y>33</y>
+     <x>835</x>
+     <y>43</y>
     </hint>
     <hint type="destinationlabel">
      <x>526</x>
@@ -1549,8 +1549,8 @@
    <slot>StartEncoding()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>295</x>
-     <y>587</y>
+     <x>315</x>
+     <y>671</y>
     </hint>
     <hint type="destinationlabel">
      <x>301</x>
@@ -1565,7 +1565,7 @@
    <slot>CheckAspectRatioConflict()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>265</x>
+     <x>258</x>
      <y>348</y>
     </hint>
     <hint type="destinationlabel">
@@ -1581,7 +1581,7 @@
    <slot>CheckAspectRatioConflict()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>351</x>
+     <x>337</x>
      <y>348</y>
     </hint>
     <hint type="destinationlabel">
@@ -1597,8 +1597,8 @@
    <slot>CheckAspectRatioConflict()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>753</x>
-     <y>264</y>
+     <x>721</x>
+     <y>239</y>
     </hint>
     <hint type="destinationlabel">
      <x>598</x>
@@ -1613,8 +1613,8 @@
    <slot>CheckAspectRatioConflict()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>806</x>
-     <y>264</y>
+     <x>774</x>
+     <y>239</y>
     </hint>
     <hint type="destinationlabel">
      <x>761</x>
@@ -1629,7 +1629,7 @@
    <slot>CheckSpeedConflict()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>443</x>
+     <x>411</x>
      <y>348</y>
     </hint>
     <hint type="destinationlabel">
@@ -1645,8 +1645,8 @@
    <slot>CheckSpeedConflict()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>892</x>
-     <y>265</y>
+     <x>860</x>
+     <y>240</y>
     </hint>
     <hint type="destinationlabel">
      <x>798</x>
@@ -1661,7 +1661,7 @@
    <slot>SelectOutputDirectory()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>443</x>
+     <x>411</x>
      <y>282</y>
     </hint>
     <hint type="destinationlabel">
@@ -1677,11 +1677,11 @@
    <slot>UpdateAudioQualityLabel(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>827</x>
-     <y>189</y>
+     <x>718</x>
+     <y>173</y>
     </hint>
     <hint type="destinationlabel">
-     <x>891</x>
+     <x>890</x>
      <y>611</y>
     </hint>
    </hints>
@@ -1693,11 +1693,11 @@
    <slot>ShowMetadata()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>807</x>
-     <y>429</y>
+     <x>775</x>
+     <y>522</y>
     </hint>
     <hint type="destinationlabel">
-     <x>914</x>
+     <x>890</x>
      <y>563</y>
     </hint>
    </hints>
@@ -1709,7 +1709,7 @@
    <slot>OpenInputFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>443</x>
+     <x>411</x>
      <y>114</y>
     </hint>
     <hint type="destinationlabel">
@@ -1722,7 +1722,7 @@
    <sender>audioVideoButtonGroup</sender>
    <signal>buttonClicked(QAbstractButton*)</signal>
    <receiver>MainWindow</receiver>
-   <slot>SetControlsState(QAbstractButton*)</slot>
+   <slot>UpdateControlsState()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -1741,12 +1741,12 @@
    <slot>showMenu()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>893</x>
-     <y>27</y>
+     <x>870</x>
+     <y>44</y>
     </hint>
     <hint type="destinationlabel">
-     <x>892</x>
-     <y>29</y>
+     <x>870</x>
+     <y>44</y>
     </hint>
    </hints>
   </connection>
@@ -1773,11 +1773,11 @@
    <slot>UpdateCodecsList(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>617</x>
-     <y>444</y>
+     <x>665</x>
+     <y>543</y>
     </hint>
     <hint type="destinationlabel">
-     <x>910</x>
+     <x>890</x>
      <y>478</y>
     </hint>
    </hints>
@@ -1789,11 +1789,11 @@
    <slot>SelectVideoCodec(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>535</x>
-     <y>121</y>
+     <x>580</x>
+     <y>108</y>
     </hint>
     <hint type="destinationlabel">
-     <x>910</x>
+     <x>890</x>
      <y>396</y>
     </hint>
    </hints>
@@ -1805,11 +1805,11 @@
    <slot>SelectAudioCodec(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>712</x>
-     <y>123</y>
+     <x>720</x>
+     <y>108</y>
     </hint>
     <hint type="destinationlabel">
-     <x>917</x>
+     <x>890</x>
      <y>352</y>
     </hint>
    </hints>
@@ -1823,7 +1823,7 @@
   <slot>CheckSpeedConflict()</slot>
   <slot>SelectOutputDirectory()</slot>
   <slot>UpdateAudioQualityLabel(int)</slot>
-  <slot>SetControlsState(QAbstractButton*)</slot>
+  <slot>UpdateControlsState()</slot>
   <slot>SetAllowPresetSelection(bool)</slot>
   <slot>ShowMetadata()</slot>
   <slot>OpenInputFile()</slot>

@@ -82,8 +82,7 @@ private slots:
     void LoadPreset(int index) const;
     void SelectVideoCodec(int index) const;
     void SelectAudioCodec(int index) const;
-    void SetControlsState(QAbstractButton* button) const;
-    void SetControlsState() const;
+    void UpdateControlsState() const;
     void CheckAspectRatioConflict();
     void CheckSpeedConflict();
     void UpdateAudioQualityLabel(int value);

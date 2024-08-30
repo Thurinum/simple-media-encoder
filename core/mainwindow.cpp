@@ -168,7 +168,7 @@ void MainWindow::LoadState()
     SetAdvancedMode(ui->advancedModeCheckBox->isChecked());
 
     serializer->deserialize(ui->audioVideoButtonGroup, settings, key);
-    SetControlsState(ui->audioVideoButtonGroup->checkedButton());
+    UpdateControlsState();
 
     serializer->deserialize(ui->outputFileNameLineEdit, settings, key);
     LoadSelectedUrl();
@@ -194,6 +194,7 @@ void MainWindow::LoadState()
 
     serializer->deserializeMany(widgets, settings, key);
     serializer->deserializeMany(*presetWidgets, settings, "PreviousSettings");
+    UpdateControlsState();
 }
 
 void MainWindow::LoadPresetNames() const
@@ -618,12 +619,7 @@ void MainWindow::SetAdvancedMode(bool enabled)
     sectionHeightAnim->start();
 }
 
-void MainWindow::SetControlsState([[maybe_unused]] QAbstractButton* button) const
-{
-    SetControlsState();
-}
-
-void MainWindow::SetControlsState() const
+void MainWindow::UpdateControlsState() const
 {
     const auto state = static_cast<StreamType>(ui->audioVideoButtonGroup->checkedId());
     const bool isVideoAudio = state == VideoAudio;
@@ -666,12 +662,12 @@ void MainWindow::LoadPreset(const int index) const
         return;
 
     serializer->deserializeMany(*presetWidgets, presetsSettings, presetName);
-    SetControlsState();
+    UpdateControlsState();
 }
 
 void MainWindow::SelectVideoCodec(const int index) const
 {
-    SetControlsState(ui->audioVideoButtonGroup->checkedButton());
+    UpdateControlsState();
 }
 
 void MainWindow::SelectAudioCodec(const int index) const
