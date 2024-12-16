@@ -719,24 +719,24 @@ void MainWindow::ReceiveMediaMetadata(MetadataResult result)
 
 QString MainWindow::getOutputPath(QString inputFilePath)
 {
-    QString folder = ui->outputFolderLineEdit->text();
-    bool hasSuffix = ui->outputFileNameSuffixCheckBox->isChecked();
+    const QString folder = ui->outputFolderLineEdit->text();
+    const bool isSuffix = ui->outputFileNameSuffixCheckBox->isChecked();
     QString fileNameOrSuffix = ui->outputFileNameLineEdit->text();
-    QFileInfo inputFile = QFileInfo(inputFilePath);
+    const QFileInfo inputFile(inputFilePath);
 
-    QDir resolvedFolder = folder.isEmpty() ? inputFile.dir() : QDir(folder);
+    const QDir resolvedFolder = folder.isEmpty() ? inputFile.dir() : QDir(folder);
     QString resolvedFileName;
 
     if (fileNameOrSuffix.isEmpty())
     {
-        resolvedFileName = inputFile.baseName();
+        resolvedFileName = inputFile.fileName();
     }
-    else if (hasSuffix)
+    else if (isSuffix)
     {
         if (!fileNameOrSuffix[0].isLetterOrNumber())
             fileNameOrSuffix.remove(0, 1);
 
-        resolvedFileName = inputFile.baseName() + "_" + fileNameOrSuffix;
+        resolvedFileName = inputFile.completeBaseName() + "_" + fileNameOrSuffix;
     }
     else
     {

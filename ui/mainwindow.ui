@@ -1233,6 +1233,9 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="acceptDrops">
+               <bool>false</bool>
+              </property>
               <property name="whatsThis">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;For advanced users, this lets you specify a chain of &lt;span style=&quot; font-weight:700;&quot;&gt;custom arguments&lt;/span&gt; for the ffmpeg process. You may only use valid characters.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
