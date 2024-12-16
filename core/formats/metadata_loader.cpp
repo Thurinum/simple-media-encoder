@@ -91,11 +91,11 @@ void MetadataLoader::handleResult()
 {
     if (ffprobe.exitCode() != 0)
     {
-        emit Message(
+        emit loadAsyncComplete(Message(
             Severity::Error,
             tr("Could not retrieve media metadata."),
             tr("FFprobe failed: %1").arg(ffprobe.errorString())
-        );
+        ));
 
         return;
     }
@@ -122,11 +122,11 @@ void MetadataLoader::loadAsync(const QString& path)
 
     if (!ffprobe.waitForStarted())
     {
-        emit Message(
+        emit loadAsyncComplete(Message(
             Severity::Error,
             tr("Could not retrieve media metadata."),
             tr("FFprobe failed: %1").arg(ffprobe.errorString())
-        );
+        ));
 
         return;
     }
