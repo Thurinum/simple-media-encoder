@@ -686,7 +686,8 @@ void MainWindow::SelectAudioCodec(const int index) const
 void MainWindow::OpenInputFile()
 {
     const QUrl fileUrl = QFileDialog::getOpenFileUrl(this, tr("Select file to compress"), QDir::currentPath(), "*");
-    LoadInputFile(fileUrl);
+    if (fileUrl.isValid())
+        LoadInputFile(fileUrl);
 }
 
 void MainWindow::QueryMediaMetadataAsync(const QString& path)
