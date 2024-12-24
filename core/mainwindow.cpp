@@ -117,11 +117,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::CheckForFFmpeg() const
 {
-    const QString ffmpeg = platformInfo.isWindows() ? "ffmpeg.exe" : "ffmpeg";
-    const QString ffprobe = platformInfo.isWindows() ? "ffprobe.exe" : "ffprobe";
-
-    const int ffmpegReturnCode = QProcess::execute(ffmpeg, QStringList() << "-version");
-    const int ffprobeReturnCode = QProcess::execute(ffprobe, QStringList() << "-version");
+    const int ffmpegReturnCode = QProcess::execute("ffmpeg", QStringList() << "-version");
+    const int ffprobeReturnCode = QProcess::execute("ffprobe", QStringList() << "-version");
 
     if (ffmpegReturnCode == 0 && ffprobeReturnCode == 0)
         return;

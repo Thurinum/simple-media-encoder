@@ -4,7 +4,6 @@
 #include "core/formats/codec.hpp"
 #include "core/formats/container.hpp"
 #include "core/formats/metadata.hpp"
-#include "core/formats/metadata_loader.hpp"
 #include "encoder_options.hpp"
 
 #include <QDir>
@@ -50,7 +49,7 @@ private:
     );
 
     [[nodiscard]] QString BuildBaseParams(const EncoderOptions& options, const ComputedOptions& computed) const;
-    [[nodiscard]] QString BuildVideoFilterParams(const EncoderOptions& options, const ComputedOptions& computed) const;
+    [[nodiscard]] QString BuildVideoFilterParams(const EncoderOptions& options, [[maybe_unused]] const ComputedOptions& computed) const;
     [[nodiscard]] QString BuildAudioFilterParams(const EncoderOptions& options, const ComputedOptions& computed) const;
 
     void ComputeVideoBitrate(const EncoderOptions& options, ComputedOptions& computed, const Metadata& metadata);
@@ -61,9 +60,6 @@ private:
 
     QString output = "";
     QString parseOutput();
-
-    // TODO: Use service
-    QString exeSuffix = IS_WINDOWS ? ".exe" : "";
 
     QEventLoop eventLoop;
     QProcess* ffprobe = new QProcess();
