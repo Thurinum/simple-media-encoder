@@ -17,12 +17,13 @@ SimpleMediaEncoder_autogen/
 *.dll
 *.exe
 # Required as linux binaries do not have an extension
-bin/
+bin/SimpleMediaEncoder
 
 # Generated custom configuration
 bin/config.ini
 /config.ini
 
 # IDE configuration files
+.clangd
 .vscode/
 .idea/

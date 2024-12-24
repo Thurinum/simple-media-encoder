@@ -9,17 +9,14 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/ui)
 set(BOOST_DI_CFG_DIAGNOSTICS_LEVEL 2)
 add_definitions(-DQT_DISABLE_DEPRECATED_UP_TO=0x060700)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        add_compile_options(-std=c++2b)
-    endif()
-    set(CMAKE_HAVE_THREADS_LIBRARY 1)
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
-
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Threads REQUIRED)
 qt_standard_project_setup()
 
 include_directories(${CMAKE_SOURCE_DIR})
