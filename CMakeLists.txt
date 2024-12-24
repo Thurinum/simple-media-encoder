@@ -16,7 +16,6 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
-find_package(Threads REQUIRED)
 qt_standard_project_setup()
 
 include_directories(${CMAKE_SOURCE_DIR})
