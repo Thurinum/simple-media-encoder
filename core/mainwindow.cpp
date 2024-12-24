@@ -117,11 +117,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::CheckForFFmpeg() const
 {
-    const QString ffmpeg = platformInfo.isWindows() ? "ffmpeg.exe" : "ffmpeg";
-    const QString ffprobe = platformInfo.isWindows() ? "ffprobe.exe" : "ffprobe";
-
-    const int ffmpegReturnCode = QProcess::execute(ffmpeg, QStringList() << "-version");
-    const int ffprobeReturnCode = QProcess::execute(ffprobe, QStringList() << "-version");
+    const int ffmpegReturnCode = QProcess::execute("ffmpeg", QStringList() << "-version");
+    const int ffprobeReturnCode = QProcess::execute("ffprobe", QStringList() << "-version");
 
     if (ffmpegReturnCode == 0 && ffprobeReturnCode == 0)
         return;
@@ -374,7 +371,7 @@ void MainWindow::HandleSuccess(
     SetProgressShown({});
 
     QFileInfo fileInfo(output);
-    QString command = platformInfo.isWindows() ? "explorer.exe" : "xdg-open";
+    QString command = platformInfo.isWindows() ? "explorer" : "xdg-open";
 
     if (ui->deleteOnSuccessCheckBox->isChecked())
     {
@@ -541,6 +538,7 @@ void MainWindow::UpdateCodecsList(const bool commonOnly) const
 
 void MainWindow::ShowAbout() const
 {
+    /// @todo: Add William to the credits
     static const QString msg
         = "\r\n<h4>Acknowledgements</h4>\r\n"
 

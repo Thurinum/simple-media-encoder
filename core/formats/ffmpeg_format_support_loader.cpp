@@ -17,12 +17,11 @@ void FFmpegFormatSupportLoader::QuerySupportedFormatsAsync()
         return;
     }
 
-    // TODO: Make commands cross-platform
     connect(codecsProcess, &QProcess::finished, this, &FFmpegFormatSupportLoader::onCodecsQueried);
-    codecsProcess->startCommand(R"(ffmpeg.exe -encoders -hide_banner)");
+    codecsProcess->startCommand(R"(ffmpeg -encoders -hide_banner)");
 
     connect(containersProcess, &QProcess::finished, this, &FFmpegFormatSupportLoader::onContainersQueried);
-    containersProcess->startCommand(R"(ffmpeg.exe -muxers -hide_banner)");
+    containersProcess->startCommand(R"(ffmpeg -muxers -hide_banner)");
 }
 
 void FFmpegFormatSupportLoader::onCodecsQueried()

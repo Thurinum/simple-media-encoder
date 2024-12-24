@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/formats/metadata_loader.hpp"
 #include "encoder/encoder.hpp"
 #include "formats/format_support_loader.hpp"
 #include "notifier/notifier.hpp"

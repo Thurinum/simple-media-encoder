@@ -116,8 +116,7 @@ void MetadataLoader::loadAsync(const QString& path)
         return;
 
     ffprobe.start(
-        QString(R"(ffprobe%1 -v error -print_format json -show_format -show_streams "%2")")
-            .arg(platform.isWindows() ? ".exe" : "", path)
+        QString(R"(ffprobe -v error -print_format json -show_format -show_streams "%1")").arg(path)
     );
 
     if (!ffprobe.waitForStarted())

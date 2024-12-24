@@ -8,6 +8,7 @@
 #include <QVariant>
 
 #include "core/formats/metadata.hpp"
+#include "core/notifier/message.hpp"
 
 MediaEncoder::MediaEncoder()
 {
@@ -60,8 +61,8 @@ void MediaEncoder::StartCompression(const EncoderOptions& options, const Compute
     const QString fileExtension = std::get<QString>(maybeFileExtension);
     QString outputPath = options.outputPath + "." + fileExtension;
 
-    const QString command = QString(R"(ffmpeg%1 -i "%2" %3 %4 %5 %6 "%7" -y)")
-                                .arg(exeSuffix, options.inputPath, baseParams, videoFiltersParams, audioFiltersParams, *options.customArguments, outputPath);
+    const QString command = QString(R"(ffmpeg -i "%2" %3 %4 %5 %6 "%7" -y)")
+                                .arg(options.inputPath, baseParams, videoFiltersParams, audioFiltersParams, *options.customArguments, outputPath);
 
     *processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [metadata, this]()
                                        { UpdateProgress(metadata.durationSeconds); });
@@ -206,7 +207,7 @@ QString MediaEncoder::BuildAudioFilterParams(const EncoderOptions& options, cons
 
 QString MediaEncoder::getAvailableFormats() const
 {
-    ffmpeg->startCommand(QString("ffmpeg%1 -encoders").arg(exeSuffix));
+    ffmpeg->startCommand("ffmpeg -encoders");
     ffmpeg->waitForFinished();
     return ffmpeg->readAllStandardOutput();
 }
@@ -251,7 +252,7 @@ double MediaEncoder::computePixelRatio(const EncoderOptions& options, const Meta
 std::variant<QString, Message> MediaEncoder::extensionForContainer(const Container& container) const
 {
     QProcess process;
-    const QString command = QString("ffmpeg%1 -hide_banner -h muxer=%2").arg(exeSuffix, container.formatName);
+    const QString command = QString("ffmpeg -hide_banner -h muxer=%1").arg(container.formatName);
 
     process.startCommand(command);
 
