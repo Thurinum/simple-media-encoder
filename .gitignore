@@ -1,18 +1,27 @@
 # Build system per-user config
 *.pro.user
+Makefile
 CMakeLists.txt.user
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles/
+.qt/
 
 # Build artifacts
 cmake-build-*/
 build/
 .qtc_clangd/
+SimpleMediaEncoder_autogen/
 
 # Binaries
 *.dll
 *.exe
+# Required as linux binaries do not have an extension
+bin/
 
 # Generated custom configuration
 bin/config.ini
+/config.ini
 
 # IDE configuration files
 .vscode/
