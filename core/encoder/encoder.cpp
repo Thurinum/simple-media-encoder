@@ -61,7 +61,7 @@ void MediaEncoder::StartCompression(const EncoderOptions& options, const Compute
     const QString fileExtension = std::get<QString>(maybeFileExtension);
     QString outputPath = options.outputPath + "." + fileExtension;
 
-    const QString command = QString(R"(ffmpeg -i "%2" %3 %4 %5 %6 "%7" -y)")
+    const QString command = QString(R"(ffmpeg -i "%1" -c:s copy %2 %3 %4 %5 "%6" -y)")
                                 .arg(options.inputPath, baseParams, videoFiltersParams, audioFiltersParams, *options.customArguments, outputPath);
 
     *processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [metadata, this]()
