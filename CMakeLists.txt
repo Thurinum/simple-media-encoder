@@ -9,9 +9,9 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/ui)
 set(BOOST_DI_CFG_DIAGNOSTICS_LEVEL 2)
 add_definitions(-DQT_DISABLE_DEPRECATED_UP_TO=0x060700)
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(CMAKE_THREAD_LIBS_INIT "-lpthread")
-endif()
+endif ()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -29,7 +29,6 @@ set(SOURCES
         core/encoder/encoder_options.hpp
         core/encoder/encoder_options_builder.cpp
         core/encoder/encoder_options_builder.hpp
-        core/encoder/encoder_strategy.hpp
         core/formats/codec.hpp
         core/formats/container.hpp
         core/formats/ffmpeg_format_support_loader.hpp
