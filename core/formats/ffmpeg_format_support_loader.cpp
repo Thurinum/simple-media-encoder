@@ -63,8 +63,8 @@ QPair<QList<Codec>, QList<Codec>> FFmpegFormatSupportLoader::parseCodecs()
             continue;
 
         static QRegularExpression delimiter("\\s");
-        QString libraryName = line.section(delimiter, 1, 2).trimmed();
-        QString displayName = line.section(delimiter, 2).trimmed();
+        const QString libraryName = line.section(delimiter, 1, 2).trimmed();
+        const QString displayName = line.section(delimiter, 2).trimmed();
 
         Codec codec { displayName, libraryName, isAudio };
 
@@ -91,8 +91,8 @@ QList<Container> FFmpegFormatSupportLoader::parseContainers()
             continue;
 
         static QRegularExpression delimiter("\\s");
-        QString libraryName = line.section(delimiter, 1, 2).trimmed();
-        QString displayName = line.section(delimiter, 2).trimmed();
+        const QString libraryName = line.section(delimiter, 1, 2).trimmed();
+        const QString displayName = line.section(delimiter, 2).trimmed();
 
         containers.append({ displayName, libraryName });
     }

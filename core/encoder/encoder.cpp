@@ -1,7 +1,6 @@
 #include "encoder.hpp"
 
 #include <QFile>
-#include <QJsonDocument>
 #include <QRegularExpression>
 #include <QStringBuilder>
 #include <QTime>
@@ -14,13 +13,9 @@ MediaEncoder::MediaEncoder()
 {
     ffmpeg->setProcessChannelMode(QProcess::MergedChannels);
     connect(ffmpeg, &QProcess::errorOccurred, [this](QProcess::ProcessError error)
-            { emit encodingFailed(tr("Process %1").arg(QVariant::fromValue(error).toString())); });
-}
-
-MediaEncoder::~MediaEncoder()
-{
-    delete ffmpeg;
-    delete ffprobe;
+    {
+        emit encodingFailed(tr("Process %1").arg(QVariant::fromValue(error).toString()));
+    });
 }
 
 void MediaEncoder::Encode(const EncoderOptions& options)
@@ -64,29 +59,33 @@ void MediaEncoder::StartCompression(const EncoderOptions& options, const Compute
     const QString command = QString(R"(ffmpeg -i "%1" -c:s copy %2 %3 %4 %5 "%6" -y)")
                                 .arg(options.inputPath, baseParams, videoFiltersParams, audioFiltersParams, *options.customArguments, outputPath);
 
-    *processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [metadata, this]()
-                                       { UpdateProgress(metadata.durationSeconds); });
+    processUpdateConnection = connect(ffmpeg, &QProcess::readyRead, [metadata, this]
+    {
+        UpdateProgress(metadata.durationSeconds);
+    });
 
-    *processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](const int exitCode)
-                                         { EndCompression(options, computed, outputPath, command, exitCode); });
+    processFinishedConnection = connect(ffmpeg, &QProcess::finished, [=, this](const int exitCode)
+    {
+        EndCompression(options, computed, outputPath, command, exitCode);
+    });
 
     ffmpeg->startCommand(command);
 }
 
 void MediaEncoder::UpdateProgress(double mediaDuration)
 {
-    QString line = QString(ffmpeg->readAll());
-    QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
-    QRegularExpressionMatch match = regex.match(line);
+    const QString line(ffmpeg->readAll());
+    const QRegularExpression regex("time=([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9])");
+    const QRegularExpressionMatch match = regex.match(line);
 
     output += line;
 
     if (!match.hasMatch())
         return;
 
-    QTime timestamp = QTime::fromString(match.captured(1));
-    int currentDuration = timestamp.second() + timestamp.minute() * 60 + timestamp.hour() * 3600;
-    int progressPercent = currentDuration * 100 / mediaDuration;
+    const QTime timestamp = QTime::fromString(match.captured(1));
+    const int currentDuration = timestamp.second() + timestamp.minute() * 60 + timestamp.hour() * 3600;
+    const int progressPercent = currentDuration * 100 / mediaDuration;
 
     emit encodingProgressUpdate(progressPercent);
 }
@@ -95,8 +94,8 @@ void MediaEncoder::EndCompression(const EncoderOptions& options, const ComputedO
 {
     if (exitCode != 0)
     {
-        disconnect(*processUpdateConnection);
-        disconnect(*processFinishedConnection);
+        disconnect(processUpdateConnection);
+        disconnect(processFinishedConnection);
 
         emit encodingFailed(parseOutput(), command + "\n\n" + output);
         output.clear();
@@ -106,8 +105,8 @@ void MediaEncoder::EndCompression(const EncoderOptions& options, const ComputedO
     QFile media(outputPath);
     if (!media.open(QIODevice::ReadOnly))
     {
-        disconnect(*processUpdateConnection);
-        disconnect(*processFinishedConnection);
+        disconnect(processUpdateConnection);
+        disconnect(processFinishedConnection);
         emit encodingFailed("Could not open the compressed media.", media.errorString());
         output.clear();
         media.close();
@@ -115,11 +114,12 @@ void MediaEncoder::EndCompression(const EncoderOptions& options, const ComputedO
     }
 
     media.close();
-    disconnect(*processUpdateConnection);
-    disconnect(*processFinishedConnection);
+    disconnect(processUpdateConnection);
+    disconnect(processFinishedConnection);
     emit encodingSucceeded(options, computed, media);
     output.clear();
 }
+
 QString MediaEncoder::BuildBaseParams(const EncoderOptions& options, const ComputedOptions& computed) const
 {
     const QString videoCodecParam = options.videoCodec.has_value() ? "-c:v " + options.videoCodec->libraryName : "-vn";
@@ -129,26 +129,20 @@ QString MediaEncoder::BuildBaseParams(const EncoderOptions& options, const Compu
     const QString audioChannelsParam = options.audioChannelsCount.has_value() ? "-ac " + QString::number(*options.audioChannelsCount) : "";
     const QString formatParam = QString("-f %1").arg(options.container.formatName);
 
-    QStringList params {
-        videoCodecParam,
-        audioCodecParam,
-        videoBitrateParam,
-        audioBitrateParam,
-        audioChannelsParam,
-        formatParam
-    };
+    QStringList params { videoCodecParam, audioCodecParam, videoBitrateParam,
+                         audioBitrateParam, audioChannelsParam, formatParam };
     params.removeAll({});
 
     return params.join(" ");
 }
+
 QString MediaEncoder::BuildVideoFilterParams(const EncoderOptions& options, const ComputedOptions& computed) const
 {
     QString aspectRatioFilter;
     QString scaleFilter;
     if (options.outputWidth.has_value() && options.outputHeight.has_value())
     {
-        scaleFilter = QString("scale=%1:%2")
-                          .arg(QString::number(*options.outputWidth), QString::number(*options.outputHeight));
+        scaleFilter = QString("scale=%1:%2").arg(QString::number(*options.outputWidth), QString::number(*options.outputHeight));
         aspectRatioFilter = "setsar=1/1";
     }
     else if (options.outputWidth.has_value())
@@ -180,12 +174,7 @@ QString MediaEncoder::BuildVideoFilterParams(const EncoderOptions& options, cons
         fpsFilter = "fps=" + QString::number(fps);
     }
 
-    QStringList videoFilters {
-        scaleFilter,
-        aspectRatioFilter,
-        speedFilter,
-        fpsFilter
-    };
+    QStringList videoFilters { scaleFilter, aspectRatioFilter, speedFilter, fpsFilter };
     videoFilters.removeAll({});
 
     return videoFilters.empty() ? "" : "-filter:v " + videoFilters.join(',');
@@ -221,13 +210,13 @@ bool MediaEncoder::computeAudioBitrate(const EncoderOptions& options, ComputedOp
     return true;
 }
 
-double MediaEncoder::computePixelRatio(const EncoderOptions& options, const Metadata& metadata)
+double MediaEncoder::computePixelRatio(const EncoderOptions& options, const Metadata& metadata) const
 {
     double pixelRatio = 1;
     int outputWidth;
     int outputHeight;
 
-    long inputPixelCount = metadata.width * metadata.height;
+    const long inputPixelCount = metadata.width * metadata.height;
 
     if (options.outputWidth.has_value())
     {
@@ -240,7 +229,7 @@ double MediaEncoder::computePixelRatio(const EncoderOptions& options, const Meta
         outputHeight = outputWidth * metadata.aspectRatioX / metadata.aspectRatioY;
     }
 
-    double outputPixelCount = outputWidth * outputHeight;
+    const double outputPixelCount = outputWidth * outputHeight;
 
     // TODO: Add option to enable bitrate compensation even when upscaling (will result in bigger files)
     if (outputPixelCount > 0 && outputPixelCount < inputPixelCount)
@@ -258,13 +247,7 @@ std::variant<QString, Message> MediaEncoder::extensionForContainer(const Contain
 
     if (const bool result = process.waitForFinished(10000); !result)
     {
-        return Message(
-            Severity::Critical,
-            tr("Failed to query file extension for container"),
-            tr("FFmpeg did not respond in time to query the file extension for container %1.")
-                .arg(container.formatName),
-            process.readAllStandardError()
-        );
+        return Message(Severity::Critical, tr("Failed to query file extension for container"), tr("FFmpeg did not respond in time to query the file extension for container %1.").arg(container.formatName), process.readAllStandardError());
     }
 
     const QString output = process.readAllStandardOutput();
@@ -273,26 +256,14 @@ std::variant<QString, Message> MediaEncoder::extensionForContainer(const Contain
 
     if (!match.hasMatch())
     {
-        return Message(
-            Severity::Critical,
-            tr("Failed to query file extension for container"),
-            tr("FFmpeg did not return a file extension for container %1.")
-                .arg(container.formatName),
-            output
-        );
+        return Message(Severity::Critical, tr("Failed to query file extension for container"), tr("FFmpeg did not return a file extension for container %1.").arg(container.formatName), output);
     }
 
     QStringList extensions = match.captured(1).split(",");
 
     if (extensions.isEmpty())
     {
-        return Message(
-            Severity::Critical,
-            tr("Failed to query file extension for container"),
-            tr("FFmpeg did not return a file extension for container %1.")
-                .arg(container.formatName),
-            output
-        );
+        return Message(Severity::Critical, tr("Failed to query file extension for container"), tr("FFmpeg did not return a file extension for container %1.").arg(container.formatName), output);
     }
 
     return extensions.first().trimmed();
@@ -300,26 +271,21 @@ std::variant<QString, Message> MediaEncoder::extensionForContainer(const Contain
 
 void MediaEncoder::ComputeVideoBitrate(const EncoderOptions& options, ComputedOptions& computed, const Metadata& metadata)
 {
-    double audioBitrateKbps = computed.audioBitrateKbps.value_or(0);
+    const double audioBitrateKbps = computed.audioBitrateKbps.value_or(0);
 
-    double pixelRatio = computePixelRatio(options, metadata);
-    double bitrateKbps = *options.sizeKbps / metadata.durationSeconds * (1.0 - options.overshootCorrectionPercent);
+    const double pixelRatio = computePixelRatio(options, metadata);
+    const double bitrateKbps = *options.sizeKbps / metadata.durationSeconds * (1.0 - options.overshootCorrectionPercent);
 
     computed.videoBitrateKbps = qMax(options.minVideoBitrateKbps, pixelRatio * (bitrateKbps - audioBitrateKbps));
 }
 
-QString MediaEncoder::parseOutput()
+QString MediaEncoder::parseOutput() const
 {
     QStringList split = output.split("Press [q] to stop, [?] for help");
     if (split.length() == 1)
         split = output.split("[0][0][0][0]");
 
     return split.last()
-        .replace(
-            QRegularExpression(
-                R"((\[.*\]|(?:Conversion failed!)|(?:v\d\.\d.*)|(?: (?:\s)+)|(?:- (?:\s)+(?1))))"
-            ),
-            ""
-        )
+        .replace(QRegularExpression(R"((\[.*\]|(?:Conversion failed!)|(?:v\d\.\d.*)|(?: (?:\s)+)|(?:- (?:\s)+(?1))))"), "")
         .trimmed();
 }

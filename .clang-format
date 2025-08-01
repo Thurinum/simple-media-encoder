@@ -7,3 +7,6 @@ BreakBeforeBraces: Allman
 AlignOperands: AlignAfterOperator
 AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortLambdasOnASingleLine: Empty
+LambdaBodyIndentation: OuterScope
+

@@ -10,7 +10,7 @@
 
 MetadataResult MetadataLoader::parse(QByteArray data)
 {
-    QJsonDocument document = QJsonDocument::fromJson(data);
+    const QJsonDocument document = QJsonDocument::fromJson(data);
 
     if (document.isNull())
     {
@@ -23,7 +23,7 @@ MetadataResult MetadataLoader::parse(QByteArray data)
         );
     }
 
-    QJsonObject root = document.object();
+    const QJsonObject root = document.object();
     QJsonArray streams = root.value("streams").toArray();
 
     // we only support 1 stream of each type at the moment
@@ -58,7 +58,7 @@ MetadataResult MetadataLoader::parse(QByteArray data)
 
     Metadata metadata;
     QList<QString> errors;
-    std::pair<double, double> aspectRatio = getAspectRatio(errors);
+    const std::pair<double, double> aspectRatio = getAspectRatio(errors);
 
     metadata = Metadata {
         .width = value(errors, video, "width", true).toDouble(),
@@ -100,8 +100,8 @@ void MetadataLoader::handleResult()
         return;
     }
 
-    QByteArray data = ffprobe.readAll();
-    MetadataResult result = parse(data);
+    const QByteArray data = ffprobe.readAll();
+    const MetadataResult result = parse(data);
     emit loadAsyncComplete(result);
 }
 
@@ -135,12 +135,12 @@ void MetadataLoader::loadAsync(const QString& path)
 
 double MetadataLoader::getFrameRate(QList<QString>& errors)
 {
-    QVariant frameRateData = value(errors, video, "r_frame_rate");
+    const QVariant frameRateData = value(errors, video, "r_frame_rate");
 
     if (frameRateData.isNull())
     {
-        QVariant nbrFramesData = value(errors, video, "nb_frames");
-        QVariant durationData = value(errors, format, "duration");
+        const QVariant nbrFramesData = value(errors, video, "nb_frames");
+        const QVariant durationData = value(errors, format, "duration");
 
         if (nbrFramesData.isNull() || durationData.isNull())
         {
@@ -148,8 +148,8 @@ double MetadataLoader::getFrameRate(QList<QString>& errors)
             return -1;
         }
 
-        double nbrFrames = nbrFramesData.toDouble();
-        double duration = durationData.toDouble();
+        const double nbrFrames = nbrFramesData.toDouble();
+        const double duration = durationData.toDouble();
 
         return nbrFrames / duration;
     }
@@ -167,12 +167,12 @@ double MetadataLoader::getFrameRate(QList<QString>& errors)
 
 std::pair<double, double> MetadataLoader::getAspectRatio(QList<QString>& errors)
 {
-    QVariant aspectRatioData = value(errors, video, "display_aspect_ratio");
+    const QVariant aspectRatioData = value(errors, video, "display_aspect_ratio");
 
     if (aspectRatioData.isNull())
     {
-        double width = value(errors, video, "width").toDouble();
-        double height = value(errors, video, "height").toDouble();
+        const double width = value(errors, video, "width").toDouble();
+        const double height = value(errors, video, "height").toDouble();
         double ratio = width / height;
 
         return { ratio, 1 };

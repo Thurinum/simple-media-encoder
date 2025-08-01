@@ -16,13 +16,12 @@
 struct Message;
 using std::optional;
 
-class MediaEncoder : public QObject
+class MediaEncoder final : public QObject
 {
     Q_OBJECT
 
 public:
     explicit MediaEncoder();
-    ~MediaEncoder() override;
 
     struct ComputedOptions
     {
@@ -54,19 +53,18 @@ private:
 
     void ComputeVideoBitrate(const EncoderOptions& options, ComputedOptions& computed, const Metadata& metadata);
     bool computeAudioBitrate(const EncoderOptions& options, ComputedOptions& computed) const;
-    double computePixelRatio(const EncoderOptions& options, const Metadata& metadata);
+    double computePixelRatio(const EncoderOptions& options, const Metadata& metadata) const;
 
     std::variant<QString, Message> extensionForContainer(const Container& container) const;
 
     QString output = "";
-    QString parseOutput();
+    QString parseOutput() const;
 
     QEventLoop eventLoop;
-    QProcess* ffprobe = new QProcess();
     QProcess* ffmpeg = new QProcess(&eventLoop);
 
-    QMetaObject::Connection* const processUpdateConnection = new QMetaObject::Connection();
-    QMetaObject::Connection* const processFinishedConnection = new QMetaObject::Connection();
+    QMetaObject::Connection processUpdateConnection;
+    QMetaObject::Connection processFinishedConnection;
 };
 
 #endif // MEDIAENCODER_H

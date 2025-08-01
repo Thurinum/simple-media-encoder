@@ -370,7 +370,7 @@ void MainWindow::HandleSuccess(
 
     SetProgressShown({});
 
-    QFileInfo fileInfo(output);
+    const QFileInfo fileInfo(output);
     QString command = platformInfo.isWindows() ? "explorer" : "xdg-open";
 
     if (ui->deleteOnSuccessCheckBox->isChecked())
@@ -416,8 +416,8 @@ void MainWindow::HandleFailure(const QString& shortError, const QString& longErr
 
 void MainWindow::CheckAspectRatioConflict()
 {
-    bool hasCustomScale = ui->aspectRatioSpinBoxH->value() != 0 || ui->aspectRatioSpinBoxV->value() != 0;
-    bool hasCustomAspect = ui->widthSpinBox->value() != 0 || ui->heightSpinBox->value() != 0;
+    const bool hasCustomScale = ui->aspectRatioSpinBoxH->value() != 0 || ui->aspectRatioSpinBoxV->value() != 0;
+    const bool hasCustomAspect = ui->widthSpinBox->value() != 0 || ui->heightSpinBox->value() != 0;
 
     if (hasCustomScale && hasCustomAspect)
     {
@@ -434,8 +434,8 @@ void MainWindow::CheckAspectRatioConflict()
 
 void MainWindow::CheckSpeedConflict()
 {
-    bool hasSpeed = ui->speedSpinBox->value() != 0;
-    bool hasFps = ui->fpsSpinBox->value() != 0;
+    const bool hasSpeed = ui->speedSpinBox->value() != 0;
+    const bool hasFps = ui->fpsSpinBox->value() != 0;
 
     if (hasSpeed && hasFps)
     {
@@ -453,7 +453,7 @@ void MainWindow::CheckSpeedConflict()
 
 void MainWindow::SelectOutputDirectory()
 {
-    QDir dir = QFileDialog::getExistingDirectory(this, tr("Select output directory"), QDir::currentPath());
+    const QDir dir = QFileDialog::getExistingDirectory(this, tr("Select output directory"), QDir::currentPath());
     ui->outputFolderLineEdit->setText(dir.absolutePath());
 }
 
@@ -461,7 +461,7 @@ void MainWindow::UpdateAudioQualityLabel(int value)
 {
     static double minBitrate = settings->get("Main/dMinBitrateAudioKbps").toDouble();
     static double maxBitrate = settings->get("Main/dMaxBitrateAudioKbps").toDouble();
-    double currentValue = qMax(minBitrate, value / 100.0 * maxBitrate);
+    const double currentValue = qMax(minBitrate, value / 100.0 * maxBitrate);
 
     ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
 }
@@ -706,7 +706,7 @@ void MainWindow::ReceiveMediaMetadata(MetadataResult result)
 
     if (std::holds_alternative<Message>(result))
     {
-        Message error = std::get<Message>(result);
+        const Message error = std::get<Message>(result);
 
         notifier.Notify(error);
         ui->inputFileLineEdit->clear();
@@ -750,7 +750,7 @@ bool MainWindow::isAutoValue(QAbstractSpinBox* spinBox) { return spinBox->text()
 void MainWindow::LoadSelectedUrl()
 {
     const QString selectedUrl = ui->inputFileLineEdit->text();
-    bool isValidInput = QFile::exists(selectedUrl);
+    const bool isValidInput = QFile::exists(selectedUrl);
     if (isValidInput)
         QueryMediaMetadataAsync(selectedUrl);
     else
@@ -782,7 +782,7 @@ void MainWindow::LoadInputFile(const QUrl& url)
 void MainWindow::ValidateSelectedDir() const
 {
     const QString selectedDir = ui->outputFolderLineEdit->text();
-    bool isValidOutput = QDir(selectedDir).exists();
+    const bool isValidOutput = QDir(selectedDir).exists();
     if (!isValidOutput)
         ui->outputFolderLineEdit->clear();
 

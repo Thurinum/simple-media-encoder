@@ -21,7 +21,7 @@ bool PlatformInfo::DetectNvidia()
     functions.initializeOpenGLFunctions();
 
     const GLubyte* vendor = functions.glGetString(GL_VENDOR);
-    QString vendorString
+    const QString vendorString
         = QString::fromUtf8(reinterpret_cast<const char*>(vendor));
 
     return vendorString.contains("NVIDIA", Qt::CaseInsensitive);
