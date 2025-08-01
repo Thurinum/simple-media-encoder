@@ -51,7 +51,7 @@ private:
     [[nodiscard]] QString BuildVideoFilterParams(const EncoderOptions& options, [[maybe_unused]] const ComputedOptions& computed) const;
     [[nodiscard]] QString BuildAudioFilterParams(const EncoderOptions& options, const ComputedOptions& computed) const;
 
-    void ComputeVideoBitrate(const EncoderOptions& options, ComputedOptions& computed, const Metadata& metadata);
+    void ComputeVideoBitrate(const EncoderOptions& options, ComputedOptions& computed, const Metadata& metadata) const;
     bool computeAudioBitrate(const EncoderOptions& options, ComputedOptions& computed) const;
     double computePixelRatio(const EncoderOptions& options, const Metadata& metadata) const;
 

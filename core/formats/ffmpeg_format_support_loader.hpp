@@ -26,7 +26,7 @@ private:
     QPair<QList<Codec>, QList<Codec>> parseCodecs();
     QList<Container> parseContainers();
     bool EnsureValidResult(QProcess* process);
-    void SkipLines(size_t count);
+    void SkipLines(size_t count) const;
     void CheckQueryComplete();
 
     QProcess* codecsProcess;

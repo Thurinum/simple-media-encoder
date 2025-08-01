@@ -56,7 +56,7 @@ protected:
     void CheckForFFmpeg() const;
     void SetupMenu();
     void SetupEventCallbacks();
-    void QuerySupportedFormatsAsync();
+    void QuerySupportedFormatsAsync() const;
 
     void LoadState();
     void LoadPresetNames() const;
@@ -68,15 +68,15 @@ protected:
     void resizeEvent(QResizeEvent* event) override;
     void closeEvent(QCloseEvent* event) override;
 
-    void HandleStart(double videoBitrateKbps, double audioBitrateKbps);
-    void HandleSuccess(const EncoderOptions& options, const MediaEncoder::ComputedOptions& computed, QFile& output);
-    void HandleFailure(const QString& shortError, const QString& longError);
+    void HandleStart(double videoBitrateKbps, double audioBitrateKbps) const;
+    void HandleSuccess(const EncoderOptions& options, const MediaEncoder::ComputedOptions& computed, QFile& output) const;
+    void HandleFailure(const QString& shortError, const QString& longError) const;
     void ShowAbout() const;
 
     // NOTE: const parameters are NOT supported by Qt slots setup from the designer!
 private slots:
     void StartEncoding();
-    void SetAdvancedMode(bool enabled);
+    void SetAdvancedMode(bool enabled) const;
     void OpenInputFile();
     void SelectOutputDirectory();
     void ShowMetadata();
@@ -84,10 +84,10 @@ private slots:
     void SelectVideoCodec(int index) const;
     void SelectAudioCodec(int index) const;
     void UpdateControlsState() const;
-    void CheckAspectRatioConflict();
-    void CheckSpeedConflict();
-    void UpdateAudioQualityLabel(int value);
-    void SetAllowPresetSelection(bool allowed);
+    void CheckAspectRatioConflict() const;
+    void CheckSpeedConflict() const;
+    void UpdateAudioQualityLabel(int value) const;
+    void SetAllowPresetSelection(bool allowed) const;
     void HandleFormatsQueryResult(const std::variant<QSharedPointer<FormatSupport>, Message>& maybeFormats);
     void UpdateCodecsList(bool commonOnly) const;
 
@@ -100,8 +100,8 @@ private:
 
     void QueryMediaMetadataAsync(const QString& path);
     void ReceiveMediaMetadata(MetadataResult result);
-    QString getOutputPath(QString inputFilePath);
-    inline bool isAutoValue(QAbstractSpinBox* spinBox);
+    QString getOutputPath(QString inputFilePath) const;
+    inline bool isAutoValue(QAbstractSpinBox* spinBox) const;
     void SetProgressShown(const ProgressState& state) const;
     void LoadSelectedUrl();
     void LoadInputFile(const QUrl& url);

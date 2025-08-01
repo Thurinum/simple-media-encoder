@@ -269,7 +269,7 @@ std::variant<QString, Message> MediaEncoder::extensionForContainer(const Contain
     return extensions.first().trimmed();
 }
 
-void MediaEncoder::ComputeVideoBitrate(const EncoderOptions& options, ComputedOptions& computed, const Metadata& metadata)
+void MediaEncoder::ComputeVideoBitrate(const EncoderOptions& options, ComputedOptions& computed, const Metadata& metadata) const
 {
     const double audioBitrateKbps = computed.audioBitrateKbps.value_or(0);
 

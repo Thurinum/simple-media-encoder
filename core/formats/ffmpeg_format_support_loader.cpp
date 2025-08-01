@@ -116,7 +116,7 @@ bool FFmpegFormatSupportLoader::EnsureValidResult(QProcess* process)
     return true;
 }
 
-void FFmpegFormatSupportLoader::SkipLines(size_t count)
+void FFmpegFormatSupportLoader::SkipLines(size_t count) const
 {
     for (size_t i = 0; i < count; i++) {
         codecsProcess->readLine();

@@ -13,7 +13,7 @@ public:
     bool isNvidia() const { return m_isNvidia; };
 
 private:
-    bool DetectNvidia();
+    bool DetectNvidia() const;
 
     const bool m_isWindows = QSysInfo::kernelType() == "winnt";
     bool m_isNvidia;

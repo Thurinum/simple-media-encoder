@@ -7,7 +7,7 @@
 
 PlatformInfo::PlatformInfo() { m_isNvidia = DetectNvidia(); }
 
-bool PlatformInfo::DetectNvidia()
+bool PlatformInfo::DetectNvidia() const
 {
     QOpenGLContext context;
     context.create();

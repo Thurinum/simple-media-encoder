@@ -151,7 +151,7 @@ void MainWindow::SetupEventCallbacks()
             { SetProgressShown({ .status = tr("Compressing..."), .progressPercent = progress }); });
 }
 
-void MainWindow::QuerySupportedFormatsAsync()
+void MainWindow::QuerySupportedFormatsAsync() const
 {
     SetProgressShown({ .status = tr("Querying supported formats...") });
     formatSupport.QuerySupportedFormatsAsync();
@@ -329,7 +329,7 @@ void MainWindow::StartEncoding()
     encoder.Encode(options);
 }
 
-void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
+void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps) const
 {
     SetProgressShown({ .status = tr("Compressing..."), .progressPercent = 0 });
 
@@ -341,7 +341,7 @@ void MainWindow::HandleStart(double videoBitrateKbps, double audioBitrateKbps)
 
 void MainWindow::HandleSuccess(
     const EncoderOptions& options, const MediaEncoder::ComputedOptions& computed, QFile& output
-)
+) const
 {
     SetProgressShown({ .status = tr("Compression complete"), .progressPercent = 100 });
 
@@ -408,13 +408,13 @@ void MainWindow::HandleSuccess(
     }
 }
 
-void MainWindow::HandleFailure(const QString& shortError, const QString& longError)
+void MainWindow::HandleFailure(const QString& shortError, const QString& longError) const
 {
     notifier.Notify(Severity::Warning, tr("Compression failed"), shortError, longError);
     SetProgressShown({});
 }
 
-void MainWindow::CheckAspectRatioConflict()
+void MainWindow::CheckAspectRatioConflict() const
 {
     const bool hasCustomScale = ui->aspectRatioSpinBoxH->value() != 0 || ui->aspectRatioSpinBoxV->value() != 0;
     const bool hasCustomAspect = ui->widthSpinBox->value() != 0 || ui->heightSpinBox->value() != 0;
@@ -432,7 +432,7 @@ void MainWindow::CheckAspectRatioConflict()
     }
 }
 
-void MainWindow::CheckSpeedConflict()
+void MainWindow::CheckSpeedConflict() const
 {
     const bool hasSpeed = ui->speedSpinBox->value() != 0;
     const bool hasFps = ui->fpsSpinBox->value() != 0;
@@ -457,7 +457,7 @@ void MainWindow::SelectOutputDirectory()
     ui->outputFolderLineEdit->setText(dir.absolutePath());
 }
 
-void MainWindow::UpdateAudioQualityLabel(int value)
+void MainWindow::UpdateAudioQualityLabel(int value) const
 {
     static double minBitrate = settings->get("Main/dMinBitrateAudioKbps").toDouble();
     static double maxBitrate = settings->get("Main/dMaxBitrateAudioKbps").toDouble();
@@ -466,7 +466,7 @@ void MainWindow::UpdateAudioQualityLabel(int value)
     ui->audioQualityDisplayLabel->setText(QString::number(qRound(currentValue)) + " kbps");
 }
 
-void MainWindow::SetAllowPresetSelection(bool allowed) { ui->qualityPresetComboBox->setEnabled(!allowed); }
+void MainWindow::SetAllowPresetSelection(bool allowed) const { ui->qualityPresetComboBox->setEnabled(!allowed); }
 
 void MainWindow::HandleFormatsQueryResult(const std::variant<QSharedPointer<FormatSupport>, Message>& maybeFormats)
 {
@@ -596,7 +596,7 @@ void MainWindow::SetProgressShown(const ProgressState& state) const
     progressBarValueAnim->start();
 }
 
-void MainWindow::SetAdvancedMode(bool enabled)
+void MainWindow::SetAdvancedMode(bool enabled) const
 {
     if (enabled)
     {
@@ -716,7 +716,7 @@ void MainWindow::ReceiveMediaMetadata(MetadataResult result)
     metadata = std::get<Metadata>(result);
 }
 
-QString MainWindow::getOutputPath(QString inputFilePath)
+QString MainWindow::getOutputPath(QString inputFilePath) const
 {
     const QString folder = ui->outputFolderLineEdit->text();
     const bool isSuffix = ui->outputFileNameSuffixCheckBox->isChecked();
@@ -745,7 +745,7 @@ QString MainWindow::getOutputPath(QString inputFilePath)
     return resolvedFolder.filePath(resolvedFileName);
 }
 
-bool MainWindow::isAutoValue(QAbstractSpinBox* spinBox) { return spinBox->text() == spinBox->specialValueText(); }
+bool MainWindow::isAutoValue(QAbstractSpinBox* spinBox) const { return spinBox->text() == spinBox->specialValueText(); }
 
 void MainWindow::LoadSelectedUrl()
 {

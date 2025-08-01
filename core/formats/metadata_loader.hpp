@@ -45,7 +45,7 @@ private:
         return {};
     }
 
-    inline void NotFound(QList<QString>& errors, const QString& key)
+    inline void NotFound(QList<QString>& errors, const QString& key) const
     {
         errors.append(QString("Could not find %1 in metadata.").arg(key));
     }
