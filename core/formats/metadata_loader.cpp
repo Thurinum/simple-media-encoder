@@ -115,8 +115,8 @@ void MetadataLoader::loadAsync(const QString& path)
     if (ffprobe.state() == QProcess::Running)
         return;
 
-    ffprobe.start(
-        QString(R"(ffprobe -v error -print_format json -show_format -show_streams "%1")").arg(path)
+    ffprobe.startCommand(
+        QString(R"(ffprobe -v warning -print_format json -show_format -show_streams "%1")").arg(path)
     );
 
     if (!ffprobe.waitForStarted())
