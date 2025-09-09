@@ -4,7 +4,13 @@ project(SimpleMediaEncoder VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wextra -Wno-unused-parameter")
+
+if (MSVC)
+    add_compile_options(/W4 /WX /wd4100 /wd4458 /wd4505)
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wextra -Wno-unused-parameter")
+endif()
+
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/ui)
 set(BOOST_DI_CFG_DIAGNOSTICS_LEVEL 2)
 add_definitions(-DQT_DISABLE_DEPRECATED_UP_TO=0x060700)
