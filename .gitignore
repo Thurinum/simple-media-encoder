@@ -27,3 +27,4 @@ bin/config.ini
 .clangd
 .vscode/
 .idea/
+.vs/
