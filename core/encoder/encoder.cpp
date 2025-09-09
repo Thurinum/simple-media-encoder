@@ -160,17 +160,18 @@ QString MediaEncoder::BuildVideoFilterParams(const EncoderOptions& options, cons
                                 .arg(QString::number(options.aspectRatio->y()), QString::number(options.aspectRatio->x()));
     }
 
+    double speedFactor = 1;
     QString speedFilter;
-    double fps = *options.fps;
     if (options.speed.has_value())
     {
         speedFilter = QString("setpts=%1*PTS").arg(QString::number(1.0 / *options.speed));
-        fps *= *options.speed;
+        speedFactor = *options.speed;
     }
 
     QString fpsFilter;
     if (options.fps.has_value())
     {
+        double fps = *options.fps * speedFactor;
         fpsFilter = "fps=" + QString::number(fps);
     }
 
@@ -213,20 +214,20 @@ bool MediaEncoder::computeAudioBitrate(const EncoderOptions& options, ComputedOp
 double MediaEncoder::computePixelRatio(const EncoderOptions& options, const Metadata& metadata) const
 {
     double pixelRatio = 1;
-    int outputWidth;
-    int outputHeight;
+    int outputWidth = 0;
+    int outputHeight = 0;
 
-    const long inputPixelCount = metadata.width * metadata.height;
+    const int64_t inputPixelCount = metadata.width * metadata.height;
 
     if (options.outputWidth.has_value())
     {
-        outputHeight = *options.outputHeight;
-        outputWidth = outputHeight * metadata.aspectRatioX / metadata.aspectRatioY;
-    }
-    else
-    {
         outputWidth = *options.outputWidth;
         outputHeight = outputWidth * metadata.aspectRatioX / metadata.aspectRatioY;
+    }
+    else if (options.outputHeight.has_value())
+    {
+        outputWidth = outputHeight * metadata.aspectRatioX / metadata.aspectRatioY;
+        outputHeight = *options.outputHeight;
     }
 
     const double outputPixelCount = outputWidth * outputHeight;
