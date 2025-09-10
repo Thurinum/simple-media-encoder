@@ -16,13 +16,20 @@ int main(int argc, char* argv[])
     app.setApplicationName("Simple Media Encoder");
     app.setStyle("Fusion");
 
-    QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, QDir::current().absolutePath());
+    const QDir appDir(QCoreApplication::applicationDirPath());
 
     const auto injector = make_injector(
-        di::bind<Settings>.named(di_settings).to([]
-                                                 { return std::make_shared<IniSettings>("config.ini", "config_default.ini"); }),
-        di::bind<Settings>.named(di_presets).to([]
-                                                { return std::make_shared<IniSettings>("presets.ini"); }),
+        di::bind<Settings>.named(di_settings).to([appDir]
+    {
+        return std::make_shared<IniSettings>(
+            appDir.filePath("config.ini"),
+            appDir.filePath("config_default.ini")
+        );
+    }),
+        di::bind<Settings>.named(di_presets).to([appDir]
+    {
+        return std::make_shared<IniSettings>(appDir.filePath("presets.ini"));
+    }),
         di::bind<Notifier>.to<MessageBoxNotifier>(), di::bind<FormatSupportLoader>.to<FFmpegFormatSupportLoader>()
     );
 

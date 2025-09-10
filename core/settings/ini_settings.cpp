@@ -6,7 +6,8 @@
 
 IniSettings::IniSettings(const QString& fileName, const QString& defaultFileName)
 {
-    if (const QFile file(defaultFileName); file.exists()) {
+    if (const QFile file(defaultFileName); file.exists())
+    {
         defaultSettings = new QSettings(defaultFileName, QSettings::IniFormat);
     }
 
